@@ -1,0 +1,30 @@
+# Angular / Node
+node_modules/
+dist/
+.angular/
+npm-debug.log
+yarn-error.log
+
+# Spring Boot / Java
+backend/target/
+*.class
+*.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# Python (si aplica)
+__pycache__/
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Secretos
+.env
+.env.*
+application-secret.yml
+*.pem

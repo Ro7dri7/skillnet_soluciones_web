@@ -1,0 +1,52 @@
+<header
+  class="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-skillnet-dark px-4 sm:px-6"
+>
+  <div class="flex min-w-0 flex-1 items-center gap-4 md:gap-5">
+    <a routerLink="/login" class="shrink-0">
+      <img
+        src="/assets/images/logo_skillnet.png"
+        alt="Skillnet"
+        class="h-11 w-auto object-contain"
+      />
+    </a>
+
+    <button
+      type="button"
+      class="hidden cursor-pointer items-center gap-2 border-none bg-transparent text-[15px] text-white md:flex"
+    >
+      Categorías
+      <i class="ri-arrow-down-s-line text-lg"></i>
+    </button>
+
+    <div class="relative hidden min-w-0 flex-1 md:block">
+      <i
+        class="ri-search-line pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-gray-500"
+      ></i>
+      <input
+        type="search"
+        name="search"
+        placeholder="¿Qué quieres aprender hoy?"
+        autocomplete="off"
+        class="h-10 w-full max-w-lg rounded-full border-none bg-white py-0 pl-11 pr-4 text-sm text-gray-700 outline-none placeholder:text-gray-500"
+      />
+    </div>
+  </div>
+
+  <nav class="flex shrink-0 items-center gap-2 sm:gap-3">
+    <a
+      routerLink="/login"
+      routerLinkActive="ring-2 ring-white/50"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="rounded-lg border border-white bg-skillnet-dark px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 sm:px-5"
+    >
+      Iniciar sesión
+    </a>
+    <a
+      routerLink="/register"
+      routerLinkActive="ring-2 ring-white/50"
+      class="rounded-lg border-none bg-skillnet-accent px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:px-5"
+    >
+      Regístrate
+    </a>
+  </nav>
+</header>

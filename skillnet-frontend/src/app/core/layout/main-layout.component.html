@@ -1,0 +1,35 @@
+@if (currentUser$ | async; as user) {
+  <div class="flex min-h-screen bg-white">
+    @if (!hideSidebar()) {
+      <app-dashboard-sidebar
+        [user]="user"
+        [isStudent]="isStudent(user)"
+        [isInfoproductor]="isInfoproductor(user)"
+        [isAdmin]="isAdmin(user)"
+        (logout)="logout()"
+      />
+    }
+
+    <div class="flex min-h-screen min-w-0 flex-1 flex-col">
+      <app-dashboard-navbar
+        [displayName]="displayName(user)"
+        [avatarSrc]="avatarSrc(user)"
+        [isInfoproductor]="isInfoproductor(user)"
+        (logout)="logout()"
+      />
+
+      <main
+        class="flex-1 overflow-y-auto"
+        [class.bg-skillnet-surface]="!hideSidebar()"
+        [class.bg-white]="hideSidebar()"
+        [class.p-6]="!hideSidebar()"
+        [class.md:p-8]="!hideSidebar()"
+        [class.p-0]="hideSidebar()"
+      >
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+}
+
+

@@ -1,0 +1,160 @@
+<div class="relative min-h-screen bg-white">
+  <!-- Hero carrusel -->
+  <div class="mx-auto max-w-[1000px] px-4 pt-5 md:px-5">
+    <div class="relative aspect-video w-full overflow-hidden rounded-2xl bg-skillnet-dark md:rounded-3xl">
+      <div
+        class="flex h-full w-[200%] transition-transform duration-500 ease-in-out"
+        [style.transform]="'translateX(-' + currentHeroSlide() * 50 + '%)'"
+      >
+        <div class="relative h-full w-1/2 shrink-0">
+          <div
+            class="h-full w-full bg-gradient-to-br from-skillnet-dark via-skillnet-accent/60 to-skillnet-cyan/40"
+          ></div>
+          <div
+            class="pointer-events-none absolute left-5 top-5 h-36 w-36 opacity-60"
+            style="background-image: radial-gradient(#145bff 2px, transparent 2px); background-size: 15px 15px"
+          ></div>
+        </div>
+        <div class="relative h-full w-1/2 shrink-0 bg-skillnet-dark">
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-transparent via-skillnet-dark/40 to-skillnet-dark/90"
+          ></div>
+          <div class="relative z-10 flex h-full items-center justify-end px-6 text-right text-white md:px-12">
+            <div class="max-w-lg">
+              <p class="mb-4 text-2xl font-bold">
+                <span>Skill</span><span class="text-skillnet-accent">net</span>
+              </p>
+              <h1 class="mb-4 text-3xl font-black leading-tight drop-shadow-lg md:text-5xl">
+                Impulsa tu carrera al<br />siguiente nivel
+              </h1>
+              <p class="mb-8 max-w-md text-sm text-gray-200 md:text-base">
+                Cursos certificados y contenido de expertos. Aprende a tu ritmo con Skillnet.
+              </p>
+              <div class="mb-8 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="goCatalog('Finanzas y Negocios')"
+                  class="rounded-lg bg-skillnet-accent px-6 py-3 text-sm font-black text-white shadow-xl transition-colors hover:bg-skillnet-accent/90"
+                >
+                  Ver cursos en oferta
+                </button>
+                <button
+                  type="button"
+                  (click)="goCatalog()"
+                  class="rounded-lg border border-white px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+                >
+                  Explorar catálogo
+                </button>
+              </div>
+              <div class="flex flex-wrap justify-end gap-5 text-xs font-bold text-white/90 md:text-sm">
+                <span class="flex items-center gap-2">
+                  <i class="ri-user-line text-skillnet-accent"></i> +180 estudiantes
+                </span>
+                <span class="flex items-center gap-2">
+                  <i class="ri-star-fill text-skillnet-accent"></i> 4.8 valoración
+                </span>
+                <span
+                  class="rounded-full border border-skillnet-accent/50 bg-skillnet-dark/60 px-4 py-1.5 text-[10px] uppercase tracking-wider text-skillnet-accent backdrop-blur-md"
+                >
+                  Oferta: 40% off
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="setHeroSlide(0)"
+        class="absolute left-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-skillnet-dark/40 text-white backdrop-blur-sm transition-colors hover:bg-skillnet-accent hover:text-white"
+      >
+        <i class="ri-arrow-left-s-line text-2xl"></i>
+      </button>
+      <button
+        type="button"
+        (click)="setHeroSlide(1)"
+        class="absolute right-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-skillnet-dark/40 text-white backdrop-blur-sm transition-colors hover:bg-skillnet-accent hover:text-white"
+      >
+        <i class="ri-arrow-right-s-line text-2xl"></i>
+      </button>
+    </div>
+  </div>
+
+  @if (user) {
+    <div class="mx-auto max-w-[1400px] px-4 py-4 md:px-10">
+      <div class="flex items-center gap-5">
+        <div
+          class="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-skillnet-dark shadow-md"
+        >
+          <span class="text-xl font-black text-skillnet-accent">{{ userInitial(user) }}</span>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black leading-tight text-skillnet-dark">
+            Hola de nuevo, {{ welcomeName(user) }}
+          </h2>
+          <a
+            routerLink="/dashboard"
+            class="mt-1 text-sm font-bold text-skillnet-accent underline transition-colors hover:text-skillnet-dark"
+          >
+            Ir a mi panel de control
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Te ofrecemos -->
+  <section
+    class="mb-8 bg-gradient-to-b from-skillnet-accent/30 to-white py-10"
+  >
+    <div class="relative mx-auto max-w-[1400px] px-4 md:px-10">
+      <div
+        id="offer-carousel"
+        class="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        @for (item of offerFormats; track item.title) {
+          <button
+            type="button"
+            (click)="goCatalog()"
+            class="group relative h-[140px] min-w-[220px] shrink-0 snap-start overflow-hidden rounded-3xl shadow-lg transition-transform duration-300 hover:scale-105"
+          >
+            <img [src]="item.image" [alt]="item.title" class="h-full w-full object-cover" />
+            <span
+              class="absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-skillnet-dark px-6 py-2 text-sm text-white transition-colors group-hover:bg-skillnet-accent group-hover:text-white"
+            >
+              {{ item.title }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Cursos por categoría -->
+  <div class="mx-auto max-w-[1400px] px-5 pb-16 md:px-10">
+    @if (isLoading()) {
+      <div class="space-y-12 py-10">
+        @for (s of [1, 2, 3]; track s) {
+          <div class="space-y-4">
+            <div class="ml-5 h-6 w-48 animate-pulse rounded bg-slate-200"></div>
+            <div class="flex gap-6 overflow-hidden pl-5">
+              @for (c of [1, 2, 3, 4]; track c) {
+                <div class="h-[350px] w-[300px] shrink-0 animate-pulse rounded-[20px] bg-slate-100"></div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      @for (entry of categoryEntries(); track entry[0]) {
+        <app-marketplace-carousel
+          [title]="'Los mejores cursos de ' + entry[0]"
+          [courses]="entry[1]"
+          [sectionId]="entry[0].toLowerCase().replace(/\s+/g, '-')"
+        />
+      }
+    }
+  </div>
+</div>
+

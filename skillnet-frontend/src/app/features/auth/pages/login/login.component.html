@@ -1,0 +1,111 @@
+<app-auth-navbar />
+
+<div
+  class="grid h-[calc(100vh-64px)] w-full grid-cols-1 overflow-x-hidden font-[Inter,sans-serif] lg:grid-cols-2"
+>
+  <!-- Columna izquierda: imagen -->
+  <div
+    class="relative hidden h-full w-full bg-[url('/assets/images/fondo_login_skillnet.png')] bg-cover bg-center lg:block"
+  >
+    <div class="absolute inset-0 flex items-center justify-center">
+      <img
+        src="/assets/images/icono_skillnet.png"
+        alt="Icono Skillnet"
+        class="h-auto w-48"
+      />
+    </div>
+  </div>
+
+  <!-- Columna derecha: formulario -->
+  <div
+    class="flex flex-col items-center justify-center overflow-y-auto bg-white p-5 sm:p-8"
+  >
+    <div class="w-full max-w-[400px]">
+      <div class="mb-[30px] text-center">
+        <h1 class="mb-2 text-[32px] font-bold text-skillnet-dark">Inicia Sesión</h1>
+        <p class="text-[15px] leading-snug text-gray-600">
+          Continúa tu aprendizaje y alcanza tus objetivos profesionales
+        </p>
+      </div>
+
+      @if (error()) {
+        <div
+          class="mb-[15px] rounded-lg bg-red-100 px-2.5 py-2.5 text-center text-[13px] text-red-800"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-5">
+        <div class="flex flex-col gap-1.5">
+          <label class="flex items-center gap-2 text-sm font-semibold text-skillnet-dark">
+            <i class="ri-mail-line text-lg text-skillnet-accent"></i>
+            Email
+          </label>
+          <input
+            type="email"
+            formControlName="email"
+            placeholder="123@gmail.com"
+            autocomplete="email"
+            class="rounded-[10px] border border-gray-300 bg-white px-3.5 py-3 text-sm text-skillnet-dark outline-none focus:border-skillnet-accent"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="flex items-center gap-2 text-sm font-semibold text-skillnet-dark">
+            <i class="ri-lock-password-line text-lg text-skillnet-accent"></i>
+            Contraseña
+          </label>
+          <div class="relative flex items-center">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Mínimo 8 carácteres"
+              autocomplete="current-password"
+              class="w-full rounded-[10px] border border-gray-300 bg-white py-3 pl-3.5 pr-10 text-sm text-skillnet-dark outline-none focus:border-skillnet-accent"
+            />
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute right-3 flex cursor-pointer border-none bg-transparent p-0 text-gray-500"
+            >
+              <i
+                class="text-lg"
+                [class]="showPassword() ? 'ri-eye-off-line' : 'ri-eye-line'"
+              ></i>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="isLoading()"
+          class="mt-1 rounded-[10px] border-none bg-skillnet-accent py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ isLoading() ? '...' : 'Iniciar sesión' }}
+        </button>
+      </form>
+
+      @if (googleSignInEnabled) {
+        <div class="my-[15px] text-center text-sm font-extrabold text-skillnet-dark">o</div>
+
+        <div class="flex w-full justify-center">
+          <asl-google-signin-button
+            type="standard"
+            size="large"
+            text="signin_with"
+            theme="outline"
+            [width]="360"
+          ></asl-google-signin-button>
+        </div>
+      }
+
+      <div class="mt-6 text-center text-sm text-gray-600">
+        ¿Eres nuevo en Skillnet?
+        <a routerLink="/register" class="font-bold text-skillnet-accent no-underline hover:underline">
+          Crea tu cuenta hoy.
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

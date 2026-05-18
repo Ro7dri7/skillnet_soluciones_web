@@ -1,0 +1,35 @@
+<section [id]="sectionId()" class="relative mb-14">
+  <h2 class="mb-4 text-lg font-bold text-skillnet-dark">{{ title() }}</h2>
+  <div class="relative">
+    <div
+      #track
+      class="flex snap-x snap-mandatory gap-10 overflow-x-auto pb-4 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    >
+      @for (course of courses(); track course.id) {
+        <div class="w-[300px] shrink-0 snap-start">
+          <app-marketplace-course-card [course]="course" />
+        </div>
+      }
+    </div>
+
+    @if (courses().length > 0) {
+      <button
+        type="button"
+        (click)="scroll('left')"
+        class="absolute -left-11 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-none bg-skillnet-accent shadow-md transition-transform hover:scale-110"
+        aria-label="Anterior"
+      >
+        <i class="ri-arrow-left-s-line text-2xl font-bold text-white"></i>
+      </button>
+      <button
+        type="button"
+        (click)="scroll('right')"
+        class="absolute -right-11 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-none bg-skillnet-accent shadow-md transition-transform hover:scale-110"
+        aria-label="Siguiente"
+      >
+        <i class="ri-arrow-right-s-line text-2xl font-bold text-white"></i>
+      </button>
+    }
+  </div>
+</section>
+

@@ -1,0 +1,91 @@
+<aside
+  class="sticky top-0 z-50 flex h-screen shrink-0 flex-col overflow-hidden border-r border-white/10 bg-skillnet-dark text-white/70 transition-[width] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+  [class.w-[72px]]="!expanded()"
+  [class.w-64]="expanded()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  <div class="flex flex-col items-center gap-1 border-b border-white/10 px-2 py-4">
+    <a
+      routerLink="/dashboard"
+      class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5"
+      title="Skillnet"
+    >
+      <img
+        src="/assets/images/logo_skillnet.png"
+        alt="Skillnet"
+        class="h-7 w-7 object-contain brightness-0 invert"
+        onerror="this.onerror=null;this.src='assets/images/avatar-placeholder.png'"
+      />
+    </a>
+    @if (expanded()) {
+      <div class="w-full px-2 text-center">
+        <span class="block truncate text-sm font-bold text-white">SkillNet</span>
+        <span class="block truncate text-[11px] text-white/50">Estudiante</span>
+      </div>
+    }
+  </div>
+
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
+    @for (item of navItems(); track item.label) {
+      @if (item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="border-l-4 border-skillnet-sky bg-white/5 font-semibold !text-skillnet-sky"
+          [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+          [title]="item.label"
+          class="mb-1 flex w-full items-center rounded-r-lg py-2.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          [class.justify-center]="!expanded()"
+          [class.gap-3]="expanded()"
+          [class.pl-4]="expanded()"
+          [class.pr-3]="expanded()"
+          [class.px-0]="!expanded()"
+        >
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center">
+            <i [class]="item.icon + ' text-[20px] leading-none'"></i>
+          </span>
+          @if (expanded()) {
+            <span class="truncate text-sm">{{ item.label }}</span>
+          }
+        </a>
+      } @else {
+        <a
+          [href]="item.href ?? '#'"
+          [title]="item.label"
+          class="mb-1 flex w-full items-center rounded-lg py-2.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          [class.justify-center]="!expanded()"
+          [class.gap-3]="expanded()"
+          [class.px-3]="expanded()"
+          [class.px-0]="!expanded()"
+        >
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center">
+            <i [class]="item.icon + ' text-[20px] leading-none'"></i>
+          </span>
+          @if (expanded()) {
+            <span class="truncate text-sm">{{ item.label }}</span>
+          }
+        </a>
+      }
+    }
+  </nav>
+
+  <div class="border-t border-white/10 px-2 py-4">
+    <button
+      type="button"
+      (click)="onLogout()"
+      title="Cerrar sesión"
+      class="flex w-full items-center rounded-lg py-2.5 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+      [class.justify-center]="!expanded()"
+      [class.gap-3]="expanded()"
+      [class.px-3]="expanded()"
+      [class.px-0]="!expanded()"
+    >
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center">
+        <i class="ri-shut-down-line text-[20px]"></i>
+      </span>
+      @if (expanded()) {
+        <span class="truncate text-sm font-medium">Cerrar sesión</span>
+      }
+    </button>
+  </div>
+</aside>

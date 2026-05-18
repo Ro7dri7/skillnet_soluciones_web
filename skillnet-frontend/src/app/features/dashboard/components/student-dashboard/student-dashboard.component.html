@@ -1,0 +1,305 @@
+<div class="-m-6 min-h-full md:-m-8">
+  <div class="mx-auto max-w-[1400px] space-y-8">
+    <!-- Cabecera + filtros -->
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-skillnet-dark md:text-4xl">
+          ¡Hola, {{ welcomeName(user()) }}!
+        </h1>
+        <p class="mt-2 flex items-center gap-2 text-skillnet-muted">
+          <i class="ri-fire-fill text-lg text-orange-500"></i>
+          <span class="text-base">
+            Estás en racha: llevas
+            <strong class="text-skillnet-dark">{{ streakDays() }} días seguidos</strong> aprendiendo.
+          </span>
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <select
+          [(ngModel)]="selectedCategory"
+          (ngModelChange)="onFiltersChange()"
+          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+        >
+          @for (cat of categories; track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+        <select
+          [(ngModel)]="selectedYear"
+          (ngModelChange)="onFiltersChange()"
+          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+        >
+          @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+        <select
+          [(ngModel)]="selectedMonth"
+          (ngModelChange)="onFiltersChange()"
+          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+        >
+          @for (month of months; track month) {
+            <option [value]="month">{{ month }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-8">
+      <!-- Columna principal -->
+      <section class="col-span-12 space-y-8 lg:col-span-9">
+        <!-- Continuar aprendiendo -->
+        <article
+          class="group relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-xl bg-skillnet-dark p-8 text-white shadow-card"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-br from-skillnet-dark via-skillnet-accent/40 to-skillnet-cyan/30 opacity-90"
+          ></div>
+          <div
+            class="absolute inset-0 bg-[url('/assets/images/fondo_login_skillnet.png')] bg-cover bg-center opacity-20 transition-transform duration-700 group-hover:scale-105"
+          ></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-skillnet-dark via-skillnet-dark/70 to-transparent"></div>
+
+          <div class="relative z-10 max-w-2xl">
+            <span
+              class="mb-4 inline-block rounded-full bg-skillnet-sky px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-skillnet-dark"
+            >
+              Continuar aprendiendo
+            </span>
+            <h2 class="mb-2 text-2xl font-bold leading-tight md:text-3xl">
+              Maestría en Ciencia de Datos
+            </h2>
+            <p class="mb-6 text-sm text-white/80">Módulo 2: Tipos de datos — 24 minutos restantes</p>
+
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div class="flex-1">
+                <div class="mb-2 flex justify-between text-xs font-bold uppercase tracking-widest text-white/70">
+                  <span>Progreso del curso</span>
+                  <span>64%</span>
+                </div>
+                <div class="h-3 overflow-hidden rounded-full bg-white/20">
+                  <div class="h-full w-[64%] rounded-full bg-skillnet-cyan shadow-[0_0_15px_rgba(57,184,253,0.5)]"></div>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-skillnet-dark transition-colors hover:bg-skillnet-sky"
+              >
+                <i class="ri-play-fill text-lg"></i>
+                Reanudar clase
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          @for (kpi of filteredKpis(); track kpi.label) {
+            <article
+              class="rounded-xl border border-slate-200 bg-white p-6 shadow-card transition-shadow hover:shadow-lg"
+            >
+              <div class="mb-4 flex items-start justify-between">
+                <span
+                  class="flex h-10 w-10 items-center justify-center rounded-lg bg-skillnet-accent/10 text-skillnet-accent"
+                >
+                  <i [class]="kpi.icon + ' text-xl'"></i>
+                </span>
+                @if (kpi.badge) {
+                  <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">
+                    {{ kpi.badge }}
+                  </span>
+                }
+              </div>
+              <p class="mb-1 text-sm font-medium text-skillnet-muted">{{ kpi.label }}</p>
+              @if (kpi.label === 'Horas Invertidas') {
+                <p class="flex items-baseline gap-1 text-3xl font-bold text-skillnet-dark">
+                  {{ kpi.value }}
+                  <span class="text-sm font-normal text-skillnet-muted">h</span>
+                </p>
+              } @else {
+                <p class="text-3xl font-bold text-skillnet-dark">{{ kpi.value }}</p>
+              }
+            </article>
+          }
+        </div>
+
+        <!-- Mi aprendizaje -->
+        <div class="space-y-6">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 class="text-xl font-bold text-skillnet-dark">Mi Aprendizaje</h3>
+            <div class="flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-100 p-1">
+              @for (tab of learningTabs; track tab.id) {
+                <button
+                  type="button"
+                  (click)="setLearningTab(tab.id)"
+                  class="rounded-full px-4 py-1.5 text-sm font-bold transition-colors"
+                  [class.bg-white]="isLearningTabActive(tab.id)"
+                  [class.text-skillnet-dark]="isLearningTabActive(tab.id)"
+                  [class.shadow-sm]="isLearningTabActive(tab.id)"
+                  [class.text-skillnet-muted]="!isLearningTabActive(tab.id)"
+                  [class.hover:text-skillnet-dark]="!isLearningTabActive(tab.id)"
+                >
+                  {{ tab.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (filteredLearningCourses().length === 0) {
+            <div
+              class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-skillnet-muted"
+            >
+              No hay cursos para los filtros seleccionados.
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              @for (course of filteredLearningCourses(); track course.id) {
+                <article
+                  class="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"
+                >
+                  <div class="relative h-40 overflow-hidden">
+                    <div
+                      class="h-full w-full bg-gradient-to-br transition-transform duration-500 group-hover:scale-110"
+                      [class]="course.gradient"
+                    ></div>
+                    <span
+                      class="absolute left-3 top-3 rounded bg-white/90 px-2 py-1 text-[10px] font-bold uppercase text-skillnet-dark backdrop-blur"
+                    >
+                      {{ course.category }}
+                    </span>
+                  </div>
+                  <div class="p-5">
+                    <h4 class="mb-2 line-clamp-1 text-sm font-bold text-skillnet-dark">
+                      {{ course.title }}
+                    </h4>
+                    <p class="mb-4 flex items-center gap-1 text-xs text-skillnet-muted">
+                      <i class="ri-user-line"></i>
+                      {{ course.professor }}
+                    </p>
+                    <div class="mb-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        class="h-full rounded-full bg-skillnet-accent transition-all"
+                        [style.width.%]="course.progress"
+                      ></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] font-bold text-skillnet-muted">
+                      <span>{{ course.progress }}% Completado</span>
+                      <span>{{ course.lessonsDone }}/{{ course.lessonsTotal }} Lecciones</span>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Análisis lateral (sin comunidad) -->
+      <aside class="col-span-12 space-y-8 lg:col-span-3">
+        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 class="mb-6 flex items-center gap-2 text-sm font-bold text-skillnet-dark">
+            <i class="ri-bar-chart-grouped-line text-lg text-skillnet-accent"></i>
+            Análisis de Progreso
+          </h3>
+          <div class="space-y-4">
+            @for (item of filteredProgress(); track item.subject) {
+              <div>
+                <div
+                  class="mb-2 flex justify-between text-[11px] font-bold uppercase tracking-widest text-skillnet-muted"
+                >
+                  <span>{{ item.subject }}</span>
+                  <span>{{ item.percent }}%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    class="h-full rounded-full bg-skillnet-accent transition-all duration-300"
+                    [style.width.%]="item.percent"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="mt-8 border-t border-slate-200 pt-8">
+            <h4 class="mb-4 text-sm font-bold text-skillnet-dark">Ruta de Aprendizaje</h4>
+            <ol class="relative space-y-6 pl-6 before:absolute before:bottom-2 before:left-[7px] before:top-2 before:w-0.5 before:bg-slate-200">
+              @for (step of learningPath; track step.title) {
+                <li class="relative">
+                  <span
+                    class="absolute -left-6 top-0.5 h-4 w-4 rounded-full border-4 border-white"
+                    [class]="pathDotClass(step.status)"
+                  ></span>
+                  <p class="text-xs font-bold text-skillnet-dark">{{ step.title }}</p>
+                  <p class="text-[10px] text-skillnet-muted">
+                    @switch (step.status) {
+                      @case ('completed') {
+                        Completado
+                      }
+                      @case ('in_progress') {
+                        En progreso
+                      }
+                      @default {
+                        Siguiente paso
+                      }
+                    }
+                  </p>
+                </li>
+              }
+            </ol>
+          </div>
+        </article>
+      </aside>
+
+      <!-- Recomendados -->
+      <section class="col-span-12 space-y-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-skillnet-dark">
+              @if (selectedCategory === 'Todas') {
+                Cursos recomendados para ti
+              } @else {
+                Porque te interesa {{ selectedCategory }}...
+              }
+            </h3>
+            <p class="text-sm text-skillnet-muted">Basado en tus últimos cursos y filtros activos.</p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              (click)="scrollCarousel('left')"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors hover:bg-slate-50"
+              aria-label="Anterior"
+            >
+              <i class="ri-arrow-left-s-line text-xl"></i>
+            </button>
+            <button
+              type="button"
+              (click)="scrollCarousel('right')"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors hover:bg-slate-50"
+              aria-label="Siguiente"
+            >
+              <i class="ri-arrow-right-s-line text-xl"></i>
+            </button>
+          </div>
+        </div>
+
+        <div
+          #carouselTrack
+          class="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          @for (course of recommendedCourses; track course.id) {
+            <div class="w-[280px] shrink-0 snap-start sm:w-[300px]">
+              <app-course-card
+                [title]="course.title"
+                [price]="course.price"
+                [category]="course.category"
+                [imageUrl]="course.imageUrl"
+              />
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

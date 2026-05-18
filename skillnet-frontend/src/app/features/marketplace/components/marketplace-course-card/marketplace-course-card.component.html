@@ -1,0 +1,106 @@
+<a
+  [routerLink]="['/marketplace/course', course().slug]"
+  class="group flex h-full w-full max-w-[300px] cursor-pointer flex-col overflow-hidden rounded-[20px] border-[1.2px] border-skillnet-accent bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+>
+  <div class="p-2 pb-0">
+    <div class="relative aspect-video overflow-hidden rounded-[14px] bg-slate-100">
+      @if (course().imageUrl; as img) {
+        <img [src]="img" [alt]="course().title" class="h-full w-full object-cover" />
+      } @else {
+        <div
+          class="flex h-full w-full items-center justify-center bg-gradient-to-br from-skillnet-dark to-skillnet-accent"
+        >
+          <i class="ri-play-circle-line text-4xl text-white/80"></i>
+        </div>
+      }
+      <div
+        class="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100"
+      >
+        <span
+          class="flex h-11 w-11 items-center justify-center rounded-full bg-skillnet-accent/90 shadow-lg"
+        >
+          <i class="ri-play-fill ml-0.5 text-2xl text-white"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-1 flex-col p-3">
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-1">
+        <span class="rounded-md bg-skillnet-accent px-2 py-0.5 text-[10px] font-bold text-white">
+          {{ course().category }}
+        </span>
+        <span class="rounded-md bg-skillnet-accent/90 px-2 py-0.5 text-[10px] font-bold text-white">
+          {{ course().format }}
+        </span>
+      </div>
+      <span
+        class="flex items-center gap-1 rounded-md bg-skillnet-dark px-1.5 py-0.5 text-[10px] font-bold text-white"
+      >
+        <i class="ri-star-fill text-skillnet-accent"></i>
+        {{ course().rating | number: '1.1-1' }}
+      </span>
+    </div>
+
+    <h3 class="mb-1.5 line-clamp-2 min-h-8 text-[13px] font-bold leading-tight text-skillnet-dark">
+      {{ course().title }}
+    </h3>
+
+    <div class="mb-2 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-500">
+      <span class="flex items-center gap-1">
+        <i class="ri-user-line"></i>
+        {{ course().enrollmentCount }} inscritos
+      </span>
+      <span class="flex items-center gap-1">
+        <i class="ri-book-open-line"></i>
+        {{ course().lessonsCount }} lecciones
+      </span>
+      <span class="flex items-center gap-1">
+        <i class="ri-bar-chart-line"></i>
+        {{ levelLabel(course().level) }}
+      </span>
+    </div>
+
+    <div class="mb-2.5 h-px bg-slate-200"></div>
+
+    <div class="mb-2.5 flex items-center gap-2">
+      <span class="text-base font-extrabold text-skillnet-accent">
+        {{ course().price | currency: 'USD' : 'symbol' : '1.0-0' }}
+      </span>
+      @if (course().originalPrice && course().originalPrice! > course().price) {
+        <span class="text-[11px] text-slate-400 line-through">
+          {{ course().originalPrice | currency: 'USD' : 'symbol' : '1.0-0' }}
+        </span>
+      }
+    </div>
+
+    <div class="mt-auto flex gap-1.5">
+      <button
+        type="button"
+        (click)="onBuy($event)"
+        class="flex-1 rounded-lg border-none bg-skillnet-accent py-2 text-xs font-extrabold text-white transition-colors hover:bg-skillnet-dark"
+      >
+        Comprar ahora
+      </button>
+      <button
+        type="button"
+        (click)="onWishlist($event)"
+        class="flex h-[34px] w-[34px] items-center justify-center rounded-lg border-[1.2px] border-skillnet-accent text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white"
+        aria-label="Agregar a favoritos"
+      >
+        <i class="ri-heart-line text-base"></i>
+      </button>
+      <button
+        type="button"
+        (click)="onBuy($event)"
+        class="flex h-[34px] w-[34px] items-center justify-center rounded-lg border-[1.2px] border-skillnet-accent text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white"
+        aria-label="Agregar al carrito"
+      >
+        <i class="ri-shopping-cart-line text-base"></i>
+      </button>
+    </div>
+  </div>
+</a>
+
+

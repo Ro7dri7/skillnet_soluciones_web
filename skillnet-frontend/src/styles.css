@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+@theme {
+  --color-skillnet-dark: #032b60;
+  --color-skillnet-accent: #145bff;
+}

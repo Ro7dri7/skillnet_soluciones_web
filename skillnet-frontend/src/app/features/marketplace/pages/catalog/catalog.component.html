@@ -1,0 +1,57 @@
+<div class="min-h-screen bg-white">
+  <div class="border-b border-slate-200 bg-gradient-to-b from-skillnet-accent/20 to-white py-8">
+    <div class="mx-auto max-w-[1400px] px-5 md:px-10">
+      <a routerLink="/marketplace" class="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-skillnet-accent">
+        <i class="ri-arrow-left-line"></i> Volver al marketplace
+      </a>
+      <h1 class="text-3xl font-black text-skillnet-dark">Explorar catálogo</h1>
+      <p class="mt-2 text-skillnet-muted">Filtra por categoría y encuentra tu próximo curso.</p>
+    </div>
+  </div>
+
+  <div class="mx-auto max-w-[1400px] px-5 py-8 md:px-10">
+    <div class="mb-8 flex flex-wrap gap-2">
+      <button
+        type="button"
+        (click)="selectCategory('')"
+        class="rounded-full px-4 py-2 text-sm font-bold transition-colors"
+        [class.bg-skillnet-accent]="!selectedCategory()"
+        [class.text-white]="!selectedCategory()"
+        [class.bg-slate-100]="selectedCategory()"
+        [class.text-skillnet-dark]="selectedCategory()"
+      >
+        Todas
+      </button>
+      @for (cat of categories; track cat) {
+        <button
+          type="button"
+          (click)="selectCategory(cat)"
+          class="rounded-full px-4 py-2 text-sm font-bold transition-colors"
+          [class.bg-skillnet-accent]="selectedCategory() === cat"
+          [class.text-white]="selectedCategory() === cat"
+          [class.bg-slate-100]="selectedCategory() !== cat"
+          [class.text-skillnet-dark]="selectedCategory() !== cat"
+        >
+          {{ cat }}
+        </button>
+      }
+    </div>
+
+    @if (isLoading()) {
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        @for (s of [1, 2, 3, 4, 5, 6]; track s) {
+          <div class="h-[350px] animate-pulse rounded-[20px] bg-slate-100"></div>
+        }
+      </div>
+    } @else if (filteredCourses().length === 0) {
+      <p class="py-16 text-center text-skillnet-muted">No hay cursos en esta categoría.</p>
+    } @else {
+      <div class="grid grid-cols-1 justify-items-center gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        @for (course of filteredCourses(); track course.id) {
+          <app-marketplace-course-card [course]="course" />
+        }
+      </div>
+    }
+  </div>
+</div>
+

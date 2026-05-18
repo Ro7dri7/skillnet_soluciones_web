@@ -1,0 +1,205 @@
+<nav
+  class="relative z-[1010] flex h-16 shrink-0 items-center border-b border-white/10 bg-skillnet-dark px-4 font-sans text-white transition-[0.3s] sm:px-6"
+>
+  <!-- Izquierda: logo, categorías, búsqueda -->
+  <div class="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
+    <a routerLink="/marketplace" class="flex shrink-0 items-center" title="Ir al marketplace">
+      <img
+        src="/assets/images/logo_skillnet.png"
+        alt="Skillnet"
+        class="h-[38px] w-auto object-contain"
+        onerror="this.onerror=null;this.src='assets/images/avatar-placeholder.png'"
+      />
+    </a>
+
+    <div class="relative hidden md:block">
+      <button
+        type="button"
+        (click)="toggleCategories($event)"
+        class="flex cursor-pointer items-center gap-2 border-none bg-transparent text-[15px] text-white"
+      >
+        Categorías
+        <i class="ri-arrow-down-s-line text-lg"></i>
+      </button>
+
+      @if (showCategories()) {
+        <div
+          #categoriesPanel
+          class="absolute left-0 top-[calc(100%+10px)] z-[1000] min-w-[220px] overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#111] py-2 shadow-2xl"
+          (click)="$event.stopPropagation()"
+        >
+          @for (cat of categories; track cat) {
+            <a
+              href="#"
+              class="block px-4 py-2.5 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              {{ cat }}
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="relative hidden min-w-0 max-w-[320px] flex-1 sm:block">
+      <div
+        class="rounded-lg border-2 border-transparent bg-[linear-gradient(#f3f4f6,#f3f4f6),linear-gradient(90deg,#89ceff_0%,#145bff_100%)] bg-origin-border bg-clip-padding"
+      >
+        <div class="relative flex h-9 items-center">
+          <i
+            class="ri-search-line pointer-events-none absolute left-4 text-sm text-black"
+          ></i>
+          <input
+            id="navbar-search"
+            type="search"
+            name="search"
+            placeholder="¿Qué quieres aprender hoy?"
+            autocomplete="off"
+            class="h-full w-full rounded-3xl border-none bg-[#f3f4f6] py-0 pl-11 pr-4 text-[15px] font-medium text-[#111] outline-none transition-colors placeholder:text-gray-500 focus:bg-white"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Derecha: acciones -->
+  <div class="flex items-center gap-4 sm:gap-5">
+    @if (isInfoproductor()) {
+      <button
+        type="button"
+        class="hidden rounded-lg border-none bg-[linear-gradient(180deg,#89ceff_0%,#ffffff_100%)] px-3.5 py-1.5 text-[13px] font-bold text-black transition-opacity hover:opacity-90 sm:inline-flex"
+      >
+        Gestionar negocio
+      </button>
+    }
+
+    <div class="flex items-center gap-3 sm:gap-4">
+      <!-- Notificaciones -->
+      <div class="relative">
+        <button
+          type="button"
+          [class]="iconBtnClass()"
+          (click)="toggleNotifications($event)"
+          aria-label="Notificaciones"
+        >
+          <i class="ri-notification-3-line text-xl"></i>
+          @if (unreadCount() > 0) {
+            <span [class]="badgeClass()">{{ unreadCount() }}</span>
+          }
+        </button>
+
+        @if (showNotifications()) {
+          <div
+            #notificationsPanel
+            class="absolute right-0 top-[calc(100%+12px)] z-[1000] w-[300px] overflow-hidden rounded-xl border border-[#333] bg-[#111] shadow-2xl sm:right-[-60px]"
+            (click)="$event.stopPropagation()"
+          >
+            <div
+              class="flex items-center justify-between border-b border-[#222] px-3 py-3 text-[13px]"
+            >
+              <b>Notificaciones</b>
+              <button
+                type="button"
+                (click)="markAllNotificationsRead()"
+                class="cursor-pointer border-none bg-transparent text-[11px] text-skillnet-sky hover:underline"
+              >
+                Marcar todo leído
+              </button>
+            </div>
+            <div class="max-h-[300px] overflow-y-auto">
+              @if (notifications.length === 0) {
+                <p class="px-5 py-8 text-center text-sm text-[#666]">No hay notificaciones</p>
+              } @else {
+                @for (n of notifications; track n.id) {
+                  <button
+                    type="button"
+                    class="block w-full border-b border-[#1e1e1e] px-3 py-2.5 text-left transition-colors hover:bg-white/5"
+                    [class.bg-skillnet-sky/5]="!n.isRead"
+                  >
+                    <p class="text-xs font-bold text-white">{{ n.title }}</p>
+                    <p class="text-[11px] text-[#aaa]">{{ n.message }}</p>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Carrito -->
+      <a href="#" [class]="iconBtnClass()" aria-label="Carrito">
+        <i class="ri-shopping-cart-2-line text-xl"></i>
+        @if (cartCount() > 0) {
+          <span [class]="badgeClass()">{{ cartCount() }}</span>
+        }
+      </a>
+
+      <!-- Wishlist -->
+      <a href="#" [class]="iconBtnClass()" aria-label="Lista de deseos">
+        <i class="ri-heart-line text-xl"></i>
+        @if (wishlistCount() > 0) {
+          <span [class]="badgeClass()">{{ wishlistCount() }}</span>
+        }
+      </a>
+    </div>
+
+    <!-- Perfil -->
+    <div class="relative">
+      <button
+        type="button"
+        id="onboarding-profile"
+        (click)="toggleProfile($event)"
+        class="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/10"
+        aria-label="Menú de perfil"
+        aria-haspopup="true"
+        [attr.aria-expanded]="showProfile()"
+      >
+        <div
+          class="flex h-[34px] w-[34px] items-center justify-center overflow-hidden rounded-full border-[1.5px] border-skillnet-sky bg-[#333]"
+        >
+          <img
+            [src]="avatarSrc()"
+            alt="Perfil"
+            class="h-full w-full object-cover"
+            onerror="this.onerror=null;this.src='assets/images/avatar-placeholder.png'"
+          />
+        </div>
+        <i class="ri-arrow-down-s-line text-lg"></i>
+      </button>
+
+      @if (showProfile()) {
+        <div
+          #profilePanel
+          class="absolute right-0 top-[calc(100%+12px)] z-[1000] w-[200px] overflow-hidden rounded-xl border border-[#333] bg-[#111] py-2 shadow-2xl"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="border-b border-[#222] px-5 py-2 text-xs text-[#666]">
+            Hola, <b class="text-white">{{ displayName() }}</b>
+          </div>
+          <a
+            href="#"
+            class="flex items-center px-5 py-2.5 text-sm text-white no-underline transition-colors hover:bg-white/5"
+          >
+            <i class="ri-user-line mr-2 text-skillnet-sky"></i>
+            Mi Perfil
+          </a>
+          <a
+            routerLink="/dashboard"
+            class="flex items-center px-5 py-2.5 text-sm text-white no-underline transition-colors hover:bg-white/5"
+          >
+            <i class="ri-dashboard-line mr-2 text-skillnet-sky"></i>
+            Panel de Control
+          </a>
+          <button
+            type="button"
+            (click)="onLogout()"
+            class="flex w-full items-center border-t border-[#222] px-5 py-2.5 text-left text-sm text-[#ff4444] transition-colors hover:bg-white/5"
+          >
+            <i class="ri-logout-box-r-line mr-2"></i>
+            Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</nav>
+
