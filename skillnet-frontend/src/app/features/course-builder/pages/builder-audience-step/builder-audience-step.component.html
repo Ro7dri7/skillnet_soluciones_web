@@ -1,0 +1,168 @@
+<div class="min-h-full bg-gray-50/50 p-4 md:p-6 pb-12">
+  <div class="mx-auto max-w-6xl space-y-6">
+    <div
+      class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between"
+    >
+      <div class="flex flex-1 items-center gap-4">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent text-white shadow-sm"
+        >
+          <i class="ri-team-fill text-xl"></i>
+        </div>
+        <div>
+          <h2 class="mb-1 text-xl font-bold tracking-tight text-gray-900">Audiencia Objetivo</h2>
+          <p class="text-sm font-medium leading-relaxed text-gray-500">
+            Define quién es tu estudiante ideal. Una audiencia bien perfilada aumenta la tasa de
+            conversión.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+          <span class="text-sm font-bold text-gray-800">¿Qué aprenderán?</span>
+          <span
+            class="rounded-md bg-skillnet-sky/25 px-2.5 py-1 text-xs font-bold text-skillnet-dark"
+          >
+            MÍNIMO 2
+          </span>
+        </div>
+        <div class="flex flex-1 flex-col space-y-4 bg-gray-50/30 p-6">
+          <div class="flex flex-col gap-3">
+            @for (goal of goals(); track $index) {
+              <div class="group relative flex items-center gap-3">
+                <div
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-skillnet-accent text-xs font-bold text-white shadow-sm"
+                >
+                  {{ $index + 1 }}
+                </div>
+                <div class="relative flex-1">
+                  <input
+                    type="text"
+                    [ngModel]="goal"
+                    (ngModelChange)="updateGoal($index, $event)"
+                    placeholder="Ej: Dominar las bases de..."
+                    maxlength="160"
+                    class="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-4 pr-12 text-sm text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  />
+                  @if (goals().length > 2) {
+                    <button
+                      type="button"
+                      (click)="removeGoal($index)"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 transition-colors hover:text-red-500"
+                    >
+                      <i class="ri-close-line text-lg"></i>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <button
+            type="button"
+            (click)="addGoal()"
+            class="mt-auto flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-3 text-sm font-semibold text-gray-500 transition-all hover:border-skillnet-accent/50 hover:bg-gray-50 hover:text-skillnet-accent"
+          >
+            <i class="ri-add-line text-lg"></i> Añadir Meta
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+          <span class="text-sm font-bold text-gray-800">Estudiante Ideal</span>
+          <i class="ri-user-star-fill text-lg text-skillnet-accent"></i>
+        </div>
+        <div class="flex flex-1 flex-col space-y-4 bg-gray-50/30 p-6">
+          <div class="flex flex-col gap-3">
+            @for (line of audienceLines(); track $index) {
+              <div class="relative flex items-center gap-3">
+                <div
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-skillnet-accent text-sm font-bold text-white shadow-sm"
+                >
+                  <i class="ri-user-line"></i>
+                </div>
+                <div class="relative flex-1">
+                  <input
+                    type="text"
+                    [ngModel]="line"
+                    (ngModelChange)="updateAudience($index, $event)"
+                    placeholder="Ej: Emprendedores digitales..."
+                    class="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-4 pr-12 text-sm text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  />
+                  @if (audienceLines().length > 1) {
+                    <button
+                      type="button"
+                      (click)="removeAudience($index)"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 transition-colors hover:text-red-500"
+                    >
+                      <i class="ri-close-line text-lg"></i>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <button
+            type="button"
+            (click)="addAudienceLine()"
+            class="mt-auto flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-3 text-sm font-semibold text-gray-500 transition-all hover:border-skillnet-accent/50 hover:bg-gray-50 hover:text-skillnet-accent"
+          >
+            <i class="ri-add-line text-lg"></i> Añadir Perfil
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 pt-4 md:grid-cols-3">
+      <div class="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h4 class="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide text-gray-800">
+          <div
+            class="flex h-7 w-7 items-center justify-center rounded-lg bg-skillnet-accent text-white shadow-sm"
+          >
+            <i class="ri-lightbulb-flash-line"></i>
+          </div>
+          Pro Tip: Metas
+        </h4>
+        <p class="text-sm leading-relaxed text-gray-500">
+          Usa verbos de acción. En lugar de "Aprenderás Python", usa "Construirás 5 aplicaciones
+          reales".
+        </p>
+      </div>
+      <div class="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h4 class="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide text-gray-800">
+          <div
+            class="flex h-7 w-7 items-center justify-center rounded-lg bg-skillnet-accent text-white shadow-sm"
+          >
+            <i class="ri-information-line"></i>
+          </div>
+          Transparencia
+        </h4>
+        <p class="text-sm leading-relaxed text-gray-500">
+          Sé honesto. Si el {{ productNoun() }} es avanzado o requiere base, dilo claramente para
+          evitar reseñas negativas de alumnos.
+        </p>
+      </div>
+      <div class="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h4 class="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide text-gray-800">
+          <div
+            class="flex h-7 w-7 items-center justify-center rounded-lg bg-skillnet-accent text-white shadow-sm"
+          >
+            <i class="ri-radar-line"></i>
+          </div>
+          Segmentación
+        </h4>
+        <p class="text-sm leading-relaxed text-gray-500">
+          No intentes llegar a todos. "Para todos" suele significar "para nadie". Define un nicho
+          muy específico.
+        </p>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">{{ error() }}</div>
+    }
+  </div>
+</div>

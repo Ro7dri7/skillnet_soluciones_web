@@ -5,6 +5,9 @@ dist/
 npm-debug.log
 yarn-error.log
 
+# Media uploads (local dev storage)
+uploads/
+
 # Spring Boot / Java
 backend/target/
 *.class

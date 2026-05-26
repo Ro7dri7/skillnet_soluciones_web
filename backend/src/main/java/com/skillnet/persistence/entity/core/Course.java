@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -53,6 +54,12 @@ public class Course {
     @Column(name = "requirements", columnDefinition = "text")
     private String requirements;
 
+    @Column(name = "welcome_message", columnDefinition = "text")
+    private String welcomeMessage;
+
+    @Column(name = "congratulations_message", columnDefinition = "text")
+    private String congratulationsMessage;
+
     @Column(name = "category", length = 100)
     private String category;
 
@@ -65,6 +72,7 @@ public class Course {
     @Column(name = "language", length = 10, nullable = false)
     private String language = "es";
 
+    /** Formato del infoproducto: course, ebook, audiobook, podcast, etc. */
     @Column(name = "course_format", length = 30, nullable = false)
     private String courseFormat = "course";
 
@@ -101,7 +109,7 @@ public class Course {
     private User professor;
 
     @Column(name = "status", length = 20, nullable = false)
-    private String status = "draft";
+    private String status = "draft"; // DRAFT por defecto (valor persistido en minúsculas)
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -142,4 +150,23 @@ public class Course {
 
     @ManyToMany(mappedBy = "featuredCourses", fetch = FetchType.LAZY)
     private Set<User> usersWhoFeatured = new HashSet<>();
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private Set<Section> sections = new HashSet<>();
+
+    public String getFormat() {
+        return courseFormat;
+    }
+
+    public void setFormat(String format) {
+        this.courseFormat = format;
+    }
+
+    public String getAudience() {
+        return targetAudience;
+    }
+
+    public void setAudience(String audience) {
+        this.targetAudience = audience;
+    }
 }

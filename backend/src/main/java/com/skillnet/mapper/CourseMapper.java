@@ -32,6 +32,8 @@ public class CourseMapper {
         dto.setDurationHours(course.getDurationHours());
         dto.setDurationMinutes(course.getDurationMinutes());
         dto.setRequirements(course.getRequirements());
+        dto.setWelcomeMessage(course.getWelcomeMessage());
+        dto.setCongratulationsMessage(course.getCongratulationsMessage());
         dto.setCategory(course.getCategory());
         dto.setSubcategory(course.getSubcategory());
         dto.setLevel(course.getLevel());

@@ -18,9 +18,23 @@ spring:
           time_zone: UTC
         format_sql: true
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 105MB
+
 skillnet:
   jwt:
     secret: ${SKILLNET_JWT_SECRET:skillnet-dev-jwt-secret-key-minimum-32bytes!}
     expiration-ms: ${SKILLNET_JWT_EXPIRATION_MS:86400000}
   google:
     client-id: ${SKILLNET_GOOGLE_CLIENT_ID:226869771343-duthig8qnupr5j7u1l61bkl95hmc284n.apps.googleusercontent.com}
+  media:
+    storage: ${SKILLNET_MEDIA_STORAGE:local}
+    local-dir: ${SKILLNET_MEDIA_LOCAL_DIR:uploads/media}
+    public-base-url: ${SKILLNET_MEDIA_PUBLIC_BASE_URL:http://127.0.0.1:8080/api/v1/media/files}
+    s3-bucket: ${SKILLNET_S3_BUCKET:}
+    s3-region: ${SKILLNET_S3_REGION:us-east-1}
+    s3-access-key: ${AWS_ACCESS_KEY_ID:}
+    s3-secret-key: ${AWS_SECRET_ACCESS_KEY:}
+    s3-public-base-url: ${SKILLNET_S3_PUBLIC_BASE_URL:}

@@ -1,0 +1,66 @@
+<div class="category-bar" (mouseleave)="onBarMouseLeave()">
+  <div
+    class="category-bar__strip hide-scrollbar"
+    [class.category-bar__strip--filtered]="!!activeParent()"
+  >
+    <nav aria-label="Navegación de categorías" class="category-bar__nav">
+      <ul class="category-bar__list" [class.category-bar__list--filtered]="!!activeParent()">
+        @if (activeParent(); as parent) {
+          <li class="category-bar__parent-tab">
+            <span class="category-bar__parent-fill" aria-hidden="true"></span>
+            <button type="button" class="category-bar__parent-btn" (click)="navigateParent()">
+              {{ parent }}
+            </button>
+          </li>
+          @for (sub of activeSubcategories(); track sub) {
+            <li>
+              <button
+                type="button"
+                class="category-bar__sub-btn"
+                [class.category-bar__sub-btn--active]="isSubcategoryActive(sub)"
+                (click)="navigateCategory(sub)"
+              >
+                {{ sub }}
+              </button>
+            </li>
+          }
+        } @else {
+          @for (cat of officialCategories; track cat) {
+            <li class="category-bar__item" (mouseenter)="onCategoryMouseEnter(cat)">
+              <button
+                type="button"
+                class="category-bar__cat-btn"
+                [class.category-bar__cat-btn--hover]="isCategoryHovered(cat)"
+                (click)="navigateCategory(cat)"
+              >
+                {{ cat }}
+                @if (isCategoryHovered(cat)) {
+                  <span class="category-bar__underline" aria-hidden="true"></span>
+                }
+              </button>
+            </li>
+          }
+        }
+      </ul>
+    </nav>
+  </div>
+
+  @if (!activeParent()) {
+    <div
+      class="category-bar__dropdown"
+      [class.category-bar__dropdown--open]="!!hoveredCategory()"
+    >
+      <div class="category-bar__dropdown-inner hide-scrollbar">
+        <ul class="category-bar__dropdown-list">
+          @for (sub of hoveredSubcategories(); track sub) {
+            <li>
+              <button type="button" class="category-bar__dropdown-btn" (click)="navigateCategory(sub)">
+                {{ sub }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+</div>

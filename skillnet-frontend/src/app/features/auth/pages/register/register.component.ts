@@ -122,11 +122,11 @@ export class RegisterComponent {
         role,
         activeRole: role,
         active: true,
-        student: role === 'student',
-        infoproductor: role === 'infoproductor',
+        student: true,
+        infoproductor: true,
       })
       .subscribe({
-        next: () => void this.router.navigate(['/dashboard']),
+        next: () => void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser()),
         error: (err) => {
           this.error.set(messageFromHttpError(err, 'Error al crear la cuenta. Intenta nuevamente.'));
           this.isLoading.set(false);

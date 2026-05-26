@@ -10,6 +10,8 @@ import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.UserRepository;
 import com.skillnet.security.CustomUserDetails;
 import com.skillnet.security.JwtService;
+import com.skillnet.security.RoleAuthorityResolver;
+import com.skillnet.service.UserRoleNormalizer;
 import com.skillnet.web.dto.request.GoogleLoginRequestDTO;
 import com.skillnet.web.dto.response.AuthResponseDTO;
 import com.skillnet.web.dto.response.UserSummaryDTO;
@@ -69,9 +71,10 @@ public class GoogleAuthService {
             throw new DisabledException("User account is disabled");
         }
 
-        CustomUserDetails userDetails = new CustomUserDetails(user);
-        String jwt = jwtService.generateToken(userDetails);
-        UserSummaryDTO summary = userMapper.toSummaryDTO(user);
+        String activeRole = RoleAuthorityResolver.defaultActiveRole(user);
+        CustomUserDetails userDetails = new CustomUserDetails(user, activeRole);
+        String jwt = jwtService.generateToken(userDetails, activeRole);
+        UserSummaryDTO summary = userMapper.toSummaryDTO(user, activeRole);
         return new AuthResponseDTO(jwt, summary);
     }
 
@@ -102,9 +105,7 @@ public class GoogleAuthService {
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setIdentityProvider("google");
         user.setEmailVerified(true);
-        user.setRole("student");
-        user.setActiveRole("student");
-        user.setStudent(true);
+        UserRoleNormalizer.applyDualRoleCapabilities(user, "student");
         user.setActive(true);
         user.setDateJoined(Instant.now());
         user.setSpecialties(JsonNodeFactory.instance.objectNode());
@@ -113,13 +114,18 @@ public class GoogleAuthService {
     }
 
     private User updateExistingUser(User user, String pictureUrl) {
+        UserRoleNormalizer.ensureDualCapabilities(user);
+        boolean dirty = false;
+        if (!user.isStudent() || !user.isInfoproductor()) {
+            dirty = true;
+        }
         if (pictureUrl != null
                 && !pictureUrl.isBlank()
                 && (user.getProfilePicture() == null || !pictureUrl.equals(user.getProfilePicture()))) {
             user.setProfilePicture(pictureUrl);
-            return userRepository.save(user);
+            dirty = true;
         }
-        return user;
+        return dirty ? userRepository.save(user) : user;
     }
 
     private String generateUniqueUsername(String email) {

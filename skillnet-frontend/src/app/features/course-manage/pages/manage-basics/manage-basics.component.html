@@ -1,0 +1,393 @@
+<div class="manage-basics-scroll h-full overflow-y-auto bg-gray-50/50 p-4 pb-40 font-sans text-gray-900 md:p-6">
+  <div class="mx-auto max-w-7xl space-y-10">
+    <!-- Encabezado -->
+    <header class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm"
+      >
+        <i class="ri-layout-masonry-fill text-2xl text-skillnet-accent"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">Página de Inicio</h2>
+        <p class="mt-1 text-sm font-medium text-skillnet-muted">
+          Configura la presentación pública de tu curso
+        </p>
+      </div>
+    </header>
+
+    <!-- Banner conversión -->
+    <div
+      class="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:p-6"
+    >
+      <div class="flex flex-1 items-center gap-4">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/10"
+        >
+          <i class="ri-rocket-line text-2xl text-skillnet-accent"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold uppercase tracking-wide text-skillnet-dark">
+            Optimiza tu Conversión
+          </p>
+          <p class="mt-1 text-xs font-medium leading-snug text-skillnet-muted">
+            Una landing page profesional puede aumentar tus inscripciones hasta un 40%. Asegúrate de
+            que cada palabra cuente.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <p class="text-sm text-skillnet-muted">Cargando…</p>
+    } @else {
+      <form [formGroup]="form" class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <!-- Columna principal -->
+        <div class="space-y-8 lg:col-span-8">
+          <!-- Información del producto -->
+          <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+              <span class="text-sm font-bold text-gray-800">Información del Producto</span>
+              <i class="ri-file-list-3-line text-lg text-skillnet-accent"></i>
+            </div>
+            <div class="space-y-6 bg-gray-50/30 p-6 md:p-8">
+              <div class="space-y-2">
+                <div class="flex items-end justify-between">
+                  <label class="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-gray-700" for="title">
+                    Título del Curso <span class="text-red-500">*</span>
+                  </label>
+                  <span
+                    class="text-[10px] font-semibold"
+                    [class.text-red-500]="titleLength() > 55"
+                    [class.text-gray-400]="titleLength() <= 55"
+                  >
+                    {{ titleLength() }}/{{ maxTitleChars }}
+                  </span>
+                </div>
+                <input
+                  id="title"
+                  type="text"
+                  formControlName="title"
+                  maxlength="60"
+                  placeholder="Ej: Master en Automatización con Python 2024"
+                  class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-sm placeholder:text-gray-400 transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-wide text-gray-700" for="description">
+                  Descripción Detallada <span class="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  rows="8"
+                  formControlName="description"
+                  placeholder="Describe qué hace que tu curso sea único..."
+                  class="min-h-[200px] w-full resize-y rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium leading-relaxed text-gray-900 shadow-sm placeholder:text-gray-400 transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                ></textarea>
+                <div class="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+                  <i class="ri-information-line text-skillnet-accent"></i>
+                  <p class="text-[11px] font-medium italic text-blue-700">
+                    Tip: Usa párrafos cortos y viñetas para que sea fácil de leer.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Imagen de portada -->
+          <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+              <span class="text-sm font-bold text-gray-800">Imagen de Portada</span>
+              <i class="ri-image-line text-lg text-skillnet-accent"></i>
+            </div>
+            <div class="bg-gray-50/30 p-6 md:p-8">
+              <div class="flex flex-col items-start gap-8 md:flex-row">
+                <div
+                  class="group relative aspect-video w-full shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100 shadow-sm md:w-[320px]"
+                >
+                  @if (coverPreview(); as src) {
+                    <img [src]="src" alt="Preview" class="h-full w-full object-cover" />
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+                    >
+                      <label
+                        for="course-image"
+                        class="cursor-pointer rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
+                      >
+                        Cambiar Imagen
+                      </label>
+                    </div>
+                  } @else {
+                    <div class="flex h-full items-center justify-center text-gray-400">
+                      <i class="ri-image-add-line text-4xl"></i>
+                    </div>
+                  }
+                </div>
+                <div class="flex-1 space-y-4 pt-2">
+                  <h4 class="text-sm font-bold text-gray-900">Tu identidad visual</h4>
+                  <p class="text-[12px] font-medium leading-relaxed text-gray-500">
+                    Dimensiones recomendadas:
+                    <span class="font-semibold text-gray-700">750×422px</span>.<br />
+                    Formatos: <span class="font-semibold text-gray-700">.jpg, .png</span>.<br />
+                    Evita incluir texto excesivo en la imagen para mejorar la legibilidad en móviles.
+                  </p>
+                  <div class="space-y-3 pt-2">
+                    <input
+                      id="course-image"
+                      type="file"
+                      class="hidden"
+                      accept=".jpg,.jpeg,.png,.gif,image/*"
+                      (change)="onImageFileSelected($event)"
+                    />
+                    <label
+                      for="course-image"
+                      class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-black"
+                    >
+                      <i class="ri-upload-cloud-2-line text-lg"></i>
+                      Seleccionar Archivo
+                    </label>
+                    @if (imageFileName()) {
+                      <p class="text-[11px] font-medium text-skillnet-muted">
+                        Archivo: {{ imageFileName() }}
+                      </p>
+                    }
+                    @if (isImageUploading()) {
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-gray-500">Subiendo…</span>
+                          <span class="text-[10px] font-bold text-gray-700">{{ imageUploadProgress() }}%</span>
+                        </div>
+                        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                          <div
+                            class="h-full bg-skillnet-accent transition-all"
+                            [style.width.%]="imageUploadProgress()"
+                          ></div>
+                        </div>
+                      </div>
+                    }
+                    <div class="border-t border-gray-200 pt-3">
+                      <label class="mb-1 block text-[10px] font-bold uppercase text-gray-500" for="imageUrl">
+                        O pega URL (temporal)
+                      </label>
+                      <input
+                        id="imageUrl"
+                        type="url"
+                        formControlName="imageUrl"
+                        placeholder="https://…"
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Vídeo promocional -->
+          <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+              <span class="text-sm font-bold text-gray-800">Vídeo Promocional</span>
+              <i class="ri-video-line text-lg text-skillnet-accent"></i>
+            </div>
+            <div class="bg-gray-50/30 p-6 md:p-8">
+              <div class="flex flex-col items-start gap-8 md:flex-row">
+                <div
+                  class="relative flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-800 bg-skillnet-dark shadow-sm md:w-[320px]"
+                >
+                  @if (videoPreview()) {
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <i class="ri-play-circle-fill text-5xl text-white/90"></i>
+                    </div>
+                  } @else {
+                    <i class="ri-video-add-line text-4xl text-white/20"></i>
+                  }
+                </div>
+                <div class="flex-1 space-y-4 pt-2">
+                  <h4 class="text-sm font-bold text-gray-900">El gancho comercial</h4>
+                  <p class="text-[12px] font-medium leading-relaxed text-gray-500">
+                    Un buen vídeo de introducción puede cerrar la venta en segundos. Manténlo por debajo de
+                    <span class="font-semibold text-gray-700">2 minutos</span> y enfócate en el valor que
+                    aportas.
+                  </p>
+                  <div class="space-y-3 pt-2">
+                    <input
+                      id="course-video"
+                      type="file"
+                      class="hidden"
+                      accept="video/*"
+                      (change)="onVideoFileSelected($event)"
+                    />
+                    <label
+                      for="course-video"
+                      class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-skillnet-dark px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-skillnet-dark/90"
+                    >
+                      <i class="ri-video-upload-line text-lg text-skillnet-sky"></i>
+                      Cargar Tráiler
+                    </label>
+                    @if (videoFileName()) {
+                      <p class="text-[11px] font-medium text-skillnet-muted">
+                        Archivo: {{ videoFileName() }}
+                      </p>
+                    }
+                    @if (isVideoUploading()) {
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold uppercase text-gray-500">Procesando vídeo…</span>
+                          <span class="text-[10px] font-bold text-gray-700">{{ videoUploadProgress() }}%</span>
+                        </div>
+                        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                          <div
+                            class="h-full bg-skillnet-dark transition-all"
+                            [style.width.%]="videoUploadProgress()"
+                          ></div>
+                        </div>
+                      </div>
+                    }
+                    <div class="border-t border-gray-200 pt-3">
+                      <label class="mb-1 block text-[10px] font-bold uppercase text-gray-500" for="videoUrl">
+                        O pega URL de YouTube / Vimeo
+                      </label>
+                      <input
+                        id="videoUrl"
+                        type="url"
+                        formControlName="videoUrl"
+                        placeholder="https://youtube.com/…"
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="space-y-8 lg:col-span-4">
+          <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+              <span class="text-sm font-bold text-gray-800">Ajustes Básicos</span>
+              <i class="ri-equalizer-line text-lg text-skillnet-accent"></i>
+            </div>
+            <div class="space-y-6 bg-gray-50/30 p-6">
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold uppercase tracking-wide text-gray-500" for="language">
+                  Idioma
+                </label>
+                <div class="relative">
+                  <select
+                    id="language"
+                    formControlName="language"
+                    class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm font-semibold text-gray-800 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  >
+                    @for (lang of languages; track lang.value) {
+                      <option [value]="lang.value">{{ lang.label }}</option>
+                    }
+                  </select>
+                  <i
+                    class="ri-arrow-down-s-line pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+                  ></i>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold uppercase tracking-wide text-gray-500" for="level">
+                  Nivel
+                </label>
+                <div class="relative">
+                  <select
+                    id="level"
+                    formControlName="level"
+                    class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm font-semibold text-gray-800 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  >
+                    @for (lvl of levels; track lvl.value) {
+                      <option [value]="lvl.value">{{ lvl.label }}</option>
+                    }
+                  </select>
+                  <i
+                    class="ri-arrow-down-s-line pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+                  ></i>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold uppercase tracking-wide text-gray-500" for="category">
+                  Categoría
+                </label>
+                <div class="relative">
+                  <select
+                    id="category"
+                    formControlName="category"
+                    (change)="onCategoryChange($any($event.target).value)"
+                    class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm font-semibold text-gray-800 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  >
+                    <option value="" disabled>Seleccionar…</option>
+                    @for (cat of categories; track cat) {
+                      <option [value]="cat">{{ cat }}</option>
+                    }
+                  </select>
+                  <i
+                    class="ri-arrow-down-s-line pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+                  ></i>
+                </div>
+              </div>
+
+              @if (subcategoryOptions().length > 0) {
+                <div class="animate-in fade-in space-y-2 duration-300">
+                  <label class="text-[11px] font-bold uppercase tracking-wide text-gray-500" for="subcategory">
+                    Subcategoría
+                  </label>
+                  <div class="relative">
+                    <select
+                      id="subcategory"
+                      formControlName="subcategory"
+                      class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm font-semibold text-gray-800 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                    >
+                      <option value="">Seleccionar…</option>
+                      @for (sub of subcategoryOptions(); track sub) {
+                        <option [value]="sub">{{ sub }}</option>
+                      }
+                    </select>
+                    <i
+                      class="ri-arrow-down-s-line pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+                    ></i>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+
+          @if (missingItems().length > 0) {
+            <section class="space-y-4 rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
+                  <i class="ri-error-warning-fill text-lg text-red-600"></i>
+                </div>
+                <h4 class="text-sm font-bold text-red-800">Requisitos Pendientes</h4>
+              </div>
+              <p class="text-xs font-medium leading-relaxed text-red-700">
+                Para publicar tu curso, necesitas completar los siguientes pasos:
+              </p>
+              <ul class="ml-1 list-inside list-disc space-y-2 text-xs font-medium text-red-700">
+                @for (item of missingItems(); track item.text) {
+                  <li>
+                    @if (item.link !== '#') {
+                      <a
+                        [routerLink]="item.link"
+                        class="font-semibold transition-colors hover:text-red-900 hover:underline"
+                      >
+                        {{ item.text }}
+                      </a>
+                    } @else {
+                      <span class="font-semibold">{{ item.text }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        </aside>
+      </form>
+    }
+  </div>
+</div>

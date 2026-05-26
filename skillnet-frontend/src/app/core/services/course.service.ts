@@ -14,9 +14,23 @@ interface CourseApiResponse {
   slug: string;
   description: string;
   level: string;
+  language: string;
   status: string;
   price: number | string;
   professorId: number | null;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  whatYouWillLearn?: string | null;
+  targetAudience?: string | null;
+  currency?: string | null;
+  originalPrice?: number | string | null;
+  onSale?: boolean;
+  affiliateCommission?: number | string | null;
+  affiliatePolicy?: string | null;
+  welcomeMessage?: string | null;
+  congratulationsMessage?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -82,10 +96,35 @@ export class CourseService {
       title: item.title,
       slug: item.slug,
       description: item.description ?? '',
-      level: item.level,
+      level: item.level ?? 'beginner',
+      language: item.language ?? 'es',
       status: item.status,
       price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
       professorId: item.professorId,
+      imageUrl: item.imageUrl ?? null,
+      videoUrl: item.videoUrl ?? null,
+      category: item.category ?? null,
+      subcategory: item.subcategory ?? null,
+      whatYouWillLearn: item.whatYouWillLearn ?? null,
+      targetAudience: item.targetAudience ?? null,
+      currency: item.currency ?? 'USD',
+      originalPrice: this.toNumber(item.originalPrice ?? item.price),
+      onSale: item.onSale ?? false,
+      affiliateCommission: this.toNumber(item.affiliateCommission ?? 0),
+      affiliatePolicy: item.affiliatePolicy ?? 'all',
+      welcomeMessage: item.welcomeMessage ?? null,
+      congratulationsMessage: item.congratulationsMessage ?? null,
     };
+  }
+
+  private toNumber(value: number | string | null | undefined): number {
+    if (value == null) {
+      return 0;
+    }
+    return typeof value === 'string' ? parseFloat(value) : value;
+  }
+
+  getCourseWithAudience(id: number): Observable<CourseResponse> {
+    return this.getCourse(id);
   }
 }

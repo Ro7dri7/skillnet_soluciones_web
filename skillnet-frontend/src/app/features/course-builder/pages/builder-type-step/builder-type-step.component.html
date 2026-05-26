@@ -1,0 +1,146 @@
+<div class="p-6 md:p-8">
+  <div class="relative mx-auto w-full max-w-[1200px]">
+    <header class="mb-10 flex items-center gap-4">
+      <span
+        class="flex h-8 w-8 items-center justify-center rounded-full bg-skillnet-accent text-white shadow-md"
+      >
+        <i class="ri-add-line font-bold"></i>
+      </span>
+      <h1 class="text-2xl font-bold text-skillnet-dark">Crea un producto</h1>
+    </header>
+
+    <div class="mb-8">
+      <h2 class="mb-8 text-sm font-bold text-skillnet-dark/80">¿Qué deseas vender?</h2>
+
+      <div class="mb-6 flex flex-wrap justify-center gap-6">
+        @for (type of rowOne; track type.id) {
+          <div class="w-[calc(20%-20px)] min-w-[160px] max-w-[200px]">
+            <button
+              type="button"
+              (click)="handleCardClick(type)"
+              class="product-type-card relative flex aspect-[1.1/1] w-full items-center justify-center overflow-hidden rounded-3xl transition-all duration-300"
+              [class.product-type-card--selected]="isSelected(type)"
+              [style.background]="
+                type.image
+                  ? 'linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url(' + type.image + ') center/cover'
+                  : '#fff'
+              "
+            >
+              <span
+                class="z-10 px-2 text-center text-base font-extrabold"
+                [class.text-white]="type.image"
+                [class.drop-shadow-md]="type.image"
+                [class.text-skillnet-dark]="!type.image"
+              >
+                {{ type.label }}
+              </span>
+              @if (type.comingSoon) {
+                <span
+                  class="absolute right-3 top-3 rounded-md bg-black/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-skillnet-accent backdrop-blur-md"
+                >
+                  Pronto
+                </span>
+              }
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-6">
+        @for (type of rowTwo; track type.id) {
+          <div class="w-[calc(20%-20px)] min-w-[160px] max-w-[200px]">
+            <button
+              type="button"
+              (click)="handleCardClick(type)"
+              class="product-type-card relative flex aspect-[1.1/1] w-full items-center justify-center overflow-hidden rounded-3xl transition-all duration-300"
+              [class.product-type-card--selected]="isSelected(type)"
+              [style.background]="
+                type.image
+                  ? 'linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url(' + type.image + ') center/cover'
+                  : '#fff'
+              "
+            >
+              <span
+                class="z-10 px-2 text-center text-base font-extrabold"
+                [class.text-white]="type.image"
+                [class.drop-shadow-md]="type.image"
+                [class.text-skillnet-dark]="!type.image"
+              >
+                {{ type.label }}
+              </span>
+              @if (type.comingSoon) {
+                <span
+                  class="absolute right-3 top-3 rounded-md bg-black/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-skillnet-accent backdrop-blur-md"
+                >
+                  Pronto
+                </span>
+              }
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="mt-16 flex justify-center gap-5">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="flex items-center gap-2 rounded-xl border border-skillnet-dark bg-white px-9 py-3 text-sm font-bold text-skillnet-dark transition hover:bg-gray-50"
+      >
+        <i class="ri-arrow-left-line"></i> Volver
+      </button>
+      <button
+        type="button"
+        (click)="goNext()"
+        [disabled]="!selectedType() || loading()"
+        class="flex items-center gap-2 rounded-xl px-12 py-3 text-sm font-bold transition"
+        [class.btn-next--active]="selectedType() && !loading()"
+        [class.bg-skillnet-accent]="selectedType() && !loading()"
+        [class.text-white]="selectedType() && !loading()"
+        [class.bg-slate-300]="!selectedType() || loading()"
+        [class.cursor-not-allowed]="!selectedType() || loading()"
+      >
+        @if (loading()) {
+          Creando...
+        } @else {
+          Siguiente <i class="ri-arrow-right-line"></i>
+        }
+      </button>
+    </div>
+
+    @if (showComingSoon()) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        role="dialog"
+      >
+        <div
+          class="relative mx-4 w-full max-w-sm rounded-2xl border-2 border-skillnet-accent bg-white p-8 text-center shadow-2xl"
+        >
+          <button
+            type="button"
+            (click)="closeComingSoon()"
+            class="absolute right-4 top-4 text-gray-400 hover:text-skillnet-dark"
+          >
+            <i class="ri-close-line text-xl"></i>
+          </button>
+          <div
+            class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-skillnet-accent text-white shadow-md"
+          >
+            <i class="ri-tools-line text-2xl"></i>
+          </div>
+          <h3 class="mb-2 text-2xl font-bold text-skillnet-dark">¡Próximamente!</h3>
+          <p class="mb-8 font-medium text-skillnet-muted">
+            Estamos preparando todo para que puedas crear este tipo de infoproducto muy pronto.
+          </p>
+          <button
+            type="button"
+            (click)="closeComingSoon()"
+            class="w-full rounded-xl bg-skillnet-dark py-3 font-bold text-white hover:opacity-90"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

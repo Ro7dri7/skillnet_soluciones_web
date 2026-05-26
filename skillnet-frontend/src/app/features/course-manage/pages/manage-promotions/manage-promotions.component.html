@@ -1,0 +1,253 @@
+<div class="manage-promotions-scroll h-full overflow-y-auto bg-gray-50/50 p-4 pb-40 font-sans text-gray-900 md:p-6">
+  <div class="mx-auto max-w-7xl space-y-8">
+    <header class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm"
+      >
+        <i class="ri-megaphone-fill text-2xl text-skillnet-accent"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">
+          Promociones y Enlaces
+        </h2>
+        <p class="mt-1 text-sm font-medium text-skillnet-muted">
+          Impulsa tus ventas con descuentos y programas de referidos
+        </p>
+      </div>
+    </header>
+
+    <div
+      class="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:p-6"
+    >
+      <div class="flex flex-1 items-center gap-4">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/10"
+        >
+          <i class="ri-rocket-2-fill text-2xl text-skillnet-accent"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold uppercase tracking-wide text-skillnet-dark">
+            Maximiza tu alcance
+          </p>
+          <p class="mt-1 text-xs font-medium leading-snug text-skillnet-muted">
+            Gestiona tus enlaces de referido y cupones de descuento para incentivar las ventas en
+            tus redes sociales.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enlace instructor -->
+    <div
+      class="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all md:p-8"
+    >
+      <div
+        class="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-skillnet-accent/5 blur-3xl transition-colors group-hover:bg-skillnet-accent/10"
+      ></div>
+
+      <div class="relative z-10 space-y-6">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-skillnet-dark text-skillnet-accent shadow-sm"
+          >
+            <i class="ri-share-forward-fill text-lg"></i>
+          </div>
+          <h3 class="text-lg font-bold tracking-tight text-gray-900">Tu Enlace de Instructor</h3>
+        </div>
+
+        <div class="flex flex-col gap-4 md:flex-row">
+          <div class="relative flex-1">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <i class="ri-global-line text-lg"></i>
+            </div>
+            <input
+              type="text"
+              readonly
+              [value]="referralLink()"
+              class="w-full rounded-xl border border-gray-300 bg-gray-50 py-3.5 pl-12 pr-28 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+            />
+            <div
+              class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700"
+            >
+              Enlace Activo
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="copyReferralLink()"
+            class="flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold shadow-sm transition-all"
+            [class.bg-emerald-500]="copied()"
+            [class.text-white]="copied()"
+            [class.hover:bg-emerald-600]="copied()"
+            [class.bg-skillnet-accent]="!copied()"
+            [class.text-white]="!copied()"
+            [class.hover:bg-skillnet-accent/90]="!copied()"
+          >
+            <i [class]="copied() ? 'ri-checkbox-circle-fill text-lg' : 'ri-file-copy-line text-lg'"></i>
+            {{ copied() ? '¡Copiado!' : 'Copiar Enlace' }}
+          </button>
+        </div>
+        <p class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+          <i class="ri-information-line"></i>
+          Usa este enlace en tu Bio de Instagram o TikTok para trackear ventas directas.
+        </p>
+      </div>
+    </div>
+
+    <!-- Cupones -->
+    <div class="space-y-6">
+      <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div class="space-y-2">
+          <div
+            class="inline-block rounded-md bg-skillnet-dark px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+          >
+            Marketplace Control
+          </div>
+          <h2 class="text-2xl font-bold tracking-tight text-gray-900">Cupones de Descuento</h2>
+        </div>
+
+        <div class="flex flex-col items-center gap-4 md:flex-row">
+          <div class="relative w-full md:w-72">
+            <input
+              type="text"
+              placeholder="Buscar cupones..."
+              class="w-full rounded-xl border border-gray-300 bg-white py-2.5 px-5 pr-10 text-sm font-medium text-gray-900 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+            />
+            <i class="ri-search-line absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          </div>
+          <button
+            type="button"
+            (click)="openModal()"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-skillnet-dark px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-skillnet-dark/90 md:w-auto"
+          >
+            <i class="ri-add-line text-lg text-skillnet-accent"></i>
+            Crear Cupón
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-x-auto">
+          <div class="min-w-[700px]">
+            <div
+              class="grid grid-cols-5 items-center gap-4 border-b border-gray-200 bg-gray-50 px-6 py-4"
+            >
+              <div class="text-xs font-bold uppercase tracking-wider text-gray-500">Código</div>
+              <div class="text-center text-xs font-bold uppercase tracking-wider text-gray-500">
+                Descuento
+              </div>
+              <div class="text-center text-xs font-bold uppercase tracking-wider text-gray-500">
+                Estado
+              </div>
+              <div class="text-center text-xs font-bold uppercase tracking-wider text-gray-500">
+                Vigencia
+              </div>
+              <div class="text-right text-xs font-bold uppercase tracking-wider text-gray-500">
+                Gestión
+              </div>
+            </div>
+
+            <div class="min-h-[300px] divide-y divide-gray-100">
+              @if (loading()) {
+                <div class="flex flex-col items-center gap-4 py-24">
+                  <div
+                    class="h-8 w-8 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"
+                  ></div>
+                  <p class="animate-pulse text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    Cargando promociones...
+                  </p>
+                </div>
+              } @else if (filteredCoupons().length > 0) {
+                @for (coupon of filteredCoupons(); track coupon.id) {
+                  <div
+                    class="group grid grid-cols-5 items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/10"
+                      >
+                        <i class="ri-ticket-2-fill text-lg text-skillnet-accent"></i>
+                      </div>
+                      <span class="text-sm font-bold uppercase text-gray-900">{{ coupon.code }}</span>
+                    </div>
+
+                    <div class="flex justify-center">
+                      <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1">
+                        <span class="text-sm font-bold text-emerald-700">{{
+                          discountLabel(coupon)
+                        }}</span>
+                      </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                      <div
+                        class="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1"
+                      >
+                        <div
+                          class="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                        ></div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600"
+                          >Activo</span
+                        >
+                      </div>
+                    </div>
+
+                    <div class="text-center">
+                      <span class="text-sm font-medium text-gray-600">
+                        @if (coupon.validTo) {
+                          {{ coupon.validTo | date: 'shortDate' }}
+                        } @else {
+                          Ilimitado
+                        }
+                      </span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        title="Copiar Link"
+                        class="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+                        (click)="copyCouponLink(coupon.code)"
+                      >
+                        <i class="ri-link text-lg"></i>
+                      </button>
+                      <button
+                        type="button"
+                        title="Eliminar"
+                        class="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        (click)="deleteCoupon(coupon.id)"
+                      >
+                        <i class="ri-delete-bin-line text-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+                }
+              } @else {
+                <div class="flex flex-col items-center justify-center space-y-3 py-24 opacity-60">
+                  <div class="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                    <i class="ri-coupon-3-line text-3xl text-gray-400"></i>
+                  </div>
+                  <p class="text-sm font-bold uppercase tracking-wide text-gray-600">
+                    Sin Cupones Activos
+                  </p>
+                  <p class="text-xs font-medium text-gray-500">
+                    Crea tu primer descuento para atraer más alumnos.
+                  </p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-manage-coupon-modal
+    [open]="modalOpen()"
+    [saving]="savingCoupon()"
+    (close)="closeModal()"
+    (save)="createCoupon($event)"
+  />
+</div>

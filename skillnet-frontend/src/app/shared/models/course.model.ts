@@ -7,9 +7,23 @@ export interface CourseResponse {
   slug: string;
   description: string;
   level: string;
+  language: string;
   status: string;
   price: number;
   professorId: number | null;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  whatYouWillLearn?: string | null;
+  targetAudience?: string | null;
+  currency?: string;
+  originalPrice?: number;
+  onSale?: boolean;
+  affiliateCommission?: number;
+  affiliatePolicy?: string;
+  welcomeMessage?: string | null;
+  congratulationsMessage?: string | null;
 }
 
 export interface CourseRequest {

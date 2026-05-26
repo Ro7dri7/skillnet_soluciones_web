@@ -1,0 +1,369 @@
+<div class="manage-pricing-scroll h-full overflow-y-auto bg-gray-50/50 p-4 pb-40 font-sans text-gray-900 md:p-6">
+  <div class="mx-auto max-w-7xl space-y-8">
+    <header class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm"
+      >
+        <i class="ri-price-tag-3-fill text-2xl text-skillnet-accent"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">Precios</h2>
+        <p class="mt-1 text-sm font-medium text-skillnet-muted">
+          Configura la estrategia de ingresos de tu curso
+        </p>
+      </div>
+    </header>
+
+    <div
+      class="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:p-6"
+    >
+      <div class="flex flex-1 items-center gap-4">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/10"
+        >
+          <i class="ri-information-fill text-2xl text-skillnet-accent"></i>
+        </div>
+        <p class="text-sm font-medium leading-relaxed text-gray-600">
+          Define el precio de tu producto de forma personalizada. Un precio competitivo y
+          promociones estratégicas aumentan tus posibilidades de éxito en la plataforma.
+        </p>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <p class="text-sm text-skillnet-muted">Cargando…</p>
+    } @else {
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <!-- Configuración -->
+        <div
+          class="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+        >
+          <div
+            class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4"
+          >
+            <span class="text-sm font-bold text-gray-800">Configuración de Precio</span>
+            <i class="ri-money-dollar-circle-fill text-lg text-skillnet-accent"></i>
+          </div>
+
+          <div class="space-y-8 bg-gray-50/30 p-6 md:p-8">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wide text-gray-600"
+                  >Moneda</label
+                >
+                <div class="relative">
+                  <select
+                    [ngModel]="currency()"
+                    (ngModelChange)="currency.set($event)"
+                    class="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                  >
+                    @for (curr of currencies; track curr.value) {
+                      <option [value]="curr.value">{{ curr.label }}</option>
+                    }
+                  </select>
+                  <i
+                    class="ri-arrow-down-s-line pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+                  ></i>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wide text-gray-600"
+                  >Precio Base</label
+                >
+                <div class="relative">
+                  <span
+                    class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-500"
+                    >{{ currencySymbol(currency()) }}</span
+                  >
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    [ngModel]="price()"
+                    (ngModelChange)="onPriceInput($event)"
+                    (blur)="onBasePriceBlur()"
+                    class="h-12 w-full rounded-xl border bg-white pl-10 pr-4 text-lg font-bold text-gray-900 shadow-sm transition-all focus:outline-none focus:ring-2"
+                    [class.border-red-500]="priceError()"
+                    [class.focus:border-red-500]="priceError()"
+                    [class.focus:ring-red-500/20]="priceError()"
+                    [class.border-gray-300]="!priceError()"
+                    [class.focus:border-skillnet-accent]="!priceError()"
+                    [class.focus:ring-skillnet-accent/20]="!priceError()"
+                  />
+                </div>
+                @if (priceError()) {
+                  <p role="alert" class="text-sm font-semibold text-red-600">{{ priceError() }}</p>
+                }
+              </div>
+            </div>
+
+            <div class="space-y-6 border-t border-gray-200 pt-6">
+              <label class="group flex cursor-pointer items-center gap-3">
+                <div class="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    class="peer sr-only"
+                    [ngModel]="hasDiscount()"
+                    (ngModelChange)="hasDiscount.set($event)"
+                  />
+                  <div
+                    class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-skillnet-accent peer-checked:after:translate-x-full peer-focus:outline-none"
+                  ></div>
+                </div>
+                <span class="text-sm font-semibold text-gray-700">Activar precio promocional</span>
+              </label>
+
+              @if (hasDiscount()) {
+                <div class="animate-in fade-in space-y-2 duration-300">
+                  <label class="text-xs font-bold uppercase tracking-wide text-gray-600"
+                    >Precio con Descuento</label
+                  >
+                  <div class="relative max-w-xs">
+                    <span
+                      class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-500"
+                      >{{ currencySymbol(currency()) }}</span
+                    >
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      [ngModel]="discountPrice()"
+                      (ngModelChange)="onDiscountInput($event)"
+                      (blur)="onDiscountPriceBlur()"
+                      class="h-12 w-full rounded-xl border bg-white pl-10 pr-4 text-lg font-bold text-gray-900 shadow-sm transition-all focus:outline-none focus:ring-2"
+                      [class.border-red-500]="discountError()"
+                      [class.focus:border-red-500]="discountError()"
+                      [class.focus:ring-red-500/20]="discountError()"
+                      [class.border-gray-300]="!discountError()"
+                      [class.focus:border-skillnet-accent]="!discountError()"
+                      [class.focus:ring-skillnet-accent/20]="!discountError()"
+                    />
+                  </div>
+                  @if (discountError()) {
+                    <p role="alert" class="text-sm font-semibold text-red-600">
+                      {{ discountError() }}
+                    </p>
+                  }
+                  <p class="pt-1 text-xs font-medium text-skillnet-accent">
+                    Este será el precio final durante la oferta.
+                  </p>
+                </div>
+              }
+            </div>
+
+            <div class="border-t border-gray-200 pt-6">
+              <div class="flex flex-col gap-5">
+                <div
+                  class="space-y-3 transition-opacity duration-300"
+                  [class.opacity-50]="affiliationType() === 'none'"
+                  [class.opacity-100]="affiliationType() !== 'none'"
+                >
+                  <label class="text-xs font-bold uppercase tracking-wide text-gray-600">
+                    Comisión Afiliado ({{ parsedCommission() }}%)
+                  </label>
+                  <div class="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-skillnet-accent"
+                      [class.cursor-not-allowed]="affiliationType() === 'none'"
+                      [disabled]="affiliationType() === 'none'"
+                      [ngModel]="affiliateCommission()"
+                      (ngModelChange)="affiliateCommission.set($event)"
+                    />
+                    <div
+                      class="w-16 rounded-lg border border-gray-200 bg-gray-100 px-2 py-1.5 text-center font-bold text-gray-800"
+                      [class.bg-gray-50]="affiliationType() === 'none'"
+                      [class.text-gray-400]="affiliationType() === 'none'"
+                    >
+                      {{ parsedCommission() }}%
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    (click)="setAffiliationType('all')"
+                    class="rounded-xl border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all"
+                    [class.border-skillnet-accent]="affiliationType() === 'all'"
+                    [class.bg-skillnet-accent/10]="affiliationType() === 'all'"
+                    [class.text-skillnet-accent]="affiliationType() === 'all'"
+                    [class.border-gray-200]="affiliationType() !== 'all'"
+                    [class.bg-white]="affiliationType() !== 'all'"
+                    [class.text-gray-500]="affiliationType() !== 'all'"
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setAffiliationType('approved')"
+                    class="rounded-xl border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all"
+                    [class.border-skillnet-accent]="affiliationType() === 'approved'"
+                    [class.bg-skillnet-accent/10]="affiliationType() === 'approved'"
+                    [class.text-skillnet-accent]="affiliationType() === 'approved'"
+                    [class.border-gray-200]="affiliationType() !== 'approved'"
+                    [class.bg-white]="affiliationType() !== 'approved'"
+                    [class.text-gray-500]="affiliationType() !== 'approved'"
+                  >
+                    Aprobados
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setAffiliationType('none')"
+                    class="rounded-xl border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all"
+                    [class.border-skillnet-accent]="affiliationType() === 'none'"
+                    [class.bg-skillnet-accent/10]="affiliationType() === 'none'"
+                    [class.text-skillnet-accent]="affiliationType() === 'none'"
+                    [class.border-gray-200]="affiliationType() !== 'none'"
+                    [class.bg-white]="affiliationType() !== 'none'"
+                    [class.text-gray-500]="affiliationType() !== 'none'"
+                  >
+                    Cerrado
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulador -->
+        <div class="h-fit overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div
+            class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4"
+          >
+            <span class="text-sm font-bold text-gray-800">Simulador de Reparto</span>
+            <i class="ri-pie-chart-2-fill text-lg text-skillnet-accent"></i>
+          </div>
+
+          <div class="space-y-6 bg-gray-50/30 p-6 md:p-8">
+            <div class="grid grid-cols-2 gap-5">
+              <div class="space-y-2">
+                <label class="block text-left text-xs font-bold uppercase tracking-wide text-gray-500"
+                  >Valor Curso ({{ currency() }})</label
+                >
+                <div class="relative">
+                  <span
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500"
+                    >{{ currencySymbol(currency()) }}</span
+                  >
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    [ngModel]="price()"
+                    (ngModelChange)="onPriceInput($event)"
+                    (blur)="onBasePriceBlur()"
+                    class="w-full rounded-xl border bg-white py-2.5 pl-8 pr-3 text-lg font-bold text-gray-900 shadow-sm transition-all focus:outline-none focus:ring-2"
+                    [class.border-red-500]="priceError()"
+                    [class.focus:border-red-500]="priceError()"
+                    [class.focus:ring-red-500/20]="priceError()"
+                    [class.border-gray-300]="!priceError()"
+                    [class.focus:border-skillnet-accent]="!priceError()"
+                    [class.focus:ring-skillnet-accent/20]="!priceError()"
+                  />
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-left text-xs font-bold uppercase tracking-wide text-gray-500"
+                  >Comisión Afiliado (%)</label
+                >
+                <div class="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    class="w-full rounded-xl border border-gray-300 bg-white py-2.5 px-3 text-lg font-bold text-gray-900 shadow-sm transition-all focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+                    [ngModel]="affiliateCommission()"
+                    (ngModelChange)="affiliateCommission.set($event)"
+                  />
+                  <span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500"
+                    >%</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4 border-t border-gray-200 pt-4">
+              <div
+                class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4"
+              >
+                <div class="text-left">
+                  <span class="text-[10px] font-bold uppercase tracking-wide text-gray-500"
+                    >Skillnet Fee</span
+                  >
+                  <span class="block text-xs text-gray-400">8% fijo</span>
+                </div>
+                <span class="text-lg font-bold text-gray-700">
+                  {{ currencySymbol(currency()) }} {{ platformFee() | number: '1.2-2' }}
+                </span>
+              </div>
+
+              <div
+                class="flex items-center justify-between rounded-xl bg-skillnet-dark p-5 shadow-sm"
+              >
+                <span class="text-xs font-bold uppercase tracking-widest text-white"
+                  >Subtotal Neto</span
+                >
+                <span class="text-2xl font-bold text-skillnet-accent">
+                  {{ currencySymbol(currency()) }} {{ netSubtotal() | number: '1.2-2' }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm">
+                  <span
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-500"
+                    >Afiliado ({{ parsedCommission() }}%)</span
+                  >
+                  <span class="text-lg font-bold text-skillnet-accent">
+                    {{ currencySymbol(currency()) }}
+                    {{ affiliateAmount() | number: '1.2-2' }}
+                  </span>
+                  <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      class="h-full bg-skillnet-accent"
+                      [style.width.%]="parsedCommission()"
+                    ></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm">
+                  <span
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-500"
+                    >Tu Ganancia</span
+                  >
+                  <span class="text-lg font-bold text-emerald-600">
+                    {{ currencySymbol(currency()) }}
+                    {{ instructorEarnings() | number: '1.2-2' }}
+                  </span>
+                  <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      class="h-full bg-emerald-500"
+                      [style.width.%]="100 - parsedCommission()"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="flex items-center justify-center gap-3 pt-4 text-[10px] font-bold uppercase tracking-widest text-gray-400"
+            >
+              <i class="ri-shield-check-fill text-lg text-gray-300"></i>
+              <span>Cálculos exactos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (showInvalidBanner() && hasInvalidPrices()) {
+    <div
+      role="alert"
+      class="fixed bottom-24 left-1/2 z-[1000] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-2xl"
+    >
+      No se puede guardar: corrige el formato de precios. Solo números mayores a cero.
+    </div>
+  }
+</div>

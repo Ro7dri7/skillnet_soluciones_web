@@ -1,0 +1,39 @@
+<div class="mx-auto flex min-h-full max-w-5xl flex-col px-4 py-10 sm:px-6">
+  <div class="flex flex-1 flex-col items-center justify-center">
+    <div class="mb-8 max-w-2xl space-y-2 text-center">
+      <h2 class="text-2xl font-bold text-skillnet-dark">¿En qué categoría encaja mejor tu producto?</h2>
+      <p class="text-base text-skillnet-muted">
+        Esto ayudará a los compradores a encontrar tu {{ productLabel().toLowerCase() }} más fácilmente.
+      </p>
+    </div>
+
+    <app-searchable-select
+      label="Categoría"
+      placeholder="Busca o selecciona una categoría..."
+      [options]="categories"
+      [value]="selectedCategory()"
+      (valueChange)="onCategoryChange($event)"
+    />
+  </div>
+
+  <div class="mt-12 flex justify-center gap-5">
+    <button
+      type="button"
+      (click)="goBack()"
+      class="flex items-center gap-2 rounded-xl border border-skillnet-dark px-9 py-3 text-sm font-bold text-skillnet-dark"
+    >
+      <i class="ri-arrow-left-line"></i> Volver
+    </button>
+    <button
+      type="button"
+      (click)="goNext()"
+      [disabled]="!selectedCategory()"
+      class="rounded-xl px-12 py-3 text-sm font-bold text-white"
+      [class.bg-skillnet-accent]="selectedCategory()"
+      [class.bg-slate-300]="!selectedCategory()"
+      [class.cursor-not-allowed]="!selectedCategory()"
+    >
+      Siguiente <i class="ri-arrow-right-line"></i>
+    </button>
+  </div>
+</div>

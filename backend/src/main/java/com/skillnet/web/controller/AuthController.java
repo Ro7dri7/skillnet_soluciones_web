@@ -5,10 +5,14 @@ import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.UserRepository;
 import com.skillnet.security.CustomUserDetails;
 import com.skillnet.security.JwtService;
+import com.skillnet.security.RoleAuthorityResolver;
+import com.skillnet.service.AuthRoleService;
 import com.skillnet.service.GoogleAuthService;
+import com.skillnet.service.UserRoleNormalizer;
 import com.skillnet.service.UserService;
 import com.skillnet.web.dto.request.GoogleLoginRequestDTO;
 import com.skillnet.web.dto.request.LoginRequestDTO;
+import com.skillnet.web.dto.request.SwitchRoleRequestDTO;
 import com.skillnet.web.dto.request.UserRequestDTO;
 import com.skillnet.web.dto.response.AuthResponseDTO;
 import com.skillnet.web.dto.response.UserResponseDTO;
@@ -18,8 +22,11 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -40,6 +47,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthService googleAuthService;
+    private final AuthRoleService authRoleService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -48,7 +56,8 @@ public class AuthController {
             UserMapper userMapper,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            GoogleAuthService googleAuthService) {
+            GoogleAuthService googleAuthService,
+            AuthRoleService authRoleService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
@@ -56,6 +65,7 @@ public class AuthController {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.googleAuthService = googleAuthService;
+        this.authRoleService = authRoleService;
     }
 
     @PostMapping("/login")
@@ -67,10 +77,40 @@ public class AuthController {
         User user = userRepository
                 .findByEmailIgnoreCase(dto.getEmail())
                 .orElseThrow();
-        CustomUserDetails userDetails = new CustomUserDetails(user);
-        String jwt = jwtService.generateToken(userDetails);
+        UserRoleNormalizer.ensureDualCapabilities(user);
+        userRepository.save(user);
+        return ResponseEntity.ok(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
+    }
 
-        return ResponseEntity.ok(buildAuthResponse(jwt, user));
+    @PostMapping("/switch-role")
+    public ResponseEntity<AuthResponseDTO> switchRole(
+            Authentication authentication, @Valid @RequestBody SwitchRoleRequestDTO dto) {
+        Long userId = resolveAuthenticatedUserId(authentication);
+        User user = userRepository.findById(userId).orElseThrow();
+        String requestedRole = dto.getRole().trim().toLowerCase();
+
+        if (!authRoleService.canAssumeRole(user, requestedRole)) {
+            throw new AccessDeniedException(
+                    "El rol «" + requestedRole + "» no está habilitado para esta cuenta");
+        }
+
+        try {
+            UserRoleNormalizer.applyActiveRoleSwitch(user, requestedRole);
+        } catch (IllegalArgumentException ex) {
+            throw new AccessDeniedException(ex.getMessage());
+        }
+        userRepository.save(user);
+
+        return ResponseEntity.ok(buildAuthResponse(user, user.getActiveRole()));
+    }
+
+    private Long resolveAuthenticatedUserId(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof CustomUserDetails principal)) {
+            throw new AuthenticationCredentialsNotFoundException("Authentication required");
+        }
+        return principal.getId();
     }
 
     @PostMapping("/google")
@@ -90,14 +130,18 @@ public class AuthController {
         User user = userRepository
                 .findById(created.getId())
                 .orElseThrow();
-        CustomUserDetails userDetails = new CustomUserDetails(user);
-        String jwt = jwtService.generateToken(userDetails);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(buildAuthResponse(jwt, user));
+        UserRoleNormalizer.applyDualRoleCapabilities(user, user.getRole());
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
     }
 
-    private AuthResponseDTO buildAuthResponse(String jwt, User user) {
-        UserSummaryDTO summary = userMapper.toSummaryDTO(user);
+    private AuthResponseDTO buildAuthResponse(User user, String activeRole) {
+        CustomUserDetails userDetails = new CustomUserDetails(user, activeRole);
+        String jwt = jwtService.generateToken(userDetails, activeRole);
+        UserSummaryDTO summary = userMapper.toSummaryDTO(user, activeRole);
+        summary.setInfoproductor(user.isInfoproductor());
+        summary.setStudent(user.isStudent());
         return new AuthResponseDTO(jwt, summary);
     }
 }

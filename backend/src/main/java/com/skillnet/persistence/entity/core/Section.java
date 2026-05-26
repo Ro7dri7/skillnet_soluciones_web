@@ -8,7 +8,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,4 +39,16 @@ public class Section {
 
     @Column(name = "\"order\"", nullable = false)
     private int orderIndex;
+
+    @OneToMany(mappedBy = "section", fetch = FetchType.LAZY)
+    private List<Lesson> lessons = new ArrayList<>();
+
+    /** Alias de API para el nombre del módulo. */
+    public String getTitle() {
+        return name;
+    }
+
+    public void setTitle(String title) {
+        this.name = title;
+    }
 }

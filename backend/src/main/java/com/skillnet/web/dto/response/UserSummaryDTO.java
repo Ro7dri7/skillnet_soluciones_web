@@ -17,5 +17,8 @@ public class UserSummaryDTO {
     private String firstName;
     private String lastName;
     private String role;
+    private String activeRole;
+    private boolean student;
+    private boolean infoproductor;
     private String profilePicture;
 }

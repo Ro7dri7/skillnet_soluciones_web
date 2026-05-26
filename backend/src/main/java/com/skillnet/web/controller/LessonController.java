@@ -10,11 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,21 +46,5 @@ public class LessonController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
-    public ResponseEntity<LessonResponseDTO> update(
-            @PathVariable Long id, @Valid @RequestBody LessonRequestDTO dto) {
-        return ResponseEntity.ok(lessonService.update(id, dto)
-                .orElseThrow(() -> new EntityNotFoundException("Lesson not found with id: " + id)));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (lessonService.findById(id).isEmpty()) {
-            throw new EntityNotFoundException("Lesson not found with id: " + id);
-        }
-        lessonService.deleteById(id);
-        return ResponseEntity.noContent().build();
-    }
+    /** PUT/DELETE de lecciones del temario: {@link CurriculumController} en {@code /api/v1/lessons/{id}}. */
 }

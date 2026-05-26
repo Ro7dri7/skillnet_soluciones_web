@@ -109,6 +109,6 @@ export class LoginComponent implements OnInit, OnDestroy {
   private navigateAfterAuth(): void {
     this.isLoading.set(false);
     this.googleLoginInProgress = false;
-    void this.router.navigate(['/dashboard']);
+    void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser());
   }
 }

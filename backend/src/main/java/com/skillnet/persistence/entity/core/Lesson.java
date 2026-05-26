@@ -72,4 +72,24 @@ public class Lesson {
 
     @Column(name = "last_scanned_at")
     private Instant lastScannedAt;
+
+    /** Duración en minutos (solo builder; no persistida hasta migración dedicada). */
+    @jakarta.persistence.Transient
+    private int durationMinutes;
+
+    public String getContentUrl() {
+        return resourceUrl;
+    }
+
+    public void setContentUrl(String contentUrl) {
+        this.resourceUrl = contentUrl;
+    }
+
+    public String getLessonType() {
+        return contentType;
+    }
+
+    public void setLessonType(String lessonType) {
+        this.contentType = lessonType;
+    }
 }

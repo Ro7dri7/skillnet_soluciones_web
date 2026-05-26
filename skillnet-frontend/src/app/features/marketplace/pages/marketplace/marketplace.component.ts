@@ -41,13 +41,15 @@ export class MarketplaceComponent implements OnInit {
         const published = items
           .filter((c) => c.status === 'published')
           .map((c, i) => this.toMarketplaceCourse(c, i));
-        this.courses.set(published);
-        this.buildCategories(published);
+        const list = published.length > 0 ? published : this.mockCourses();
+        this.courses.set(list);
+        this.buildCategories(list);
         this.isLoading.set(false);
       },
       error: () => {
-        this.courses.set(this.mockCourses());
-        this.buildCategories(this.courses());
+        const list = this.mockCourses();
+        this.courses.set(list);
+        this.buildCategories(list);
         this.isLoading.set(false);
       },
     });
@@ -80,6 +82,10 @@ export class MarketplaceComponent implements OnInit {
     void this.router.navigate(['/catalog'], {
       queryParams: category ? { category } : {},
     });
+  }
+
+  categoryEntries(): [string, MarketplaceCourse[]][] {
+    return Object.entries(this.categorized()).filter(([, list]) => list.length > 0);
   }
 
   private buildCategories(list: MarketplaceCourse[]): void {
@@ -135,9 +141,5 @@ export class MarketplaceComponent implements OnInit {
       professorName: 'Prof. Skillnet',
       imageUrl: null,
     }));
-  }
-
-  categoryEntries(): [string, MarketplaceCourse[]][] {
-    return Object.entries(this.categorized()).filter(([, list]) => list.length > 0);
   }
 }

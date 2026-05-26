@@ -1,0 +1,244 @@
+<div class="-m-6 min-h-full md:-m-8">
+  <div class="mx-auto max-w-[1400px] space-y-4">
+    <!-- Cabecera (siempre visible) -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">
+          Panel de Infoproductor
+        </h1>
+        <p class="text-xs text-skillnet-muted">
+          Hola, {{ welcomeName(user()) }} — métricas de pagos, matrículas y cursos
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <select
+          [ngModel]="selectedYear()"
+          (ngModelChange)="selectedYear.set($event); onFiltersChange()"
+          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+        >
+          @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+        <select
+          [ngModel]="selectedMonth()"
+          (ngModelChange)="selectedMonth.set($event); onFiltersChange()"
+          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+        >
+          @for (month of months; track month) {
+            <option [value]="month">{{ month }}</option>
+          }
+        </select>
+        <a
+          routerLink="/infoproductor/courses/new/type"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-skillnet-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+        >
+          <i class="ri-add-line text-base"></i>
+          Nuevo curso
+        </a>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div
+        class="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-gray-100 bg-white p-8 shadow-sm"
+      >
+        <span
+          class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"
+        ></span>
+        <p class="text-sm text-skillnet-muted">Cargando analíticas…</p>
+      </div>
+    } @else if (analyticsData(); as data) {
+      <!-- Fila 1: KPIs compactos -->
+      <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-skillnet-muted">
+              Ventas del Mes
+            </p>
+            <p class="mt-1 text-2xl font-bold text-skillnet-dark">
+              {{ data.kpis.totalRevenue | currency: 'USD' : 'symbol' : '1.0-0' }}
+            </p>
+            <p class="mt-1.5 text-[10px] text-gray-500">
+              {{ selectedMonth() }} {{ selectedYear() }}
+            </p>
+          </div>
+          <span
+            class="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-skillnet-accent/10 text-skillnet-accent"
+          >
+            <i class="ri-line-chart-line text-xl"></i>
+          </span>
+        </article>
+
+        <article class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-skillnet-muted">
+              Estudiantes Activos
+            </p>
+            <p class="mt-1 text-2xl font-bold text-skillnet-dark">
+              {{ data.kpis.activeStudents | number }}
+            </p>
+            <p class="mt-1.5 text-[10px] text-gray-500">Matriculados en el periodo</p>
+          </div>
+          <span
+            class="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-skillnet-sky/40 text-skillnet-dark"
+          >
+            <i class="ri-group-line text-xl"></i>
+          </span>
+        </article>
+
+        <article class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-skillnet-muted">
+              Cursos Publicados
+            </p>
+            <p class="mt-1 text-2xl font-bold text-skillnet-dark">{{ data.kpis.publishedCourses }}</p>
+            <p class="mt-1.5 text-[10px] text-gray-500">Estado publicado en catálogo</p>
+          </div>
+          <span
+            class="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700"
+          >
+            <i class="ri-book-open-line text-xl"></i>
+          </span>
+        </article>
+
+        <article class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-skillnet-muted">
+              Calificación Global
+            </p>
+            <div class="mt-1 flex items-center gap-1">
+              <p class="text-2xl font-bold text-skillnet-dark">{{ data.kpis.avgRating }}</p>
+              <i class="ri-star-fill text-xl text-amber-400"></i>
+            </div>
+            <p class="mt-1.5 text-[10px] text-gray-500">Promedio de tus cursos</p>
+          </div>
+          <span
+            class="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600"
+          >
+            <i class="ri-star-line text-xl"></i>
+          </span>
+        </article>
+      </section>
+
+      <!-- Fila 2: gráficos -->
+      <section class="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-8">
+          <div class="mb-2 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-skillnet-dark">Evolución de Ingresos</h2>
+              <p class="text-[11px] text-gray-500">Ingresos diarios del periodo seleccionado</p>
+            </div>
+            <span class="text-[10px] font-medium text-skillnet-muted">USD</span>
+          </div>
+          <div echarts [options]="revenueChartOptions()" class="h-72 w-full"></div>
+        </article>
+
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-4">
+          <div class="mb-2">
+            <h2 class="text-sm font-bold text-skillnet-dark">Top Categorías</h2>
+            <p class="text-[11px] text-gray-500">Ventas por categoría (Payments)</p>
+          </div>
+          <div echarts [options]="categoryChartOptions()" class="h-72 w-full"></div>
+        </article>
+      </section>
+
+      <!-- Fila 3: operativa -->
+      <section class="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <!-- Top cursos -->
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-5">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-skillnet-dark">Top Cursos</h2>
+            <a routerLink="/courses" class="text-[10px] font-semibold text-skillnet-accent hover:underline">
+              Ver todos
+            </a>
+          </div>
+          @if (data.topCourses.length === 0) {
+            <p class="text-xs text-gray-500">Sin ventas en este periodo.</p>
+          } @else {
+            <ul class="space-y-2.5">
+              @for (course of data.topCourses; track course.id; let i = $index) {
+                <li class="flex items-center gap-3 rounded-lg border border-gray-50 bg-skillnet-surface/40 p-2.5">
+                  <div
+                    class="h-12 w-16 shrink-0 rounded-md shadow-sm"
+                    [style.background]="coverStyleForIndex(i)"
+                  ></div>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-semibold text-skillnet-dark">{{ course.title }}</p>
+                    <p class="text-[10px] text-gray-500">
+                      {{ course.studentsCount }} estudiantes
+                    </p>
+                  </div>
+                  <p class="shrink-0 text-xs font-bold text-skillnet-accent">
+                    {{ course.revenue | currency: 'USD' : 'symbol' : '1.0-0' }}
+                  </p>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <!-- Últimas transacciones -->
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-4">
+          <div class="mb-3">
+            <h2 class="text-sm font-bold text-skillnet-dark">Últimas Transacciones</h2>
+            <p class="text-[10px] text-gray-500">Pagos completados recientes</p>
+          </div>
+          @if (data.recentTransactions.length === 0) {
+            <p class="text-xs text-gray-500">Sin transacciones en este periodo.</p>
+          } @else {
+            <ul class="divide-y divide-gray-100">
+              @for (
+                payment of data.recentTransactions;
+                track payment.date + payment.studentName + payment.amount
+              ) {
+                <li class="flex items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0">
+                  <div class="min-w-0">
+                    <p class="truncate text-xs font-semibold text-skillnet-dark">
+                      {{ payment.studentName }}
+                    </p>
+                    <p class="truncate text-[10px] text-gray-400">{{ payment.courseName }}</p>
+                    <p class="text-[10px] text-gray-400">
+                      {{ parseTransactionDate(payment.date) | date: 'dd MMM yyyy' }}
+                    </p>
+                  </div>
+                  <p class="shrink-0 text-xs font-bold text-emerald-600">
+                    +{{ payment.amount | currency: 'USD' : 'symbol' : '1.2-2' }}
+                  </p>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <!-- Billetera -->
+        <article
+          class="flex flex-col justify-between rounded-xl bg-skillnet-dark p-4 text-white shadow-sm lg:col-span-3"
+        >
+          <div>
+            <div class="mb-1 flex items-center gap-1.5 text-skillnet-sky">
+              <i class="ri-wallet-3-line text-lg"></i>
+              <span class="text-[10px] font-bold uppercase tracking-wider">Billetera</span>
+            </div>
+            <p class="text-[11px] text-white/70">Ingresos del periodo</p>
+            <p class="mt-2 text-2xl font-bold">
+              {{ data.kpis.totalRevenue | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="mt-4 w-full rounded-lg bg-skillnet-sky py-2.5 text-xs font-bold text-skillnet-dark transition-opacity hover:opacity-90"
+          >
+            Solicitar Retiro
+          </button>
+        </article>
+      </section>
+    } @else {
+      <div
+        class="rounded-xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800"
+      >
+        {{ loadError() ?? 'No se pudieron cargar las analíticas.' }}
+      </div>
+    }
+  </div>
+</div>

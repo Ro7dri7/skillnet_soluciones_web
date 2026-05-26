@@ -1,0 +1,47 @@
+.checkout-pay-btn {
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.payment-method-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+
+  &:hover {
+    background: rgba(20, 91, 255, 0.06);
+  }
+
+  &--active {
+    border-left-color: #145bff;
+    background: rgba(20, 91, 255, 0.1);
+    color: #032b60;
+    font-weight: 700;
+  }
+}
+
+.payment-method-bar {
+  width: 3px;
+  height: 100%;
+  min-height: 2.5rem;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transition: background 0.2s;
+
+  .payment-method-item--active & {
+    background: #145bff;
+  }
+}

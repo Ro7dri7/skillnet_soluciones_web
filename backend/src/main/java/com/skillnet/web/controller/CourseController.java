@@ -2,8 +2,12 @@ package com.skillnet.web.controller;
 
 import com.skillnet.security.CustomUserDetails;
 import com.skillnet.service.CourseService;
+import com.skillnet.service.ProducerCourseService;
 import com.skillnet.web.dto.request.CourseRequestDTO;
+import com.skillnet.web.dto.request.UpdateCourseBasicsRequestDTO;
+import com.skillnet.web.dto.response.CourseBasicsResponseDTO;
 import com.skillnet.web.dto.response.CourseResponseDTO;
+import com.skillnet.web.dto.response.ProducerCourseSummaryDTO;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -27,9 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CourseController {
 
     private final CourseService courseService;
+    private final ProducerCourseService producerCourseService;
 
-    public CourseController(CourseService courseService) {
+    public CourseController(CourseService courseService, ProducerCourseService producerCourseService) {
         this.courseService = courseService;
+        this.producerCourseService = producerCourseService;
     }
 
     @GetMapping
@@ -65,5 +71,36 @@ public class CourseController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         courseService.deleteCourse(id, userDetails.getId(), userDetails.getRole());
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{courseId}/publish")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_INFOPRODUCTOR', 'ROLE_ADMIN')")
+    public ResponseEntity<ProducerCourseSummaryDTO> publishCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        ProducerCourseSummaryDTO updated =
+                producerCourseService.publishCourse(courseId, userDetails.getId());
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/{courseId}/draft")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_INFOPRODUCTOR', 'ROLE_ADMIN')")
+    public ResponseEntity<ProducerCourseSummaryDTO> unpublishCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        ProducerCourseSummaryDTO updated =
+                producerCourseService.unpublishCourse(courseId, userDetails.getId());
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/{courseId}/basics")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_INFOPRODUCTOR', 'ROLE_ADMIN')")
+    public ResponseEntity<CourseBasicsResponseDTO> updateBasics(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UpdateCourseBasicsRequestDTO dto) {
+        CourseBasicsResponseDTO updated =
+                producerCourseService.updateBasics(courseId, userDetails.getId(), dto);
+        return ResponseEntity.ok(updated);
     }
 }

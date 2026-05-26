@@ -5,7 +5,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
+import com.skillnet.persistence.entity.core.User;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,14 +27,31 @@ public class JwtService {
     }
 
     public String generateToken(CustomUserDetails userDetails) {
-        return Jwts.builder()
+        return generateToken(userDetails, userDetails.getRole());
+    }
+
+    public String generateToken(CustomUserDetails userDetails, String activeRole) {
+        String role = activeRole != null && !activeRole.isBlank() ? activeRole.trim() : userDetails.getRole();
+        User user = userDetails.getUser();
+        var builder = Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("userId", userDetails.getId())
-                .claim("role", userDetails.getRole())
+                .claim("role", role)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(signingKey())
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + expirationMs));
+        if (user != null && !RoleAuthorityResolver.isAdminAccount(user)) {
+            builder.claim("roles", List.of("student", "infoproductor"));
+        } else if (user != null) {
+            builder.claim("roles", List.of("admin"));
+        }
+        return builder.signWith(signingKey()).compact();
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> {
+            Object role = claims.get("role");
+            return role != null ? role.toString() : null;
+        });
     }
 
     public String extractUsername(String token) {

@@ -1,0 +1,233 @@
+<div class="manage-messages-scroll h-full overflow-y-auto bg-gray-50/50 p-4 pb-40 font-sans text-gray-900 md:p-6">
+  <div class="mx-auto max-w-7xl space-y-8">
+    <header class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm"
+      >
+        <i class="ri-chat-voice-fill text-2xl text-skillnet-accent"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">
+          Mensajes Automatizados
+        </h2>
+        <p class="mt-1 text-sm font-medium text-skillnet-muted">
+          Conecta con tus alumnos de manera automática y cercana
+        </p>
+      </div>
+    </header>
+
+    <div
+      class="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:p-6"
+    >
+      <div class="flex flex-1 items-center gap-4">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/10"
+        >
+          <i class="ri-group-fill text-2xl text-skillnet-accent"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold uppercase tracking-wide text-skillnet-dark">
+            Potencia tu comunidad
+          </p>
+          <p class="mt-1 text-xs font-medium leading-snug text-skillnet-muted">
+            Los mensajes personalizados aumentan la retención de tus clientes hasta en un 40%. Crea
+            una conexión real desde el primer día.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="flex items-center justify-center p-20">
+        <div
+          class="h-8 w-8 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"
+        ></div>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+        <div class="space-y-8">
+          <!-- Bienvenida -->
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div
+              class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4"
+            >
+              <div class="flex items-center gap-2">
+                <i class="ri-user-follow-line text-lg text-skillnet-accent"></i>
+                <span class="text-sm font-bold text-gray-800">Mensaje de Bienvenida</span>
+              </div>
+              <span
+                class="rounded-md bg-skillnet-accent/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-skillnet-accent"
+                >AUTO-SEND</span
+              >
+            </div>
+            <div class="space-y-4 bg-gray-50/30 p-6 md:p-8">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Se envía al instante tras la inscripción
+              </p>
+              <textarea
+                [ngModel]="welcomeMessage()"
+                (ngModelChange)="welcomeMessage.set($event)"
+                placeholder="¡Hola! Qué alegría tenerte aquí. Te damos la bienvenida..."
+                [maxlength]="maxLength"
+                class="min-h-[160px] w-full resize-y rounded-xl border border-gray-300 bg-white p-4 text-sm font-medium leading-relaxed text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+              ></textarea>
+              <div class="flex items-center justify-between px-1">
+                <div class="flex gap-1.5">
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(welcomeLength(), 50)"
+                  ></div>
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(welcomeLength(), 200)"
+                  ></div>
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(welcomeLength(), 500)"
+                  ></div>
+                </div>
+                <span class="text-[11px] font-semibold text-gray-400"
+                  >{{ welcomeLength() }}/{{ maxLength }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Felicitación -->
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div
+              class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4"
+            >
+              <div class="flex items-center gap-2">
+                <i class="ri-medal-line text-lg text-skillnet-accent"></i>
+                <span class="text-sm font-bold text-gray-800">Felicitación por Logro</span>
+              </div>
+              <span
+                class="rounded-md bg-skillnet-dark px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+                >FINISH-SEND</span
+              >
+            </div>
+            <div class="space-y-4 bg-gray-50/30 p-6 md:p-8">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Se envía al completar el 100% del contenido
+              </p>
+              <textarea
+                [ngModel]="congratulationsMessage()"
+                (ngModelChange)="congratulationsMessage.set($event)"
+                placeholder="¡Enhorabuena! Has demostrado un gran compromiso..."
+                [maxlength]="maxLength"
+                class="min-h-[160px] w-full resize-y rounded-xl border border-gray-300 bg-white p-4 text-sm font-medium leading-relaxed text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+              ></textarea>
+              <div class="flex items-center justify-between px-1">
+                <div class="flex gap-1.5">
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(congratsLength(), 50)"
+                  ></div>
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(congratsLength(), 200)"
+                  ></div>
+                  <div
+                    class="h-2 w-2 rounded-full transition-colors"
+                    [class]="progressDotClass(congratsLength(), 500)"
+                  ></div>
+                </div>
+                <span class="text-[11px] font-semibold text-gray-400"
+                  >{{ congratsLength() }}/{{ maxLength }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Consejo -->
+          <div
+            class="flex items-start gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm"
+          >
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100"
+            >
+              <i class="ri-lightbulb-flash-line text-xl text-emerald-600"></i>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-bold uppercase tracking-widest text-emerald-800">Consejo Pro</h4>
+              <p class="text-[12px] font-medium leading-relaxed text-emerald-700/80">
+                Usa un tono cercano y amigable. Hazle saber a tu cliente que estás disponible para
+                resolver cualquier duda o inquietud.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista previa -->
+        <div class="sticky top-10 hidden space-y-6 lg:block">
+          <div class="relative overflow-hidden rounded-2xl border border-gray-800 bg-skillnet-dark p-8 shadow-xl">
+            <div
+              class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-skillnet-accent/10 blur-3xl"
+            ></div>
+
+            <div class="relative z-10 space-y-6">
+              <div class="flex items-center gap-4 border-b border-gray-800 pb-5">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-xl bg-skillnet-accent text-sm font-bold text-white shadow-sm"
+                >
+                  SN
+                </div>
+                <div>
+                  <p class="text-sm font-bold tracking-wide text-white">Vista Previa del Cliente</p>
+                  <p
+                    class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-skillnet-accent"
+                  >
+                    Notificación en tiempo real
+                  </p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div
+                  class="space-y-3 rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-md"
+                >
+                  <div class="mb-2 flex items-center gap-2">
+                    <div class="h-2 w-2 animate-pulse rounded-full bg-skillnet-accent"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400"
+                      >Mensaje Entrante</span
+                    >
+                  </div>
+                  <p class="text-sm font-medium italic leading-relaxed text-gray-200">
+                    @if (welcomeMessage().trim()) {
+                      {{ welcomeMessage() }}
+                    } @else {
+                      Empieza a escribir tu mensaje de bienvenida para ver la previsualización aquí...
+                    }
+                  </p>
+                </div>
+
+                <div class="flex justify-center py-4">
+                  <div class="flex gap-2">
+                    @for (bar of [1, 2, 3]; track bar) {
+                      <div class="h-1 w-8 rounded-full bg-white/10"></div>
+                    }
+                  </div>
+                </div>
+
+                <div class="space-y-3 pt-2 text-center">
+                  <div
+                    class="inline-flex items-center gap-2 rounded-full bg-skillnet-accent px-5 py-2.5 shadow-sm"
+                  >
+                    <i class="ri-magic-line text-lg text-white"></i>
+                    <span class="text-xs font-bold uppercase tracking-wide text-white"
+                      >Interactividad Habilitada</span
+                    >
+                  </div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+                    Skillnet Experience Engine
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

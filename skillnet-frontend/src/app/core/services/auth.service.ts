@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { Injectable, WritableSignal, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable, tap } from 'rxjs';
+import { dashboardPathForRole } from '../../shared/utils/user-role.util';
 import { environment } from '../../../environments/environment';
 import {
   AuthResponse,
@@ -14,13 +16,20 @@ import { resolveUserRole } from '../../shared/utils/user-role.util';
 const TOKEN_STORAGE_KEY = 'skillnet_token';
 const USER_STORAGE_KEY = 'skillnet_user';
 
+export type AppRole = 'student' | 'infoproductor' | 'admin';
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  private readonly currentUserSubject = new BehaviorSubject<User | null>(this.loadStoredUser());
-  readonly currentUser$ = this.currentUserSubject.asObservable();
+  private readonly currentUserSignal: WritableSignal<User | null> = signal(this.loadStoredUser());
+
+  /** Señal reactiva del usuario en sesión. */
+  readonly currentUser = this.currentUserSignal.asReadonly();
+
+  /** Observable derivado de la señal (compatible con `async` pipe). */
+  readonly currentUser$ = toObservable(this.currentUser);
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http
@@ -52,7 +61,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
-    this.currentUserSubject.next(null);
+    this.currentUserSignal.set(null);
   }
 
   isLoggedIn(): boolean {
@@ -60,14 +69,34 @@ export class AuthService {
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    return this.currentUserSignal();
+  }
+
+  /**
+   * Cambia el rol activo: persiste en BD, emite un JWT nuevo y actualiza la sesión local.
+   */
+  switchRole(newRole: AppRole): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/switch-role`, { role: newRole })
+      .pipe(tap((response) => this.handleAuthSuccess(response)));
+  }
+
+  /** Ruta del panel según el rol activo tras login o cambio de rol. */
+  dashboardPathForCurrentUser(): string {
+    const user = this.currentUserSignal();
+    return dashboardPathForRole(user?.role ?? user?.activeRole);
+  }
+
+  /** @deprecated Usar `switchRole` (retorna Observable). */
+  switchActiveRole(role: 'student' | 'infoproductor'): Observable<AuthResponse> {
+    return this.switchRole(role);
   }
 
   private handleAuthSuccess(response: AuthResponse): void {
     this.setToken(response.token);
     const user = this.normalizeUser(response.user, response.token);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-    this.currentUserSubject.next(user);
+    this.currentUserSignal.set(user);
   }
 
   private loadStoredUser(): User | null {
@@ -86,7 +115,18 @@ export class AuthService {
 
   /** Asegura `role` desde API, flags legacy o claim JWT (sesiones antiguas). */
   private normalizeUser(user: User, token?: string): User {
-    const role = resolveUserRole(user, token ?? this.getToken());
-    return role ? { ...user, role } : user;
+    const jwt = token ?? this.getToken();
+    const role = resolveUserRole(user, jwt) ?? user.activeRole ?? user.role;
+    if (!role) {
+      return user;
+    }
+    const isAdmin = role === 'admin';
+    return {
+      ...user,
+      role,
+      activeRole: role,
+      student: isAdmin ? user.student === true : user.student !== false,
+      infoproductor: isAdmin ? user.infoproductor === true : user.infoproductor !== false,
+    };
   }
 }

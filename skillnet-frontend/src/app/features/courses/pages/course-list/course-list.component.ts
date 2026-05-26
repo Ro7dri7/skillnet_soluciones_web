@@ -1,23 +1,21 @@
-import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CourseService } from '../../../../core/services/course.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { CourseResponse } from '../../../../shared/models/course.model';
+import { ProducerCoursesService } from '../../../../core/services/producer-courses.service';
+import { ProducerCourseSummary } from '../../../../shared/models/producer-course.model';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-course-list',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe],
+  imports: [RouterLink, DatePipe],
   templateUrl: './course-list.component.html',
 })
 export class CourseListComponent implements OnInit {
-  private readonly courseService = inject(CourseService);
-  private readonly authService = inject(AuthService);
+  private readonly producerCoursesService = inject(ProducerCoursesService);
   private readonly router = inject(Router);
 
-  readonly courses = signal<CourseResponse[]>([]);
+  readonly courses = signal<ProducerCourseSummary[]>([]);
   readonly isLoading = signal(true);
   readonly error = signal('');
   readonly deletingId = signal<number | null>(null);
@@ -30,55 +28,37 @@ export class CourseListComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set('');
 
-    this.courseService.getCourses().subscribe({
+    this.producerCoursesService.getMyCourses().subscribe({
       next: (items) => {
-        const user = this.authService.getCurrentUser();
-        const filtered =
-          user?.role === 'infoproductor' && user.id
-            ? items.filter((c) => c.professorId === user.id)
-            : items;
-        this.courses.set(filtered);
+        this.courses.set(items);
         this.isLoading.set(false);
       },
       error: (err) => {
-        this.error.set(messageFromHttpError(err, 'No se pudieron cargar los cursos.'));
+        this.error.set(messageFromHttpError(err, 'No se pudieron cargar tus cursos.'));
         this.isLoading.set(false);
       },
     });
   }
 
-  editCourse(id: number): void {
-    void this.router.navigate(['/courses', id, 'edit']);
+  manageCourse(id: number): void {
+    void this.router.navigate(['/instructor/courses', id, 'manage']);
   }
 
-  deleteCourse(id: number): void {
-    if (!confirm('¿Eliminar este curso? Esta acción no se puede deshacer.')) {
-      return;
-    }
-
-    this.deletingId.set(id);
-    this.courseService.deleteCourse(id).subscribe({
-      next: () => {
-        this.courses.update((list) => list.filter((c) => c.id !== id));
-        this.deletingId.set(null);
-      },
-      error: (err) => {
-        this.error.set(messageFromHttpError(err, 'No se pudo eliminar el curso.'));
-        this.deletingId.set(null);
-      },
-    });
+  isDraft(status: string): boolean {
+    return status.toLowerCase() === 'draft';
   }
 
   statusLabel(status: string): string {
-    return status === 'published' ? 'Publicado' : 'Borrador';
+    return this.isDraft(status) ? 'Borrador' : 'Publicado';
   }
 
-  levelLabel(level: string): string {
+  formatLabel(format: string): string {
     const labels: Record<string, string> = {
-      beginner: 'Principiante',
-      intermediate: 'Intermedio',
-      advanced: 'Avanzado',
+      course: 'Curso',
+      ebook: 'E-book',
+      audiobook: 'Audiolibro',
+      podcast: 'Podcast',
     };
-    return labels[level] ?? level;
+    return labels[format] ?? format;
   }
 }

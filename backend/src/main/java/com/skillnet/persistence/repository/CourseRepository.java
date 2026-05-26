@@ -13,6 +13,12 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findByProfessor_Id(Long professorId);
 
+    List<Course> findAllByProfessorIdOrderByCreatedAtDesc(Long professorId);
+
+    boolean existsByProfessor_Id(Long professorId);
+
+    long countByProfessor_IdAndStatus(Long professorId, String status);
+
     List<Course> findByCategoryIgnoreCase(String category);
 
     boolean existsBySlug(String slug);

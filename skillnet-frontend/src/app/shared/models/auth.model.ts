@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   role?: string;
+  activeRole?: string;
   student?: boolean;
   infoproductor?: boolean;
   profilePicture?: string;

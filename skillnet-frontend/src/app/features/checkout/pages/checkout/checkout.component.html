@@ -1,0 +1,532 @@
+<div class="min-h-screen bg-gray-50 font-sans">
+
+  @if (paymentSuccess()) {
+
+    <div class="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+
+      <div
+
+        class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"
+
+      >
+
+        <i class="ri-checkbox-circle-fill text-4xl"></i>
+
+      </div>
+
+      <h2 class="text-2xl font-black text-skillnet-dark">¡Pago realizado con éxito!</h2>
+
+      <p class="mt-2 text-sm text-skillnet-muted">Redirigiendo al marketplace...</p>
+
+    </div>
+
+  } @else {
+
+    <div class="border-b border-gray-200 bg-white px-6 py-4 lg:px-12">
+
+      <div class="mx-auto flex max-w-7xl items-center justify-between">
+
+        <h1 class="text-xl font-bold text-skillnet-dark">Checkout</h1>
+
+        <a routerLink="/marketplace" class="text-sm font-semibold text-skillnet-accent hover:underline">
+
+          ← Volver al marketplace
+
+        </a>
+
+      </div>
+
+    </div>
+
+
+
+  @if (cartService.cartCount() === 0) {
+
+    <div class="mx-auto max-w-lg p-6 lg:p-12 text-center">
+
+      <div class="rounded-xl border border-dashed border-gray-300 bg-white p-12">
+
+        <p class="text-lg font-bold text-skillnet-dark">Tu carrito está vacío</p>
+
+        <p class="mt-2 text-sm text-skillnet-muted">Agrega cursos desde el marketplace para continuar.</p>
+
+        <a
+
+          routerLink="/marketplace"
+
+          class="mt-6 inline-block rounded-lg bg-skillnet-accent px-6 py-3 text-sm font-bold text-white hover:bg-[#1040b0]"
+
+        >
+
+          Explorar cursos
+
+        </a>
+
+      </div>
+
+    </div>
+
+  } @else {
+
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 p-6 lg:grid-cols-12 lg:p-12">
+
+      <!-- Columna izquierda: facturación y pago -->
+
+      <div class="space-y-6 lg:col-span-8">
+
+        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <h2 class="mb-1 text-lg font-bold text-skillnet-dark">Detalles de facturación</h2>
+
+          <p class="mb-6 text-sm text-skillnet-muted">Información personal para tu comprobante.</p>
+
+
+
+          <form [formGroup]="personalForm" class="space-y-4">
+
+            <div>
+
+              <label for="fullName" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                Nombre completo
+
+              </label>
+
+              <input
+
+                id="fullName"
+
+                type="text"
+
+                formControlName="fullName"
+
+                placeholder="Tu nombre completo"
+
+                class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+              />
+
+            </div>
+
+            <div>
+
+              <label for="email" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                Correo electrónico
+
+              </label>
+
+              <input
+
+                id="email"
+
+                type="email"
+
+                formControlName="email"
+
+                placeholder="correo@ejemplo.com"
+
+                class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+              />
+
+            </div>
+
+            <div>
+
+              <label for="documentId" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                Documento de identidad
+
+              </label>
+
+              <input
+
+                id="documentId"
+
+                type="text"
+
+                formControlName="documentId"
+
+                placeholder="DNI, RUC, CE o pasaporte"
+
+                class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+              />
+
+            </div>
+
+          </form>
+
+        </div>
+
+
+
+        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <h2 class="mb-1 text-lg font-bold text-skillnet-dark">Método de pago</h2>
+
+          <p class="mb-6 text-sm text-skillnet-muted">Simulación de tarjeta (integración Culqi en fase posterior).</p>
+
+
+
+          <div class="mb-4 flex gap-2">
+
+            <button
+
+              type="button"
+
+              class="rounded-lg px-4 py-2 text-xs font-bold uppercase transition"
+
+              [class.bg-skillnet-accent]="paymentMethod() === 'card'"
+
+              [class.text-white]="paymentMethod() === 'card'"
+
+              [class.bg-gray-100]="paymentMethod() !== 'card'"
+
+              [class.text-skillnet-dark]="paymentMethod() !== 'card'"
+
+              (click)="setPaymentMethod('card')"
+
+            >
+
+              Tarjeta
+
+            </button>
+
+            <button
+
+              type="button"
+
+              class="rounded-lg px-4 py-2 text-xs font-bold uppercase transition"
+
+              [class.bg-skillnet-accent]="paymentMethod() === 'yape'"
+
+              [class.text-white]="paymentMethod() === 'yape'"
+
+              [class.bg-gray-100]="paymentMethod() !== 'yape'"
+
+              [class.text-skillnet-dark]="paymentMethod() !== 'yape'"
+
+              (click)="setPaymentMethod('yape')"
+
+            >
+
+              Yape
+
+            </button>
+
+          </div>
+
+
+
+          @if (paymentMethod() === 'card') {
+
+            <form [formGroup]="cardForm" class="space-y-4">
+
+              <div>
+
+                <label for="cardNumber" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                  Número de tarjeta
+
+                </label>
+
+                <input
+
+                  id="cardNumber"
+
+                  type="text"
+
+                  formControlName="cardNumber"
+
+                  maxlength="19"
+
+                  placeholder="1234 5678 9012 3456"
+
+                  class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+                />
+
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+
+                <div>
+
+                  <label for="expiry" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                    Exp.
+
+                  </label>
+
+                  <input
+
+                    id="expiry"
+
+                    type="text"
+
+                    formControlName="expiry"
+
+                    maxlength="5"
+
+                    placeholder="MM/AA"
+
+                    class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+                  />
+
+                </div>
+
+                <div>
+
+                  <label for="cvv" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+
+                    CVV
+
+                  </label>
+
+                  <input
+
+                    id="cvv"
+
+                    type="text"
+
+                    formControlName="cvv"
+
+                    maxlength="4"
+
+                    placeholder="123"
+
+                    class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+
+                  />
+
+                </div>
+
+              </div>
+
+            </form>
+
+          } @else {
+
+            <div class="rounded-lg border border-skillnet-accent/30 bg-skillnet-accent/5 p-4 text-sm text-skillnet-muted">
+
+              Al confirmar, simularemos el pago con Yape. En producción se integrará el proveedor de pagos.
+
+            </div>
+
+          }
+
+        </div>
+
+
+
+        @if (!isFormValid()) {
+
+          <div class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+
+            <i class="ri-information-fill text-lg"></i>
+
+            Completa tu información para habilitar el pago.
+
+          </div>
+
+        }
+
+      </div>
+
+
+
+      <!-- Columna derecha: resumen -->
+
+      <aside class="lg:col-span-4">
+
+        <div class="sticky top-6 rounded-xl border border-gray-200 border-t-4 border-t-skillnet-dark bg-white p-6 shadow-sm">
+
+          <h2 class="mb-4 text-lg font-bold text-skillnet-dark">Resumen de tu pedido</h2>
+
+
+
+          <ul class="mb-4 max-h-64 space-y-3 overflow-y-auto border-b border-gray-100 pb-4">
+
+            @for (item of cartService.cartItems(); track item.id) {
+
+              <li class="flex items-start justify-between gap-3 text-sm">
+
+                <div class="min-w-0 flex-1">
+
+                  <p class="truncate font-semibold text-skillnet-dark">{{ item.title }}</p>
+
+                  <p class="text-xs text-skillnet-muted">{{ item.instructor }}</p>
+
+                </div>
+
+                <span class="shrink-0 font-bold text-skillnet-dark">
+
+                  {{ itemLineTotal(item) | currency: 'USD' : 'symbol' : '1.2-2' }}
+
+                </span>
+
+              </li>
+
+            }
+
+          </ul>
+
+
+
+          <div class="mb-4 space-y-2">
+
+            <label for="couponCode" class="block text-xs font-semibold uppercase text-gray-500">
+
+              Código de descuento
+
+            </label>
+
+            <div class="flex gap-2">
+
+              <input
+
+                id="couponCode"
+
+                type="text"
+
+                [value]="couponCode()"
+
+                (input)="couponCode.set($any($event.target).value.toUpperCase())"
+
+                placeholder="SKILL10"
+
+                class="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs uppercase outline-none focus:border-skillnet-accent"
+
+              />
+
+              <button
+
+                type="button"
+
+                (click)="applyCoupon()"
+
+                class="shrink-0 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-skillnet-dark hover:bg-gray-200"
+
+              >
+
+                Aplicar
+
+              </button>
+
+            </div>
+
+            @if (couponMessage()) {
+
+              <p
+
+                class="text-xs"
+
+                [class.text-emerald-600]="!couponError()"
+
+                [class.text-red-500]="couponError()"
+
+              >
+
+                {{ couponMessage() }}
+
+              </p>
+
+            }
+
+          </div>
+
+
+
+          <div class="space-y-2 border-t border-gray-100 pt-4 text-sm">
+
+            <div class="flex justify-between text-skillnet-muted">
+
+              <span>Subtotal</span>
+
+              <span>{{ subtotal() | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+
+            </div>
+
+            @if (appliedCoupon()) {
+
+              <div class="flex justify-between text-emerald-600">
+
+                <span>Descuento</span>
+
+                <span>- {{ discountAmount() | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+
+              </div>
+
+            }
+
+            <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-black text-skillnet-dark">
+
+              <span>Total a pagar</span>
+
+              <span class="text-skillnet-accent">
+
+                {{ totalToPay() | currency: 'USD' : 'symbol' : '1.2-2' }}
+
+              </span>
+
+            </div>
+
+          </div>
+
+
+
+          <button
+
+            type="button"
+
+            (click)="completePayment()"
+
+            [disabled]="!isFormValid() || isProcessing()"
+
+            class="checkout-pay-btn mt-6 w-full rounded-lg bg-skillnet-accent py-3 text-sm font-bold text-white transition hover:bg-[#1040b0] disabled:cursor-not-allowed disabled:opacity-50"
+
+          >
+
+            @if (isProcessing()) {
+
+              <span class="inline-flex items-center justify-center gap-2">
+
+                <i class="ri-loader-4-line animate-spin"></i>
+
+                Procesando…
+
+              </span>
+
+            } @else {
+
+              Completar Pago Seguro
+
+            }
+
+          </button>
+
+
+
+          <p class="mt-3 flex items-center justify-center gap-1 text-center text-[10px] text-skillnet-muted">
+
+            <i class="ri-lock-line"></i>
+
+            Pago encriptado y seguro
+
+          </p>
+
+        </div>
+
+      </aside>
+
+    </div>
+
+  }
+
+  }
+
+</div>
+

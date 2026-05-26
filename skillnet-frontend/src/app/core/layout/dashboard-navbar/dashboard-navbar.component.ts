@@ -8,7 +8,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { CurrencyPipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
+import { CartService } from '../../services/cart.service';
+import { OFFICIAL_CATEGORIES } from '../../../features/marketplace/data/categories.data';
 
 interface NavNotification {
   id: number;
@@ -20,10 +23,14 @@ interface NavNotification {
 @Component({
   selector: 'app-dashboard-navbar',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, CurrencyPipe],
   templateUrl: './dashboard-navbar.component.html',
 })
 export class DashboardNavbarComponent {
+  private readonly router = inject(Router);
+
+  readonly cartService = inject(CartService);
+
   readonly displayName = input.required<string>();
   readonly avatarSrc = input.required<string>();
   readonly isInfoproductor = input(false);
@@ -35,16 +42,23 @@ export class DashboardNavbarComponent {
   readonly notificationsPanelRef = viewChild<ElementRef<HTMLElement>>('notificationsPanel');
   readonly profilePanelRef = viewChild<ElementRef<HTMLElement>>('profilePanel');
   readonly categoriesPanelRef = viewChild<ElementRef<HTMLElement>>('categoriesPanel');
+  readonly cartPanelRef = viewChild<ElementRef<HTMLElement>>('cartPanel');
 
   readonly showNotifications = signal(false);
   readonly showProfile = signal(false);
   readonly showCategories = signal(false);
+  readonly showCart = signal(false);
 
-  readonly cartCount = signal(2);
   readonly wishlistCount = signal(1);
   readonly unreadCount = signal(2);
 
-  readonly categories = ['Tecnología', 'Finanzas', 'Marketing', 'Diseño', 'Negocios'];
+  readonly categories = [...OFFICIAL_CATEGORIES];
+
+  goToCategory(category: string, event: Event): void {
+    event.preventDefault();
+    this.showCategories.set(false);
+    void this.router.navigate(['/catalog'], { queryParams: { category } });
+  }
 
   readonly notifications: NavNotification[] = [
     {
@@ -81,6 +95,7 @@ export class DashboardNavbarComponent {
     this.showNotifications.set(next);
     this.showProfile.set(false);
     this.showCategories.set(false);
+    this.showCart.set(false);
   }
 
   toggleProfile(event: MouseEvent): void {
@@ -89,6 +104,7 @@ export class DashboardNavbarComponent {
     this.showProfile.set(next);
     this.showNotifications.set(false);
     this.showCategories.set(false);
+    this.showCart.set(false);
   }
 
   toggleCategories(event: MouseEvent): void {
@@ -97,6 +113,30 @@ export class DashboardNavbarComponent {
     this.showCategories.set(next);
     this.showNotifications.set(false);
     this.showProfile.set(false);
+    this.showCart.set(false);
+  }
+
+  toggleCart(event: MouseEvent): void {
+    event.stopPropagation();
+    const next = !this.showCart();
+    this.showCart.set(next);
+    this.showNotifications.set(false);
+    this.showProfile.set(false);
+    this.showCategories.set(false);
+  }
+
+  removeFromCart(courseId: number, event: MouseEvent): void {
+    event.stopPropagation();
+    this.cartService.removeFromCart(courseId);
+  }
+
+  closeCart(): void {
+    this.showCart.set(false);
+  }
+
+  goToCheckout(): void {
+    this.showCart.set(false);
+    void this.router.navigate(['/checkout']);
   }
 
   markAllNotificationsRead(): void {
@@ -121,5 +161,6 @@ export class DashboardNavbarComponent {
     this.showNotifications.set(false);
     this.showProfile.set(false);
     this.showCategories.set(false);
+    this.showCart.set(false);
   }
 }

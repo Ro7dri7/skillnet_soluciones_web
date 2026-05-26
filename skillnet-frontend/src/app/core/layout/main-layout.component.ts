@@ -5,16 +5,25 @@ import { filter, map, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../services/auth.service';
 import { User } from '../../shared/models/auth.model';
-import { isStudentRole, resolveUserRole } from '../../shared/utils/user-role.util';
+import { isStudentRole } from '../../shared/utils/user-role.util';
 import { DashboardNavbarComponent } from './dashboard-navbar/dashboard-navbar.component';
 import { DashboardSidebarComponent } from './dashboard-sidebar/dashboard-sidebar.component';
+import { MarketplaceCategoryBarComponent } from '../../features/marketplace/components/marketplace-category-bar/marketplace-category-bar.component';
+import { isWizardOnlyStep, isWizardStepWithoutMainSidebar } from '../../features/course-builder/data/builder-steps.data';
 
-const MARKETPLACE_PREFIXES = ['/marketplace', '/catalog'];
+const FULL_WIDTH_PREFIXES = ['/marketplace', '/catalog', '/checkout'];
+const CATEGORY_BAR_PREFIXES = ['/marketplace', '/catalog'];
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, AsyncPipe, DashboardNavbarComponent, DashboardSidebarComponent],
+  imports: [
+    RouterOutlet,
+    AsyncPipe,
+    DashboardNavbarComponent,
+    DashboardSidebarComponent,
+    MarketplaceCategoryBarComponent,
+  ],
   templateUrl: './main-layout.component.html',
 })
 export class MainLayoutComponent {
@@ -23,11 +32,38 @@ export class MainLayoutComponent {
 
   private readonly router = inject(Router);
 
+  readonly isWizardRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.isCourseWizardRoute()),
+      startWith(this.isCourseWizardRoute()),
+    ),
+    { initialValue: false },
+  );
+
+  readonly hideMainSidebarOnWizard = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.isWizardWithoutMainSidebar()),
+      startWith(this.isWizardWithoutMainSidebar()),
+    ),
+    { initialValue: false },
+  );
+
   readonly hideSidebar = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map(() => this.isMarketplaceRoute()),
-      startWith(this.isMarketplaceRoute()),
+      map(() => this.isFullWidthRoute()),
+      startWith(this.isFullWidthRoute()),
+    ),
+    { initialValue: false },
+  );
+
+  readonly showCategoryBar = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.isCategoryBarRoute()),
+      startWith(this.isCategoryBarRoute()),
     ),
     { initialValue: false },
   );
@@ -47,19 +83,32 @@ export class MainLayoutComponent {
   }
 
   isStudent(user: User): boolean {
-    return isStudentRole(user, this.authService.getToken());
+    return user.role === 'student' || isStudentRole(user, this.authService.getToken());
   }
 
   isInfoproductor(user: User): boolean {
-    return resolveUserRole(user, this.authService.getToken()) === 'infoproductor';
+    return user.role === 'infoproductor';
   }
 
   isAdmin(user: User): boolean {
-    return resolveUserRole(user, this.authService.getToken()) === 'admin';
+    return user.role === 'admin';
   }
 
-  private isMarketplaceRoute(): boolean {
+  private isWizardWithoutMainSidebar(): boolean {
+    return isWizardStepWithoutMainSidebar(this.router.url.split('?')[0]);
+  }
+
+  private isCourseWizardRoute(): boolean {
+    return isWizardOnlyStep(this.router.url.split('?')[0]);
+  }
+
+  private isFullWidthRoute(): boolean {
     const path = this.router.url.split('?')[0];
-    return MARKETPLACE_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+    return FULL_WIDTH_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+  }
+
+  private isCategoryBarRoute(): boolean {
+    const path = this.router.url.split('?')[0];
+    return CATEGORY_BAR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   }
 }

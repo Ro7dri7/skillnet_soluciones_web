@@ -1,7 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
-import { MARKETPLACE_CATEGORIES } from '../../data/categories.data';
+import {
+  MARKETPLACE_CATEGORIES,
+  getParentCategory,
+  getSubcategories,
+  isOfficialCategory,
+} from '../../data/categories.data';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
 import { MarketplaceCourseCardComponent } from '../../components/marketplace-course-card/marketplace-course-card.component';
 
@@ -33,7 +38,12 @@ export class CatalogComponent implements OnInit {
     if (!cat) {
       return all;
     }
-    return all.filter((c) => c.category === cat);
+    if (isOfficialCategory(cat)) {
+      const subs = getSubcategories(cat);
+      return all.filter((c) => c.category === cat || subs.includes(c.category));
+    }
+    const parent = getParentCategory(cat);
+    return all.filter((c) => c.category === cat || c.category === parent);
   }
 
   selectCategory(cat: string): void {

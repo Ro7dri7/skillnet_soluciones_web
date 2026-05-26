@@ -1,6 +1,7 @@
 package com.skillnet.mapper;
 
 import com.skillnet.persistence.entity.core.User;
+import com.skillnet.service.UserRoleNormalizer;
 import com.skillnet.web.dto.request.UserRequestDTO;
 import com.skillnet.web.dto.response.ProfessorSummaryDTO;
 import com.skillnet.web.dto.response.UserResponseDTO;
@@ -68,14 +69,25 @@ public class UserMapper {
         if (user == null) {
             return null;
         }
-        return new UserSummaryDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole(),
-                user.getProfilePicture());
+        return toSummaryDTO(user, com.skillnet.security.RoleAuthorityResolver.defaultActiveRole(user));
+    }
+
+    public UserSummaryDTO toSummaryDTO(User user, String activeRole) {
+        if (user == null) {
+            return null;
+        }
+        UserSummaryDTO dto = new UserSummaryDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setRole(activeRole);
+        dto.setActiveRole(activeRole);
+        dto.setStudent(user.isStudent());
+        dto.setInfoproductor(user.isInfoproductor());
+        dto.setProfilePicture(user.getProfilePicture());
+        return dto;
     }
 
     public ProfessorSummaryDTO toProfessorSummaryDTO(User user) {
@@ -93,6 +105,7 @@ public class UserMapper {
     public User toEntity(UserRequestDTO dto) {
         User user = new User();
         applyToEntity(user, dto, true);
+        UserRoleNormalizer.applyDualRoleCapabilities(user, dto.getRole());
         return user;
     }
 

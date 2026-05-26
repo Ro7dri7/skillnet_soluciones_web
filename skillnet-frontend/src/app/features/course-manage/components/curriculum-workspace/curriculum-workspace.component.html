@@ -1,0 +1,472 @@
+<div class="curriculum-workspace">
+  @if (showLoginBanner()) {
+    <div
+      class="absolute left-0 right-0 top-0 z-10 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-950"
+    >
+      Inicia sesión para guardar el temario en el servidor.
+      <a href="/login" class="font-semibold underline">Ir a login</a>
+    </div>
+  }
+  <div class="curriculum-editor">
+    @if (isSaving()) {
+      <p class="text-xs font-medium text-[#145bff]">Guardando…</p>
+    }
+
+    @if (curriculum.errorMessage(); as err) {
+      <div
+        class="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      >
+        <span>{{ err }}</span>
+        <button type="button" (click)="curriculum.clearError()" class="text-xs font-semibold underline">
+          Cerrar
+        </button>
+      </div>
+    }
+
+    <div class="curriculum-editor-card">
+      <div class="curriculum-tabs">
+        <button
+          type="button"
+          class="curriculum-tab"
+          [class.active]="activeTab() === 'content'"
+          (click)="setTab('content')"
+        >
+          Contenido
+        </button>
+        <button
+          type="button"
+          class="curriculum-tab"
+          [class.disabled]="!isLessonQuiz()"
+          [class.active]="activeTab() === 'evaluation'"
+          (click)="setTab('evaluation')"
+        >
+          Evaluación
+        </button>
+        <button
+          type="button"
+          class="curriculum-tab"
+          [class.active]="activeTab() === 'resources'"
+          (click)="setTab('resources')"
+        >
+          Recursos
+        </button>
+      </div>
+
+      <div
+        class="flex-1 overflow-y-auto"
+        [class.lesson-content-scroll]="
+          activeTab() === 'content' &&
+          ((!activeLesson() && curriculum.modules().length > 0) || !!activeLesson())
+        "
+        [class.p-4]="activeTab() !== 'content' || (!activeLesson() && curriculum.modules().length === 0)"
+        [class.sm:p-6]="activeTab() !== 'content' || (!activeLesson() && curriculum.modules().length === 0)"
+      >
+        @if (!activeLesson()) {
+          @if (curriculum.modules().length === 0) {
+            <p class="text-sm text-skillnet-muted">
+              Añade un módulo con el botón + del panel derecho para empezar.
+            </p>
+          } @else if (activeTab() === 'content') {
+            <p class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-skillnet-muted">
+              Selecciona una lección en el panel derecho o crea una con
+              <strong>+ lección</strong> para añadir bloques de contenido.
+            </p>
+          }
+          } @else if (activeTab() === 'content' && activeLesson(); as lesson) {
+          <div class="lesson-content-panel">
+            <div class="add-block-toolbar">
+              <div class="add-block-toolbar__inner">
+                <span class="add-block-toolbar__title">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path
+                      d="M16 5.26758V13C16 14.6569 14.6569 16 13 16H5.26756C5.61337 16.5978 6.25972 17 7 17H13C15.2091 17 17 15.2091 17 13V7.00001C17 6.25973 16.5978 5.61339 16 5.26758ZM11.5 9.49999C11.7761 9.49999 12 9.27614 12 8.99999C12 8.72385 11.7761 8.5 11.5 8.5L9.5 8.49999L9.5 6.5C9.5 6.22385 9.27614 6 9 6C8.72386 6 8.5 6.22385 8.5 6.5L8.5 8.49999H6.5C6.22386 8.49999 6 8.72385 6 8.99999C6 9.27614 6.22386 9.49999 6.5 9.49999H8.5V11.5C8.5 11.7761 8.72386 12 9 12C9.27614 12 9.5 11.7761 9.5 11.5V9.49999L11.5 9.49999ZM13 3C14.1046 3 15 3.89543 15 5V13C15 14.1046 14.1046 15 13 15H5C3.89543 15 3 14.1046 3 13L3 5C3 3.89543 3.89543 3 5 3L13 3ZM14 5C14 4.44771 13.5523 4 13 4L5 4C4.44772 4 4 4.44771 4 5L4 13C4 13.5523 4.44771 14 5 14H13C13.5523 14 14 13.5523 14 13V5Z"
+                      fill="#000"
+                    />
+                  </svg>
+                  Añadir Bloque de Contenido
+                </span>
+                <div id="onboarding-content-grid" class="content-type-grid">
+                  @for (blockType of blockTypes; track blockType.id) {
+                    <button
+                      type="button"
+                      class="content-type-btn"
+                      [style.background]="blockTypeColor(blockType.id)"
+                      [disabled]="curriculum.saving()"
+                      (click)="addContentBlock(blockType.id)"
+                    >
+                      <div class="content-type-btn__icon">
+                        @if (blockType.id === 'text') {
+                          <span class="content-type-btn__letter">T</span>
+                        } @else {
+                          <i [class]="blockType.icon"></i>
+                        }
+                      </div>
+                      <span class="content-type-btn__label">{{ blockType.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="lesson-blocks-stack">
+              @for (block of lesson.blocks; track block.id) {
+                <article class="lesson-block-card">
+                  <header class="block-card-header">
+                    <div class="block-card-header__type-icon">
+                      @if (block.contentType === 'text') {
+                        <span class="block-card-header__letter">T</span>
+                      } @else {
+                        <i [class]="lessonIcon(block.contentType)"></i>
+                      }
+                    </div>
+                    <span class="block-card-header__title">{{
+                      contentTypeLabel(block.contentType)
+                    }}</span>
+                    <div class="block-controls">
+                      <button
+                        type="button"
+                        class="block-controls__btn block-controls__btn--delete"
+                        title="Eliminar bloque"
+                        (click)="requestDeleteContentBlock(block.id)"
+                      >
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                  </header>
+
+                  <div class="block-content">
+                    @if (block.contentType === 'text') {
+                      <textarea
+                        class="block-textarea"
+                        placeholder="Escribe el contenido aquí..."
+                        [ngModel]="block.textContent"
+                        (ngModelChange)="updateBlockField(block.id, 'textContent', $event)"
+                      ></textarea>
+                    } @else if (block.contentType === 'video') {
+                      <div class="block-media-panel">
+                        <div class="block-media-panel__heading">
+                          <i class="ri-video-line text-2xl"></i>
+                          <span>Configurar Video</span>
+                        </div>
+                        <input
+                          type="url"
+                          class="block-media-input"
+                          placeholder="Pega un link de Youtube, Vimeo, etc..."
+                          [ngModel]="block.resourceUrl"
+                          (ngModelChange)="updateBlockField(block.id, 'resourceUrl', $event)"
+                        />
+                      </div>
+                    } @else if (block.contentType === 'quiz') {
+                      <div class="block-media-panel block-media-panel--quiz">
+                        <div class="block-media-panel__heading">
+                          <i class="ri-question-mark text-2xl font-bold"></i>
+                          <span>Evaluación</span>
+                        </div>
+                        <p class="block-media-panel__hint">
+                          Configura las preguntas en la pestaña Evaluación.
+                        </p>
+                        <button type="button" class="block-quiz-btn" (click)="goToEvaluationTab()">
+                          Configurar Quizz
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="block-media-panel">
+                        <div class="block-media-panel__heading">
+                          <i [class]="lessonIcon(block.contentType) + ' text-2xl'"></i>
+                          <span>{{ contentTypeLabel(block.contentType) }}</span>
+                        </div>
+                        <input
+                          type="url"
+                          class="block-media-input"
+                          placeholder="https://..."
+                          [ngModel]="block.resourceUrl"
+                          (ngModelChange)="updateBlockField(block.id, 'resourceUrl', $event)"
+                        />
+                      </div>
+                    }
+                  </div>
+                </article>
+              } @empty {
+                <p class="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-skillnet-muted">
+                  Usa los botones de arriba para añadir el primer bloque a esta lección.
+                </p>
+              }
+            </div>
+
+            <details class="add-block-more-details">
+              <summary>+ Elegir tipo de bloque</summary>
+              <div class="add-block-more-inner">
+                <div class="content-type-grid content-type-grid--compact">
+                  @for (blockType of blockTypes; track blockType.id) {
+                    <button
+                      type="button"
+                      class="content-type-btn"
+                      [style.background]="blockTypeColor(blockType.id)"
+                      [disabled]="curriculum.saving()"
+                      (click)="addContentBlock(blockType.id)"
+                    >
+                      <div class="content-type-btn__icon">
+                        @if (blockType.id === 'text') {
+                          <span class="content-type-btn__letter">T</span>
+                        } @else {
+                          <i [class]="blockType.icon"></i>
+                        }
+                      </div>
+                      <span class="content-type-btn__label">{{ blockType.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </details>
+          </div>
+        } @else if (activeTab() === 'evaluation' && isLessonQuiz()) {
+          <div class="space-y-6">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-xs font-semibold uppercase text-gray-500">
+                  Puntaje mínimo (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm"
+                  [ngModel]="quizPassingScore()"
+                  (ngModelChange)="quizPassingScore.set(+$event); updateBlockQuizData()"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-xs font-semibold uppercase text-gray-500">
+                  Tiempo límite (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm"
+                  [ngModel]="quizTimeLimit()"
+                  (ngModelChange)="quizTimeLimit.set(+$event); updateBlockQuizData()"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              @for (question of quizQuestions(); track question.id; let i = $index) {
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div class="mb-3 flex items-center justify-between gap-2">
+                    <span class="text-xs font-black uppercase text-gray-500">Pregunta {{ i + 1 }}</span>
+                    @if (quizQuestions().length > 1) {
+                      <button
+                        type="button"
+                        (click)="removeQuizQuestion(i)"
+                        class="text-xs font-semibold text-red-500"
+                      >
+                        Eliminar
+                      </button>
+                    }
+                  </div>
+                  <input
+                    type="text"
+                    class="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    [ngModel]="question.text"
+                    (ngModelChange)="updateQuizQuestion(i, $event)"
+                  />
+                  @for (option of question.options; track $index; let oi = $index) {
+                    <div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
+                      <span class="font-semibold">{{ optionLetter(oi) }}.</span>
+                      <span>{{ option }}</span>
+                    </div>
+                  }
+                </div>
+              }
+              <button
+                type="button"
+                (click)="addQuizQuestion()"
+                class="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-xs font-bold uppercase text-skillnet-dark hover:bg-gray-50"
+              >
+                + Añadir pregunta
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+            <p class="text-sm text-skillnet-muted">
+              Enlaces externos y archivos adjuntos estarán disponibles próximamente.
+            </p>
+            <input
+              type="url"
+              class="mx-auto mt-4 w-full max-w-lg rounded-lg border border-gray-200 px-4 py-2.5 text-sm"
+              placeholder="https://ejemplo.com/recurso"
+              [ngModel]="draftResourceUrl()"
+              (ngModelChange)="draftResourceUrl.set($event); scheduleSave()"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <aside class="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <header
+      class="flex items-center justify-between border-b border-gray-200 bg-black px-5 py-4 text-white"
+    >
+      <h3 class="text-sm font-semibold uppercase tracking-tight">Estructura del curso</h3>
+      <button
+        type="button"
+        id="onboarding-add-module-btn"
+        (click)="handleAddModule()"
+        [disabled]="curriculum.saving()"
+        title="Añadir módulo"
+        class="flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-[#145bff] disabled:opacity-50"
+      >
+        <i class="ri-add-line text-xl"></i>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-3">
+      @if (curriculum.loading()) {
+        <p class="py-8 text-center text-xs text-skillnet-muted">Cargando temario…</p>
+      } @else if (curriculum.modules().length === 0) {
+        <p class="py-8 text-center text-xs text-skillnet-muted">
+          Aún no hay módulos. Usa + para crear el primero.
+        </p>
+      }
+
+      @for (module of curriculum.modules(); track module.id; let mi = $index) {
+        <div class="mb-3 overflow-hidden rounded-lg border border-gray-200">
+          <div
+            class="flex items-center gap-2 bg-gray-50 px-3 py-3"
+            [class.bg-[#145bff]/5]="curriculum.activeModuleId() === module.id"
+          >
+            <button type="button" (click)="curriculum.toggleModule(module.id)" class="text-skillnet-dark">
+              <i [class]="module.expanded ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+            </button>
+
+            @if (editingModuleId() === module.id) {
+              <input
+                type="text"
+                class="min-w-0 flex-1 rounded border border-gray-200 px-2 py-1 text-xs font-semibold"
+                [ngModel]="editingModuleTitle()"
+                (ngModelChange)="editingModuleTitle.set($event)"
+                (keyup.enter)="saveModuleTitle(module.id)"
+              />
+              <button type="button" (click)="saveModuleTitle(module.id)" class="text-xs font-bold text-[#145bff]">
+                OK
+              </button>
+            } @else {
+              <span class="min-w-0 flex-1 truncate text-xs font-bold uppercase text-skillnet-dark">
+                {{ module.title }}
+              </span>
+              <button
+                type="button"
+                (click)="startEditModule(module.id, module.title)"
+                class="rounded p-1 text-gray-400 hover:text-[#145bff]"
+              >
+                <i class="ri-edit-2-line"></i>
+              </button>
+            }
+
+            <button
+              type="button"
+              (click)="curriculum.removeModule(module.id)"
+              class="rounded p-1 text-red-400 hover:text-red-600"
+            >
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+
+          @if (module.expanded) {
+            <div class="space-y-1 border-t border-gray-100 p-2">
+              @for (lesson of module.lessons; track lesson.id) {
+                <div
+                  class="lesson-sidebar-row"
+                  [class.lesson-sidebar-row--active]="curriculum.activeLessonId() === lesson.id"
+                >
+                  <button
+                    type="button"
+                    (click)="selectLesson(module.id, lesson.id)"
+                    class="lesson-sidebar-row__main"
+                  >
+                    <span
+                      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-sm"
+                    >
+                      <i [class]="lessonIcon(lesson.contentType)"></i>
+                    </span>
+                    @if (editingLessonId() === lesson.id) {
+                      <input
+                        type="text"
+                        class="lesson-sidebar-row__input"
+                        [ngModel]="editingLessonTitle()"
+                        (ngModelChange)="editingLessonTitle.set($event)"
+                        (click)="$event.stopPropagation()"
+                        (keyup.enter)="saveLessonTitle(module.id, lesson.id)"
+                        (keyup.escape)="editingLessonId.set(null)"
+                        (blur)="saveLessonTitle(module.id, lesson.id)"
+                      />
+                    } @else {
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-[11px] font-semibold">{{ lesson.title }}</span>
+                        <span class="text-[9px] uppercase text-gray-400">{{
+                          lessonBlockCount(lesson)
+                        }}</span>
+                      </span>
+                    }
+                  </button>
+                  <div class="lesson-sidebar-row__actions">
+                    <button
+                      type="button"
+                      class="lesson-sidebar-row__action"
+                      title="Editar nombre"
+                      (click)="startEditLesson(lesson.id, lesson.title, $event)"
+                    >
+                      <i class="ri-edit-2-line"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="lesson-sidebar-row__action lesson-sidebar-row__action--delete"
+                      title="Eliminar"
+                      (click)="requestDeleteLesson(module.id, lesson.id, $event)"
+                    >
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <div class="flex gap-1 pt-2">
+                <button
+                  type="button"
+                  [attr.id]="mi === 0 ? 'onboarding-add-lesson-btn-0' : null"
+                  (click)="handleAddLesson(module.id)"
+                  class="flex-1 rounded border border-dashed border-gray-300 py-2 text-[10px] font-bold uppercase text-skillnet-dark hover:bg-gray-50"
+                >
+                  + lección
+                </button>
+                <button
+                  type="button"
+                  (click)="handleAddQuiz(module.id)"
+                  class="flex-1 rounded border border-dashed border-amber-300 py-2 text-[10px] font-bold uppercase text-amber-900 hover:bg-amber-50"
+                >
+                  + Quizz
+                </button>
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </aside>
+
+  @if (confirmDialog(); as dialog) {
+    <app-confirm-dialog
+      [open]="true"
+      [title]="dialog.title"
+      [message]="dialog.message"
+      confirmLabel="Sí"
+      cancelLabel="No"
+      (confirmed)="confirmDialogAction()"
+      (cancelled)="closeConfirmDialog()"
+    />
+  }
+</div>

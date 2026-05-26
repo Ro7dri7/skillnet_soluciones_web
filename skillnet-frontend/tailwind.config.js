@@ -14,6 +14,15 @@ export default {
       boxShadow: {
         card: '0 4px 20px rgba(3, 43, 96, 0.08)',
       },
+      keyframes: {
+        cartDropdown: {
+          '0%': { opacity: '0', transform: 'translateY(-8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        cartDropdown: 'cartDropdown 0.2s ease-out',
+      },
     },
   },
   plugins: [],

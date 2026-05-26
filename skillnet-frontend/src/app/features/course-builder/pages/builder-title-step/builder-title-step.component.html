@@ -1,0 +1,46 @@
+<div class="flex min-h-full flex-col bg-white">
+  <div class="flex flex-1 flex-col items-center justify-center px-6">
+    <div class="w-full max-w-4xl space-y-6 text-center">
+      <div class="space-y-2">
+        <h1 class="text-2xl font-bold tracking-tight text-skillnet-dark">Ingresa un título temporal</h1>
+        <p class="text-base text-skillnet-muted">
+          No te preocupes si no te convence, podrás cambiarlo más adelante.
+        </p>
+      </div>
+
+      <div class="relative mx-auto max-w-3xl">
+        <input
+          type="text"
+          [ngModel]="title()"
+          (ngModelChange)="onTitleChange($event)"
+          placeholder="Por ejemplo: Conviértete en líder en la creación de podcast desde cero"
+          class="w-full rounded-2xl border border-gray-200 bg-white px-8 py-3 text-lg text-skillnet-dark shadow-sm placeholder:text-gray-300 focus:border-skillnet-accent focus:outline-none focus:ring-4 focus:ring-skillnet-accent/10"
+          autofocus
+        />
+        <div class="absolute right-6 top-1/2 -translate-y-1/2 font-medium text-gray-400">
+          {{ title().length }} / {{ maxChars }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="sticky bottom-0 flex h-16 items-center justify-end border-t border-gray-100 bg-white px-8">
+    <button
+      type="button"
+      (click)="continue()"
+      [disabled]="!title().trim() || loading()"
+      class="rounded-xl px-10 py-3 text-sm font-bold shadow-lg transition"
+      [class.bg-skillnet-accent]="title().trim() && !loading()"
+      [class.text-white]="title().trim() && !loading()"
+      [class.bg-gray-100]="!title().trim() || loading()"
+      [class.text-gray-400]="!title().trim() || loading()"
+      [class.cursor-not-allowed]="!title().trim() || loading()"
+    >
+      @if (loading()) {
+        <span class="flex items-center gap-2"><i class="ri-loader-4-line animate-spin"></i> Creando...</span>
+      } @else {
+        Continuar
+      }
+    </button>
+  </footer>
+</div>

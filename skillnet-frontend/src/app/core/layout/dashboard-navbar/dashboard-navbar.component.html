@@ -126,12 +126,100 @@
       </div>
 
       <!-- Carrito -->
-      <a href="#" [class]="iconBtnClass()" aria-label="Carrito">
-        <i class="ri-shopping-cart-2-line text-xl"></i>
-        @if (cartCount() > 0) {
-          <span [class]="badgeClass()">{{ cartCount() }}</span>
+      <div class="relative">
+        <button
+          type="button"
+          [class]="iconBtnClass()"
+          (click)="toggleCart($event)"
+          aria-label="Carrito"
+          [attr.aria-expanded]="showCart()"
+        >
+          <i class="ri-shopping-cart-line text-xl"></i>
+          @if (cartService.cartCount() > 0) {
+            <span
+              class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-skillnet-accent px-1 text-[10px] font-bold text-white"
+            >
+              {{ cartService.cartCount() }}
+            </span>
+          }
+        </button>
+
+        @if (showCart()) {
+          <div
+            #cartPanel
+            class="absolute right-0 top-full z-50 mt-2 w-80 animate-cartDropdown rounded-xl bg-white p-4 shadow-xl"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="mb-3 flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 class="text-sm font-bold text-skillnet-dark">
+                Tu carrito ({{ cartService.cartCount() }})
+              </h3>
+              <button
+                type="button"
+                (click)="closeCart()"
+                class="border-none bg-transparent p-0 text-gray-400 transition-colors hover:text-red-500"
+                aria-label="Cerrar carrito"
+              >
+                <i class="ri-close-line text-lg"></i>
+              </button>
+            </div>
+
+            <div class="mb-4 max-h-60 space-y-3 overflow-y-auto">
+              @if (cartService.cartCount() === 0) {
+                <p class="py-6 text-center text-sm text-skillnet-muted">Tu carrito está vacío</p>
+              } @else {
+                @for (item of cartService.cartItems(); track item.id) {
+                  <div class="flex items-start gap-3 border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                    @if (item.imageUrl) {
+                      <img
+                        [src]="item.imageUrl"
+                        [alt]="item.title"
+                        class="h-12 w-12 shrink-0 rounded-lg object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-skillnet-dark to-skillnet-accent"
+                      >
+                        <i class="ri-book-open-line text-lg text-white/90"></i>
+                      </div>
+                    }
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-semibold text-skillnet-dark">{{ item.title }}</p>
+                      <p class="text-xs font-bold text-skillnet-accent">
+                        {{ item.price | currency: 'USD' : 'symbol' : '1.2-2' }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="removeFromCart(item.id, $event)"
+                      class="shrink-0 border-none bg-transparent p-1 text-gray-400 transition-colors hover:text-red-500"
+                      aria-label="Quitar del carrito"
+                    >
+                      <i class="ri-close-line text-base"></i>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+
+            @if (cartService.cartCount() > 0) {
+              <div class="border-t border-gray-100 pt-3">
+                <div class="mb-4 flex items-center justify-between text-sm font-bold text-skillnet-dark">
+                  <span>Total</span>
+                  <span>{{ cartService.cartTotal() | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+                </div>
+                <a
+                  routerLink="/checkout"
+                  (click)="closeCart()"
+                  class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-skillnet-accent text-sm font-bold text-white no-underline transition-colors hover:bg-[#1040b0]"
+                >
+                  Ir al Checkout
+                </a>
+              </div>
+            }
+          </div>
         }
-      </a>
+      </div>
 
       <!-- Wishlist -->
       <a href="#" [class]="iconBtnClass()" aria-label="Lista de deseos">

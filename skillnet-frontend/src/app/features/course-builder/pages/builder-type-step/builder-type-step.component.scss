@@ -1,0 +1,23 @@
+.product-type-card {
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+
+  &:hover:not(.product-type-card--selected) {
+    border-color: #145bff;
+    transform: translateY(-5px);
+  }
+
+  &--selected {
+    border: 3px solid #145bff;
+    transform: scale(1.05);
+    box-shadow: 0 15px 30px rgba(20, 91, 255, 0.25);
+  }
+}
+
+.btn-next--active {
+  box-shadow: 0 4px 12px rgba(20, 91, 255, 0.35);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}

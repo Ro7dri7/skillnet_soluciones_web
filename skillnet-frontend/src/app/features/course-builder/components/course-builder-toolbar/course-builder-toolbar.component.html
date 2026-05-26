@@ -1,0 +1,33 @@
+<div class="border-b border-gray-200 bg-white">
+  <div class="mx-auto flex h-12 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <button
+      type="button"
+      (click)="onBack()"
+      class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-skillnet-dark transition-colors hover:border-skillnet-accent hover:text-skillnet-accent"
+    >
+      <i class="ri-arrow-left-line text-sm"></i>
+      Volver
+    </button>
+
+    @if (stepLabel()) {
+      <p class="hidden truncate text-xs font-medium text-skillnet-muted sm:block">
+        {{ stepLabel() }}
+      </p>
+    }
+
+    <button
+      type="button"
+      (click)="onSaveAndExit()"
+      class="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-skillnet-dark transition-colors hover:border-skillnet-accent hover:text-skillnet-accent"
+    >
+      Guardar y salir
+    </button>
+  </div>
+
+  <div class="h-1 w-full bg-gray-100">
+    <div
+      class="h-full bg-skillnet-accent transition-all duration-300"
+      [style.width.%]="progressPercent()"
+    ></div>
+  </div>
+</div>

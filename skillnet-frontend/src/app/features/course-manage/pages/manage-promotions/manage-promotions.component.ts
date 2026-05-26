@@ -1,0 +1,162 @@
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../../../core/services/auth.service';
+import { CourseService } from '../../../../core/services/course.service';
+import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
+import { ProducerCoursesService } from '../../../../core/services/producer-courses.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { CourseCouponResponse } from '../../../../shared/models/producer-course.model';
+import { ManageCouponModalComponent } from './manage-coupon-modal.component';
+
+@Component({
+  selector: 'app-manage-promotions',
+  standalone: true,
+  imports: [FormsModule, DatePipe, ManageCouponModalComponent],
+  templateUrl: './manage-promotions.component.html',
+  styleUrl: './manage-promotions.component.scss',
+})
+export class ManagePromotionsComponent implements OnInit, OnDestroy {
+  private readonly route = inject(ActivatedRoute);
+  private readonly courseService = inject(CourseService);
+  private readonly producerCourses = inject(ProducerCoursesService);
+  private readonly auth = inject(AuthService);
+  private readonly manageSave = inject(ManageLayoutSaveService);
+  private readonly toast = inject(ToastService);
+
+  readonly loading = signal(true);
+  readonly coupons = signal<CourseCouponResponse[]>([]);
+  readonly searchQuery = signal('');
+  readonly copied = signal(false);
+  readonly modalOpen = signal(false);
+  readonly savingCoupon = signal(false);
+
+  readonly courseSlug = signal('');
+  readonly referralLink = computed(() => {
+    const slug = this.courseSlug();
+    const userId = this.auth.getCurrentUser()?.id ?? 'REF';
+    if (!slug) {
+      return '';
+    }
+    return `${window.location.origin}/course/${slug}?referralCode=${userId}`;
+  });
+
+  readonly filteredCoupons = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    if (!q) {
+      return this.coupons();
+    }
+    return this.coupons().filter((c) => c.code.toLowerCase().includes(q));
+  });
+
+  private courseId: number | null = null;
+
+  ngOnInit(): void {
+    const idParam = this.route.parent?.snapshot.paramMap.get('id');
+    const id = idParam ? Number(idParam) : NaN;
+    if (Number.isNaN(id)) {
+      this.loading.set(false);
+      return;
+    }
+    this.courseId = id;
+    this.manageSave.registerSaveHandler(async () => {
+      this.toast.info('Los cupones se guardan al crearlos o eliminarlos.');
+    });
+    void this.load(id);
+  }
+
+  ngOnDestroy(): void {
+    this.manageSave.unregisterSaveHandler();
+  }
+
+  async copyReferralLink(): Promise<void> {
+    const link = this.referralLink();
+    if (!link) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      this.toast.error('No se pudo copiar el enlace.');
+    }
+  }
+
+  openModal(): void {
+    this.modalOpen.set(true);
+  }
+
+  closeModal(): void {
+    this.modalOpen.set(false);
+  }
+
+  async createCoupon(payload: { code: string; percentOff: number }): Promise<void> {
+    if (!this.courseId) {
+      return;
+    }
+    this.savingCoupon.set(true);
+    try {
+      const created = await firstValueFrom(
+        this.producerCourses.createCoupon(this.courseId, {
+          code: payload.code,
+          percentOff: payload.percentOff,
+        }),
+      );
+      this.coupons.update((list) => [created, ...list]);
+      this.modalOpen.set(false);
+      this.toast.success('Cupón creado');
+    } catch {
+      this.toast.error('No se pudo crear el cupón.');
+    } finally {
+      this.savingCoupon.set(false);
+    }
+  }
+
+  async deleteCoupon(id: number): Promise<void> {
+    if (!this.courseId || !confirm('¿Estás seguro de eliminar este cupón?')) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.producerCourses.deleteCoupon(this.courseId, id));
+      this.coupons.update((list) => list.filter((c) => c.id !== id));
+      this.toast.success('Cupón eliminado');
+    } catch {
+      this.toast.error('No se pudo eliminar el cupón.');
+    }
+  }
+
+  copyCouponLink(code: string): void {
+    const slug = this.courseSlug();
+    if (!slug) {
+      return;
+    }
+    const url = `${window.location.origin}/course/${slug}?couponCode=${code}`;
+    void navigator.clipboard.writeText(url);
+    this.toast.success('Enlace promocional copiado');
+  }
+
+  discountLabel(coupon: CourseCouponResponse): string {
+    if (coupon.percentOff > 0) {
+      return `-${coupon.percentOff}%`;
+    }
+    return `-$${coupon.amountOff}`;
+  }
+
+  private async load(id: number): Promise<void> {
+    try {
+      const [course, coupons] = await Promise.all([
+        firstValueFrom(this.courseService.getCourse(id)),
+        firstValueFrom(this.producerCourses.listCoupons(id)),
+      ]);
+      this.courseSlug.set(course.slug);
+      this.coupons.set(coupons);
+    } catch {
+      this.toast.error('No se pudieron cargar las promociones.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+}

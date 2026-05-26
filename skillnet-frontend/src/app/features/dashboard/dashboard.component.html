@@ -1,10 +1,12 @@
-@if (currentUser$ | async; as user) {
-  @if (isStudent(user)) {
-    <app-student-dashboard [user]="user" />
-  } @else {
-    <div class="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
-      <p class="font-medium text-skillnet-dark">Panel en construcción</p>
-      <p class="mt-1 text-sm">El dashboard para tu rol estará disponible pronto.</p>
-    </div>
-  }
+@let user = authService.currentUser();
+
+@if (user?.role === 'infoproductor') {
+  <app-producer-dashboard [user]="user!" />
+} @else if (user?.role === 'student') {
+  <app-student-dashboard [user]="user!" />
+} @else {
+  <div class="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
+    <p class="font-medium text-skillnet-dark">Panel en construcción</p>
+    <p class="mt-1 text-sm">El dashboard para tu rol estará disponible pronto.</p>
+  </div>
 }

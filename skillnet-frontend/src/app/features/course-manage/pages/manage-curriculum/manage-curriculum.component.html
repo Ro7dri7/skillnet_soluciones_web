@@ -1,0 +1,317 @@
+<div class="mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+  <nav class="mb-6 flex gap-6 border-b border-gray-200">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        (click)="setTab(tab.id)"
+        class="border-b-2 pb-3 text-sm font-semibold transition"
+        [class.border-skillnet-accent]="activeTab() === tab.id"
+        [class.text-skillnet-accent]="activeTab() === tab.id"
+        [class.border-transparent]="activeTab() !== tab.id"
+        [class.text-gray-500]="activeTab() !== tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  @if (activeTab() === 'content') {
+    @if (curriculum.errorMessage(); as err) {
+      <div
+        class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      >
+        <span>{{ err }}</span>
+        <button
+          type="button"
+          (click)="curriculum.clearError()"
+          class="shrink-0 text-xs font-semibold underline"
+        >
+          Cerrar
+        </button>
+      </div>
+    }
+
+    <!-- Crear módulo -->
+    @if (curriculum.showNewModuleForm()) {
+      <article class="mb-4 rounded-xl border-2 border-dashed border-yellow-300 bg-yellow-50 p-5">
+        <p class="mb-3 text-sm font-bold uppercase tracking-wide text-amber-900">
+          Nuevo módulo
+        </p>
+        <input
+          type="text"
+          class="mb-3 w-full rounded-lg border border-yellow-200 bg-white px-4 py-2.5 text-sm focus:border-skillnet-accent focus:outline-none focus:ring-2 focus:ring-skillnet-accent/20"
+          placeholder="Ej: Módulo 1 — Introducción"
+          [ngModel]="curriculum.newModuleTitle()"
+          (ngModelChange)="curriculum.newModuleTitle.set($event)"
+          (keyup.enter)="confirmNewModule()"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="confirmNewModule()"
+            [disabled]="curriculum.saving()"
+            class="rounded-lg bg-skillnet-accent px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {{ curriculum.saving() ? 'Guardando…' : 'Guardar módulo' }}
+          </button>
+          <button
+            type="button"
+            (click)="curriculum.cancelAddModule()"
+            [disabled]="curriculum.saving()"
+            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-skillnet-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </article>
+    } @else {
+      <button
+        type="button"
+        (click)="curriculum.startAddModule()"
+        [disabled]="curriculum.saving() || curriculum.loading()"
+        class="mb-6 w-full rounded-xl border-2 border-dashed border-yellow-300 bg-yellow-50 py-8 text-center transition hover:border-yellow-400 hover:bg-yellow-100/80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <span class="text-lg font-bold text-amber-800">+ Añadir nuevo módulo</span>
+      </button>
+    }
+
+    @if (curriculum.loading()) {
+      <p class="text-center text-sm text-skillnet-muted">Cargando temario…</p>
+    }
+
+    <!-- Acordeón de módulos -->
+    @for (module of curriculum.modules(); track module.id) {
+      <article class="mb-4 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <!-- Cabecera del módulo -->
+        <header
+          class="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3"
+        >
+          <button
+            type="button"
+            (click)="curriculum.toggleModule(module.id)"
+            class="text-skillnet-dark"
+          >
+            <i [class]="module.expanded ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+          </button>
+
+          @if (editingModuleId() === module.id) {
+            <input
+              type="text"
+              class="min-w-0 flex-1 rounded border border-gray-200 px-2 py-1 text-sm font-semibold"
+              [ngModel]="editingModuleTitle()"
+              (ngModelChange)="editingModuleTitle.set($event)"
+              (keyup.enter)="saveModuleTitle(module.id)"
+            />
+            <button
+              type="button"
+              (click)="saveModuleTitle(module.id)"
+              class="text-xs font-bold text-skillnet-accent"
+            >
+              OK
+            </button>
+          } @else {
+            <h3 class="min-w-0 flex-1 truncate text-sm font-bold text-skillnet-dark">
+              {{ module.title }}
+            </h3>
+            <button
+              type="button"
+              (click)="startEditModule(module.id, module.title)"
+              class="rounded p-1 text-gray-500 hover:bg-white hover:text-skillnet-accent"
+              title="Editar"
+            >
+              <i class="ri-edit-2-line"></i>
+            </button>
+          }
+
+          <button
+            type="button"
+            (click)="curriculum.removeModule(module.id)"
+            [disabled]="curriculum.saving()"
+            class="rounded p-1 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Eliminar módulo"
+          >
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </header>
+
+        @if (module.expanded) {
+          <div class="p-4">
+            <!-- Lista de lecciones -->
+            @if (module.lessons.length === 0) {
+              <p class="mb-3 text-xs text-skillnet-muted">Sin lecciones en este módulo.</p>
+            } @else {
+              <ul class="mb-4 space-y-2">
+                @for (lesson of module.lessons; track lesson.id) {
+                  <li>
+                    <button
+                      type="button"
+                      (click)="curriculum.selectLesson(module.id, lesson.id)"
+                      class="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition"
+                      [class.border-skillnet-accent]="curriculum.activeLessonId() === lesson.id"
+                      [class.bg-skillnet-accent/5]="curriculum.activeLessonId() === lesson.id"
+                      [class.border-gray-100]="curriculum.activeLessonId() !== lesson.id"
+                      [class.hover:bg-gray-50]="curriculum.activeLessonId() !== lesson.id"
+                    >
+                      <span
+                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-skillnet-dark"
+                      >
+                        <i [class]="lessonIcon(lesson.contentType)"></i>
+                      </span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-xs font-semibold text-skillnet-dark">
+                          {{ lesson.title }}
+                        </span>
+                        <span class="text-[10px] uppercase text-skillnet-muted">
+                          {{ contentTypeLabel(lesson.contentType) }}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); curriculum.removeLesson(module.id, lesson.id)"
+                        [disabled]="curriculum.saving()"
+                        class="shrink-0 rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <i class="ri-close-line"></i>
+                      </button>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
+            <!-- Añadir lección: píldoras (estilo Lernymart) -->
+            <div class="rounded-lg border border-gray-100 bg-slate-50 p-4">
+              <p class="mb-3 text-center text-xs font-black uppercase tracking-widest text-skillnet-dark">
+                Añadir bloque de contenido
+              </p>
+              <div class="mb-4 flex flex-wrap justify-center gap-2">
+                @for (block of blockTypes; track block.id) {
+                  <button
+                    type="button"
+                    (click)="selectBlockType(module.id, block.id)"
+                    class="rounded-full px-4 py-1.5 text-xs font-bold transition hover:scale-105"
+                    [class]="block.bgClass + ' ' + block.textClass"
+                    [class.ring-2]="curriculum.pendingLessonForm()?.moduleId === module.id && curriculum.pendingLessonForm()?.contentType === block.id"
+                    [class.ring-skillnet-dark]="curriculum.pendingLessonForm()?.moduleId === module.id && curriculum.pendingLessonForm()?.contentType === block.id"
+                  >
+                    {{ block.label }}
+                  </button>
+                }
+              </div>
+
+              <!-- Formulario inline (URL video, texto, quiz…) -->
+              @if (pendingFormForModule(module.id); as pending) {
+                <div
+                  class="mt-4 rounded-xl border border-dashed border-gray-300 bg-[#FFFBEB] p-4"
+                >
+                  <div class="mb-3 flex items-center gap-2">
+                    <i
+                      [class]="lessonIcon(pending.contentType) + ' text-lg text-skillnet-dark'"
+                    ></i>
+                    <span class="text-sm font-bold uppercase text-skillnet-dark">
+                      Configurar {{ contentTypeLabel(pending.contentType) }}
+                    </span>
+                  </div>
+
+                  <label class="mb-2 block text-xs font-semibold text-skillnet-muted">
+                    Título de la lección
+                  </label>
+                  <input
+                    type="text"
+                    class="mb-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                    [ngModel]="draftTitle()"
+                    (ngModelChange)="draftTitle.set($event)"
+                  />
+
+                  @if (pending.contentType === 'text') {
+                    <label class="mb-2 block text-xs font-semibold text-skillnet-muted">
+                      Contenido
+                    </label>
+                    <textarea
+                      rows="4"
+                      class="mb-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                      placeholder="Escribe el contenido aquí…"
+                      [ngModel]="draftTextContent()"
+                      (ngModelChange)="draftTextContent.set($event)"
+                    ></textarea>
+                  }
+
+                  @if (
+                    pending.contentType === 'video' ||
+                    pending.contentType === 'image' ||
+                    pending.contentType === 'pdf' ||
+                    pending.contentType === 'audio'
+                  ) {
+                    <label class="mb-2 block text-xs font-semibold text-skillnet-muted">
+                      {{
+                        pending.contentType === 'video'
+                          ? 'URL de YouTube, Vimeo, etc.'
+                          : 'URL del recurso'
+                      }}
+                    </label>
+                    <input
+                      type="url"
+                      class="mb-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium"
+                      placeholder="https://…"
+                      [ngModel]="draftResourceUrl()"
+                      (ngModelChange)="draftResourceUrl.set($event)"
+                    />
+                  }
+
+                  @if (pending.contentType === 'quiz') {
+                    <p class="mb-2 text-xs text-skillnet-muted">
+                      Este bloque activa la evaluación. Añade la primera pregunta aquí; podrás
+                      ampliar el cuestionario en la pestaña Evaluación.
+                    </p>
+                    <input
+                      type="text"
+                      class="mb-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                      placeholder="Primera pregunta del quizz"
+                      [ngModel]="draftQuizQuestion()"
+                      (ngModelChange)="draftQuizQuestion.set($event)"
+                    />
+                  }
+
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      (click)="savePendingLesson()"
+                      [disabled]="curriculum.saving()"
+                      class="rounded-lg bg-skillnet-accent px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {{ curriculum.saving() ? 'Guardando…' : 'Añadir lección' }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="curriculum.cancelPendingLesson()"
+                      [disabled]="curriculum.saving()"
+                      class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  (click)="curriculum.startAddLesson(module.id)"
+                  class="mt-2 w-full rounded-lg border border-dashed border-gray-300 py-2 text-xs font-semibold text-skillnet-accent hover:bg-white"
+                >
+                  + Añadir lección
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </article>
+    }
+  } @else {
+    <article
+      class="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-skillnet-muted"
+    >
+      La pestaña «{{ activeTab() === 'evaluation' ? 'Evaluación' : 'Recursos' }}» estará disponible
+      próximamente.
+    </article>
+  }
+</div>

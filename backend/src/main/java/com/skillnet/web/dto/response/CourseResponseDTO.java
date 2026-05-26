@@ -20,6 +20,8 @@ public class CourseResponseDTO {
     private int durationHours;
     private int durationMinutes;
     private String requirements;
+    private String welcomeMessage;
+    private String congratulationsMessage;
     private String category;
     private String subcategory;
     private String level;

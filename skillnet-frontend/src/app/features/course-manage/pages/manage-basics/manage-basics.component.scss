@@ -1,0 +1,17 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.manage-basics-scroll {
+  scrollbar-gutter: stable;
+}
+
+.manage-basics-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.manage-basics-scroll::-webkit-scrollbar-thumb {
+  background: rgb(203 213 225);
+  border-radius: 4px;
+}

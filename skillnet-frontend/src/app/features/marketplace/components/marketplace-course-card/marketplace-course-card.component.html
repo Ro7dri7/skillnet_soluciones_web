@@ -93,11 +93,19 @@
       </button>
       <button
         type="button"
-        (click)="onBuy($event)"
-        class="flex h-[34px] w-[34px] items-center justify-center rounded-lg border-[1.2px] border-skillnet-accent text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white"
-        aria-label="Agregar al carrito"
+        (click)="onToggleCart($event)"
+        [class]="
+          inCart()
+            ? 'flex h-[34px] w-[34px] items-center justify-center rounded-lg border-[1.2px] border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white'
+            : 'flex h-[34px] w-[34px] items-center justify-center rounded-lg border-[1.2px] border-skillnet-accent text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white'
+        "
+        [attr.aria-label]="inCart() ? 'Quitar del carrito' : 'Agregar al carrito'"
       >
-        <i class="ri-shopping-cart-line text-base"></i>
+        @if (inCart()) {
+          <i class="ri-delete-bin-line text-base"></i>
+        } @else {
+          <i class="ri-shopping-cart-line text-base"></i>
+        }
       </button>
     </div>
   </div>
