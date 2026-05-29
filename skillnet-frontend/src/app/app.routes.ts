@@ -224,6 +224,15 @@ export const routes: Routes = [
             (m) => m.CheckoutComponent,
           ),
       },
+      {
+        path: 'mis-cursos',
+        canActivate: [dashboardRoleGuard],
+        data: { requiredRole: 'student' },
+        loadComponent: () =>
+          import('./features/student/pages/my-products/my-products.component').then(
+            (m) => m.MyProductsComponent,
+          ),
+      },
 
       {
         path: 'courses',

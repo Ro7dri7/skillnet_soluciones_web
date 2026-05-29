@@ -58,7 +58,7 @@ export class DashboardSidebarComponent {
     if (role === 'student') {
       return [
         { label: 'Panel de Control', icon: 'ri-dashboard-line', route: '/dashboard/estudiante' },
-        { label: 'Mis Cursos', icon: 'ri-book-open-line', href: '#' },
+        { label: 'Mis Cursos', icon: 'ri-book-open-line', route: '/mis-cursos' },
         { label: 'Explorar Catálogo', icon: 'ri-compass-3-line', route: '/marketplace' },
         { label: 'Certificados', icon: 'ri-award-line', href: '#' },
       ];
@@ -70,7 +70,7 @@ export class DashboardSidebarComponent {
           icon: 'ri-dashboard-line',
           route: '/dashboard/infoproductor',
         },
-        { label: 'Mis Cursos', icon: 'ri-book-open-line', route: '/courses' },
+        { label: 'Mis Infoproductos', icon: 'ri-book-open-line', route: '/courses' },
         { label: 'Crear Curso', icon: 'ri-add-circle-line', route: '/infoproductor/courses/new/type' },
         { label: 'Mis Ventas', icon: 'ri-line-chart-line', href: '#' },
         { label: 'Alumnos', icon: 'ri-group-line', href: '#' },

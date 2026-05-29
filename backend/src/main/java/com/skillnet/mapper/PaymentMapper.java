@@ -182,9 +182,6 @@ public class PaymentMapper {
         if (payment.getMercadopagoPaymentId() != null) {
             return payment.getMercadopagoPaymentId();
         }
-        if (payment.getCulqiChargeId() != null) {
-            return payment.getCulqiChargeId();
-        }
         if (payment.getDlocalPaymentId() != null) {
             return payment.getDlocalPaymentId();
         }

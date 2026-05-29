@@ -72,12 +72,6 @@ public class Payment {
     @Column(name = "mercadopago_payment_id", unique = true, length = 255)
     private String mercadopagoPaymentId;
 
-    @Column(name = "culqi_charge_id", unique = true, length = 255)
-    private String culqiChargeId;
-
-    @Column(name = "culqi_order_id", length = 255)
-    private String culqiOrderId;
-
     @Column(name = "dlocal_checkout_id", unique = true, length = 255)
     private String dlocalCheckoutId;
 
@@ -102,6 +96,10 @@ public class Payment {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "izipay_payload", columnDefinition = "jsonb")
     private JsonNode izipayPayload;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "gateway_response", columnDefinition = "jsonb")
+    private JsonNode gatewayResponse;
 
     @Column(name = "status", length = 20, nullable = false)
     private String status = "PENDING";
@@ -131,20 +129,20 @@ public class Payment {
     @JoinColumn(name = "coupon_id")
     private Coupon coupon;
 
-    @Column(name = "company_name", length = 255, nullable = false)
-    private String companyName = "InterCert Latam";
+    @Column(name = "company_name", length = 255)
+    private String companyName;
 
-    @Column(name = "company_rut", length = 12, nullable = false)
-    private String companyRut = "76.123.456-7";
+    @Column(name = "company_rut", length = 12)
+    private String companyRut;
 
-    @Column(name = "company_address", columnDefinition = "text", nullable = false)
-    private String companyAddress = "Av. Principal 123, Santiago, Chile";
+    @Column(name = "company_address", columnDefinition = "text")
+    private String companyAddress;
 
-    @Column(name = "company_phone", length = 20, nullable = false)
-    private String companyPhone = "+56 2 2345 6789";
+    @Column(name = "company_phone", length = 20)
+    private String companyPhone;
 
-    @Column(name = "company_email", nullable = false)
-    private String companyEmail = "info@intercertlatam.net";
+    @Column(name = "company_email")
+    private String companyEmail;
 
     @Column(name = "document_sent", nullable = false)
     private boolean documentSent;

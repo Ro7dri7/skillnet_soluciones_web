@@ -56,22 +56,17 @@ public class PaymentRequestDTO {
     @Size(max = 20)
     private String clientPhone;
 
-    @NotBlank(message = "companyName is required")
     @Size(max = 255)
     private String companyName;
 
-    @NotBlank(message = "companyRut is required")
     @Size(max = 12)
     private String companyRut;
 
-    @NotBlank(message = "companyAddress is required")
     private String companyAddress;
 
-    @NotBlank(message = "companyPhone is required")
     @Size(max = 20)
     private String companyPhone;
 
-    @NotBlank(message = "companyEmail is required")
     @Email(message = "companyEmail must be valid")
     private String companyEmail;
 

@@ -1,0 +1,102 @@
+<div class="min-h-full bg-gray-50 p-6 md:p-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="mb-8">
+      <h1 class="text-2xl font-bold tracking-tight text-skillnet-dark md:text-3xl">Mis Cursos</h1>
+      <p class="mt-1 text-sm text-skillnet-muted">
+        Biblioteca de cursos que has adquirido. Continúa aprendiendo cuando quieras.
+      </p>
+    </header>
+
+    @if (loading()) {
+      <div class="flex items-center justify-center py-24">
+        <div
+          class="h-10 w-10 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"
+        ></div>
+      </div>
+    } @else if (error()) {
+      <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        {{ error() }}
+      </div>
+    } @else if (courses().length === 0) {
+      <div
+        class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-20 text-center"
+      >
+        <div
+          class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-skillnet-accent/10 text-skillnet-accent"
+        >
+          <i class="ri-book-open-line text-3xl"></i>
+        </div>
+        <h2 class="text-lg font-bold text-skillnet-dark">Aún no has comprado ningún curso</h2>
+        <p class="mt-2 max-w-md text-sm text-skillnet-muted">
+          Explora el marketplace y encuentra contenido para impulsar tu carrera.
+        </p>
+        <a
+          routerLink="/marketplace"
+          class="mt-6 inline-flex items-center gap-2 rounded-lg bg-skillnet-accent px-6 py-3 text-sm font-bold text-white hover:bg-[#1040b0]"
+        >
+          <i class="ri-compass-3-line"></i>
+          Explorar catálogo
+        </a>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        @for (course of courses(); track course.courseId) {
+          <article
+            class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+          >
+            <div class="relative aspect-video bg-gray-100">
+              @if (course.thumbnailUrl) {
+                <img
+                  [src]="course.thumbnailUrl"
+                  [alt]="course.title"
+                  class="h-full w-full object-cover"
+                />
+              } @else {
+                <div
+                  class="flex h-full w-full items-center justify-center bg-gradient-to-br from-skillnet-dark to-skillnet-accent/80 text-white/80"
+                >
+                  <i class="ri-play-circle-line text-5xl"></i>
+                </div>
+              }
+            </div>
+
+            <div class="space-y-4 p-5">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-skillnet-muted">
+                  {{ course.authorName }}
+                </p>
+                <h3 class="mt-1 line-clamp-2 text-lg font-bold text-skillnet-dark">
+                  {{ course.title }}
+                </h3>
+                <p class="mt-1 text-xs text-skillnet-muted">
+                  Comprado el {{ course.enrolledAt | date: 'mediumDate' }}
+                </p>
+              </div>
+
+              <div>
+                <div class="mb-1.5 flex items-center justify-between text-xs font-semibold">
+                  <span class="text-skillnet-muted">Progreso</span>
+                  <span class="text-skillnet-accent">{{ course.progressPercentage }}%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    class="h-full rounded-full bg-skillnet-accent transition-all"
+                    [style.width.%]="course.progressPercentage"
+                  ></div>
+                </div>
+              </div>
+
+              <a
+                [routerLink]="courseRoute(course.slug)"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-skillnet-dark px-4 py-2.5 text-sm font-bold text-white transition hover:bg-skillnet-dark/90"
+              >
+                <i class="ri-play-fill"></i>
+                Ir al curso
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</div>

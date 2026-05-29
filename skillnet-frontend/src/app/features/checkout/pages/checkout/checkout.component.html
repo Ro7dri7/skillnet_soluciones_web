@@ -166,7 +166,9 @@
 
           <h2 class="mb-1 text-lg font-bold text-skillnet-dark">Método de pago</h2>
 
-          <p class="mb-6 text-sm text-skillnet-muted">Simulación de tarjeta (integración Culqi en fase posterior).</p>
+          <p class="mb-6 text-sm text-skillnet-muted">
+            Pago seguro con Stripe Test Mode. Usa la tarjeta <strong>4242 4242 4242 4242</strong>.
+          </p>
 
 
 
@@ -220,95 +222,83 @@
 
 
 
-          @if (paymentMethod() === 'card') {
+          <div class="space-y-4" [class.hidden]="paymentMethod() !== 'card'">
 
-            <form [formGroup]="cardForm" class="space-y-4">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
-              <div>
+                <div class="md:col-span-2">
 
-                <label for="cardNumber" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+                  <label class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
 
-                  Número de tarjeta
-
-                </label>
-
-                <input
-
-                  id="cardNumber"
-
-                  type="text"
-
-                  formControlName="cardNumber"
-
-                  maxlength="19"
-
-                  placeholder="1234 5678 9012 3456"
-
-                  class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
-
-                />
-
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-
-                <div>
-
-                  <label for="expiry" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
-
-                    Exp.
+                    Número de tarjeta
 
                   </label>
 
-                  <input
+                  <div
 
-                    id="expiry"
+                    #stripeCardNumberMount
 
-                    type="text"
+                    class="stripe-field rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-skillnet-accent focus-within:ring-2 focus-within:ring-skillnet-accent/20"
 
-                    formControlName="expiry"
-
-                    maxlength="5"
-
-                    placeholder="MM/AA"
-
-                    class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
-
-                  />
+                  ></div>
 
                 </div>
 
                 <div>
 
-                  <label for="cvv" class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
+                  <label class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
 
-                    CVV
+                    Expiración (MM/AA)
 
                   </label>
 
-                  <input
+                  <div
 
-                    id="cvv"
+                    #stripeCardExpiryMount
 
-                    type="text"
+                    class="stripe-field rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-skillnet-accent focus-within:ring-2 focus-within:ring-skillnet-accent/20"
 
-                    formControlName="cvv"
+                  ></div>
 
-                    maxlength="4"
+                </div>
 
-                    placeholder="123"
+                <div>
 
-                    class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
+                  <label class="mb-1.5 block text-xs font-semibold uppercase text-gray-500">
 
-                  />
+                    CVC
+
+                  </label>
+
+                  <div
+
+                    #stripeCardCvcMount
+
+                    class="stripe-field rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-skillnet-accent focus-within:ring-2 focus-within:ring-skillnet-accent/20"
+
+                  ></div>
 
                 </div>
 
               </div>
 
-            </form>
+              @if (!stripeReady()) {
 
-          } @else {
+                <p class="text-xs text-skillnet-muted">Cargando formulario seguro de Stripe…</p>
+
+              }
+
+              <div class="rounded-lg border border-skillnet-accent/20 bg-skillnet-accent/5 p-3 text-xs text-skillnet-muted">
+
+                <p class="font-semibold text-skillnet-dark">Tarjetas de prueba Stripe</p>
+
+                <p class="mt-1">Éxito: 4242 4242 4242 4242 · Exp: cualquier fecha futura · CVC: cualquier 3 dígitos</p>
+
+              </div>
+
+            </div>
+
+          <div [class.hidden]="paymentMethod() !== 'yape'">
 
             <div class="rounded-lg border border-skillnet-accent/30 bg-skillnet-accent/5 p-4 text-sm text-skillnet-muted">
 
@@ -316,19 +306,45 @@
 
             </div>
 
-          }
+          </div>
 
         </div>
 
 
 
-        @if (!isFormValid()) {
+        @if (errorMessage()) {
+
+          <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+
+            <i class="ri-error-warning-fill text-lg"></i>
+
+            {{ errorMessage() }}
+
+          </div>
+
+        }
+
+
+
+        @if (!personalFormValid() && missingBillingHint().length > 0) {
 
           <div class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
 
             <i class="ri-information-fill text-lg"></i>
 
-            Completa tu información para habilitar el pago.
+            Completa: {{ missingBillingHint().join(', ') }}.
+
+          </div>
+
+        }
+
+        @if (personalFormValid() && paymentMethod() === 'card' && stripeReady() && !stripeCardComplete()) {
+
+          <div class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+
+            <i class="ri-information-fill text-lg"></i>
+
+            Ingresa los datos de tu tarjeta para habilitar el pago.
 
           </div>
 
@@ -484,13 +500,13 @@
 
             (click)="completePayment()"
 
-            [disabled]="!isFormValid() || isProcessing()"
+            [disabled]="!canSubmitPayment()"
 
             class="checkout-pay-btn mt-6 w-full rounded-lg bg-skillnet-accent py-3 text-sm font-bold text-white transition hover:bg-[#1040b0] disabled:cursor-not-allowed disabled:opacity-50"
 
           >
 
-            @if (isProcessing()) {
+            @if (isLoading()) {
 
               <span class="inline-flex items-center justify-center gap-2">
 
@@ -514,7 +530,7 @@
 
             <i class="ri-lock-line"></i>
 
-            Pago encriptado y seguro
+            Procesado de forma segura por Stripe
 
           </p>
 

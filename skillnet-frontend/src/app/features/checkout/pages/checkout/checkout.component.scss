@@ -5,6 +5,15 @@
   }
 }
 
+#stripe-card-element,
+.stripe-field {
+  min-height: 2.75rem;
+}
+
+.stripe-field iframe {
+  min-height: 1.25rem;
+}
+
 .payment-method-item {
   display: flex;
   align-items: center;

@@ -38,3 +38,7 @@ skillnet:
     s3-access-key: ${AWS_ACCESS_KEY_ID:}
     s3-secret-key: ${AWS_SECRET_ACCESS_KEY:}
     s3-public-base-url: ${SKILLNET_S3_PUBLIC_BASE_URL:}
+
+stripe:
+  api:
+    secretKey: ${STRIPE_SECRET_KEY:}
