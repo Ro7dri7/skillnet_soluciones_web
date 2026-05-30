@@ -107,14 +107,6 @@ export class ProducerDashboardComponent {
     this.buildCategoryChart(this.analyticsData() ?? null),
   );
 
-  readonly showEmptyProducerHint = computed(() => {
-    const data = this.analyticsData();
-    if (!data) {
-      return false;
-    }
-    return data.kpis.publishedCourses === 0 && data.kpis.coursesSold === 0;
-  });
-
   onFiltersChange(): void {
     // selectedYear / selectedMonth disparan la recarga vía combineLatest + switchMap.
   }

@@ -2,7 +2,8 @@ package com.skillnet.domain;
 
 public enum CourseStatus {
     DRAFT("draft"),
-    PUBLISHED("published");
+    PUBLISHED("published"),
+    DELETED("deleted");
 
     private final String dbValue;
 

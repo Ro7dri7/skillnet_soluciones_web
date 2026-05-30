@@ -43,15 +43,6 @@
       <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</div>
     }
 
-    @if (showEmptyProducerHint()) {
-      <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        No hay ventas ni cursos publicados para esta cuenta. Publica un curso como infoproductor o ejecuta
-        <code class="rounded bg-amber-100 px-1">python backend/scripts/seed_demo_analytics.py</code>
-        para datos demo en local. Los ingresos del gráfico dependen del mes/año seleccionado; el KPI de cursos
-        vendidos muestra el total acumulado.
-      </div>
-    }
-
     @if (isLoading()) {
       <div
         class="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-gray-100 bg-white p-8 shadow-sm"

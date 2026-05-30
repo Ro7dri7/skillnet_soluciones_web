@@ -50,14 +50,6 @@
       <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</div>
     }
 
-    @if (showEmptyAccountHint()) {
-      <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Esta cuenta no tiene cursos comprados todavía. Los KPIs se alimentan de la base de datos local:
-        inicia sesión con la cuenta que completó el checkout (por ejemplo Google con la que compraste) o compra un
-        curso desde el marketplace. El filtro de mes solo afecta al gráfico de compras del periodo.
-      </div>
-    }
-
     @if (isLoading()) {
       <div class="flex min-h-[320px] items-center justify-center rounded-xl border border-slate-200 bg-white">
         <span class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"></span>
@@ -70,6 +62,13 @@
         <article
           class="group relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-xl bg-skillnet-dark p-8 text-white shadow-card"
         >
+          @if (featured.thumbnailUrl) {
+            <img
+              [src]="featured.thumbnailUrl"
+              [alt]="featured.title"
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          }
           <div
             class="absolute inset-0 bg-gradient-to-br from-skillnet-dark via-skillnet-accent/40 to-skillnet-cyan/30 opacity-90"
           ></div>
@@ -173,9 +172,17 @@
                   class="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"
                 >
                   <div class="relative h-40 overflow-hidden">
-                    <div
-                      class="h-full w-full bg-gradient-to-br from-skillnet-dark via-skillnet-accent/80 to-skillnet-cyan/60 transition-transform duration-500 group-hover:scale-110"
-                    ></div>
+                    @if (course.thumbnailUrl) {
+                      <img
+                        [src]="course.thumbnailUrl"
+                        [alt]="course.title"
+                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    } @else {
+                      <div
+                        class="h-full w-full bg-gradient-to-br from-skillnet-dark via-skillnet-accent/80 to-skillnet-cyan/60 transition-transform duration-500 group-hover:scale-110"
+                      ></div>
+                    }
                     <span
                       class="absolute left-3 top-3 rounded bg-white/90 px-2 py-1 text-[10px] font-bold uppercase text-skillnet-dark backdrop-blur"
                     >
@@ -196,10 +203,17 @@
                         [style.width.%]="course.progress"
                       ></div>
                     </div>
-                    <div class="flex justify-between text-[11px] font-bold text-skillnet-muted">
+                    <div class="mb-4 flex justify-between text-[11px] font-bold text-skillnet-muted">
                       <span>{{ course.progress }}% Completado</span>
                       <span>{{ course.lessonsDone }}/{{ course.lessonsTotal }} Lecciones</span>
                     </div>
+                    <a
+                      [routerLink]="courseLearnLink(course)"
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-skillnet-dark px-4 py-2.5 text-sm font-bold text-white transition hover:bg-skillnet-dark/90"
+                    >
+                      <i class="ri-play-fill"></i>
+                      {{ learningActionLabel(course.progress) }}
+                    </a>
                   </div>
                 </article>
               }

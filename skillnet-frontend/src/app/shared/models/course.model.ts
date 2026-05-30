@@ -24,6 +24,10 @@ export interface CourseResponse {
   affiliatePolicy?: string;
   welcomeMessage?: string | null;
   congratulationsMessage?: string | null;
+  courseFormat?: string | null;
+  moduleCount?: number;
+  lessonsCount?: number;
+  enrollmentCount?: number;
 }
 
 export interface CourseRequest {

@@ -20,6 +20,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Service
 public class MediaStorageService {
 
+    public static final String MEDIA_FILES_PREFIX = "/api/v1/media/files/";
+
     private final MediaProperties properties;
     private final AwsProperties awsProperties;
     private final ObjectProvider<S3Client> s3ClientProvider;
@@ -53,9 +55,8 @@ public class MediaStorageService {
         Path target = resolveLocalPath(storageKey);
         Files.createDirectories(target.getParent());
         Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
-        String base = properties.getPublicBaseUrl().replaceAll("/$", "");
-        String publicUrl = base + "/" + storageKey;
-        return new StoredMedia(storageKey, publicUrl);
+        // Ruta relativa: el front (o nginx) proxyea /api/v1/media → backend (como Lernymart /media/).
+        return new StoredMedia(storageKey, mediaFilesPath(storageKey));
     }
 
     private StoredMedia storeToS3(String storageKey, String contentType, InputStream input, long size) {
@@ -123,5 +124,97 @@ public class MediaStorageService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Solo se permiten archivos de vídeo para el tráiler.");
         }
+    }
+
+    public void validateResourceFile(String contentType, long size) {
+        if (size <= 0 || size > 50 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El archivo debe pesar menos de 50 MB.");
+        }
+        if (contentType == null) {
+            return;
+        }
+        String lower = contentType.toLowerCase(Locale.ROOT);
+        if (!lower.startsWith("application/pdf")
+                && !lower.startsWith("video/")
+                && !lower.startsWith("image/")
+                && !lower.startsWith("audio/")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Formato no permitido. Usa PDF, imagen, audio o vídeo.");
+        }
+    }
+
+    /** URL accesible por el cliente (relativa en local, absoluta en S3). */
+    public String resolvePublicUrl(String storageKey) {
+        if (storageKey == null || storageKey.isBlank()) {
+            return null;
+        }
+        if (properties.isS3Enabled()) {
+            String publicBase = properties.getS3PublicBaseUrl();
+            if (publicBase == null || publicBase.isBlank()) {
+                String bucket = resolveS3Bucket();
+                String region = awsProperties.getRegion();
+                if (region == null || region.isBlank()) {
+                    region = properties.getS3Region();
+                }
+                publicBase = "https://" + bucket + ".s3." + region + ".amazonaws.com";
+            }
+            return publicBase.replaceAll("/$", "") + "/" + storageKey;
+        }
+        return mediaFilesPath(storageKey);
+    }
+
+    public String mediaFilesPath(String storageKey) {
+        return MEDIA_FILES_PREFIX + storageKey;
+    }
+
+    /** Extrae la clave S3/local desde una URL absoluta, relativa o clave cruda. */
+    public String extractStorageKey(String urlOrKey) {
+        if (urlOrKey == null || urlOrKey.isBlank()) {
+            return null;
+        }
+        String trimmed = urlOrKey.trim();
+        if (!trimmed.contains("://") && trimmed.startsWith("courses/")) {
+            return trimmed;
+        }
+        int markerIdx = trimmed.indexOf(MEDIA_FILES_PREFIX);
+        if (markerIdx >= 0) {
+            return trimmed.substring(markerIdx + MEDIA_FILES_PREFIX.length());
+        }
+        String legacyMarker = "/media/files/";
+        int legacyIdx = trimmed.indexOf(legacyMarker);
+        if (legacyIdx >= 0) {
+            return trimmed.substring(legacyIdx + legacyMarker.length());
+        }
+        return null;
+    }
+
+    /**
+     * Normaliza URLs guardadas en BD (p. ej. http://127.0.0.1:8080/...) a rutas relativas en local
+     * o URL pública de S3, para que estudiantes no dependan del host del infoproductor.
+     */
+    public String resolveMediaAccessUrl(String urlOrKey) {
+        if (urlOrKey == null || urlOrKey.isBlank()) {
+            return null;
+        }
+        String trimmed = urlOrKey.trim();
+        String key = extractStorageKey(trimmed);
+        if (key != null) {
+            return resolvePublicUrl(key);
+        }
+        return trimmed;
+    }
+
+    public String resolveCourseImageUrl(String imageUrl, String imageFile) {
+        if (imageFile != null && !imageFile.isBlank()) {
+            return resolvePublicUrl(imageFile);
+        }
+        return resolveMediaAccessUrl(imageUrl);
+    }
+
+    public String resolveCourseVideoUrl(String videoUrl, String videoFile) {
+        if (videoFile != null && !videoFile.isBlank()) {
+            return resolvePublicUrl(videoFile);
+        }
+        return resolveMediaAccessUrl(videoUrl);
     }
 }

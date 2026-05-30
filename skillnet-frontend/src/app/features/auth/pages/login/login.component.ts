@@ -58,6 +58,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
 
     if (this.googleSignInEnabled) {
+      void this.socialAuthService.signOut(true).catch(() => undefined);
       this.authStateSub = this.socialAuthService.authState
         .pipe(filter((user): user is SocialUser => !!user?.idToken))
         .subscribe((user) => this.handleGoogleAuth(user));
@@ -93,7 +94,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private handleGoogleAuth(user: SocialUser): void {
-    if (this.googleLoginInProgress || !user.idToken) {
+    if (this.googleLoginInProgress || !user.idToken || this.authService.isLoggedIn()) {
       return;
     }
 

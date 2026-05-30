@@ -36,9 +36,9 @@
           (pressed)="onSave()"
         />
       }
-      @if (courseId()) {
+      @if (courseManageBasicsLink(); as basicsLink) {
         <a
-          [routerLink]="['/instructor/courses', courseId(), 'manage', 'basics']"
+          [routerLink]="basicsLink"
           class="flex h-10 w-10 items-center justify-center rounded border border-white/20 text-white/80 transition-all hover:bg-white/5 hover:text-white"
           title="Configuración del curso"
         >

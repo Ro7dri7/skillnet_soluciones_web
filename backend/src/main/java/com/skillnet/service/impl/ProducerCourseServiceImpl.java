@@ -182,8 +182,13 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
                 course.setVideoFile(stored.storageKey());
                 course.setVideoUrl(stored.publicUrl());
             }
+            case "resource" -> {
+                mediaStorageService.validateResourceFile(contentType, size);
+                stored = mediaStorageService.storeCourseFile(
+                        courseId, "resources", originalFilename, contentType, input, size);
+            }
             default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "kind debe ser cover o promo_video");
+                    HttpStatus.BAD_REQUEST, "kind debe ser cover, promo_video o resource");
         }
 
         courseRepository.save(course);
@@ -377,10 +382,12 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         ProducerCourseSummaryDTO dto = new ProducerCourseSummaryDTO();
         dto.setId(course.getId());
         dto.setTitle(course.getTitle());
+        dto.setSlug(course.getSlug());
         dto.setCourseFormat(course.getCourseFormat());
         dto.setStatus(course.getStatus());
         dto.setCreatedAt(course.getCreatedAt());
-        dto.setImageUrl(course.getImageUrl());
+        dto.setImageUrl(
+                mediaStorageService.resolveCourseImageUrl(course.getImageUrl(), course.getImageFile()));
         return dto;
     }
 

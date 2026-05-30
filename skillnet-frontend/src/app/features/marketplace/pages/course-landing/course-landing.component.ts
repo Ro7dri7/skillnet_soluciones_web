@@ -1,9 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
 import { StudentService } from '../../../../core/services/student.service';
 import { CourseResponse } from '../../../../shared/models/course.model';
+import { courseCoverUrl } from '../../../../shared/utils/marketplace-course.util';
 import {
   courseLearnPath,
   courseSlugLookupCandidates,
@@ -26,6 +27,8 @@ export class CourseLandingComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly notFound = signal(false);
   readonly isEnrolled = signal(false);
+
+  readonly coverUrl = computed(() => courseCoverUrl(this.course()));
 
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug');

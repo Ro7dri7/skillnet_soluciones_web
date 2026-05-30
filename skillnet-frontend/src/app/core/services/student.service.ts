@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ContentBlockDTO } from '../../shared/models/curriculum.model';
+import { ContentBlockDTO, QuizData } from '../../shared/models/curriculum.model';
 
 export interface MyCourse {
   courseId: number;
@@ -21,6 +21,7 @@ export interface LearnLesson {
   resourceUrl: string;
   textContent: string;
   orderIndex: number;
+  quizData?: QuizData;
   blocks?: ContentBlockDTO[];
 }
 
@@ -38,6 +39,15 @@ export interface CourseLearnPage {
   welcomeMessage: string | null;
   congratulationsMessage: string | null;
   modules: LearnModule[];
+  progressPercentage?: number;
+  completedLessonIds?: number[];
+}
+
+export interface LessonProgressResult {
+  lessonId: number;
+  completed: boolean;
+  progressPercentage: number;
+  courseCompleted: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +61,13 @@ export class StudentService {
   getLearnPage(slug: string): Observable<CourseLearnPage> {
     return this.http.get<CourseLearnPage>(
       `${environment.apiUrl}/student/courses/${encodeURIComponent(slug)}/learn`,
+    );
+  }
+
+  markLessonComplete(slug: string, lessonId: number): Observable<LessonProgressResult> {
+    return this.http.post<LessonProgressResult>(
+      `${environment.apiUrl}/student/courses/${encodeURIComponent(slug)}/lessons/${lessonId}/progress`,
+      { completed: true },
     );
   }
 }

@@ -4,13 +4,15 @@
   <!-- Izquierda: logo, categorías, búsqueda -->
   <div class="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
     <a
-      [routerLink]="isAdmin() ? '/admin' : '/marketplace'"
+      routerLink="/marketplace"
       class="flex shrink-0 items-center gap-2"
-      [title]="isAdmin() ? 'Panel Admin' : 'Ir al marketplace'"
+      title="Ir al marketplace"
     >
       <img
         src="/assets/images/logo_skillnet.png"
         alt="Skillnet"
+        width="152"
+        height="38"
         class="h-[38px] w-auto object-contain"
         onerror="this.onerror=null;this.src='assets/images/avatar-placeholder.png'"
       />
@@ -23,7 +25,7 @@
       }
     </a>
 
-    @if (!isAdmin()) {
+    @if (!showAdminChrome()) {
     <div class="relative hidden md:block">
       <button
         type="button"
@@ -64,7 +66,7 @@
             id="navbar-search"
             type="search"
             name="search"
-            [placeholder]="isAdmin() ? 'Buscar usuarios, cursos, transacciones…' : '¿Qué quieres aprender hoy?'"
+            [placeholder]="showAdminChrome() ? 'Buscar usuarios, cursos, transacciones…' : '¿Qué quieres aprender hoy?'"
             autocomplete="off"
             class="h-full w-full rounded-3xl border-none bg-[#f3f4f6] py-0 pl-11 pr-4 text-[15px] font-medium text-[#111] outline-none transition-colors placeholder:text-gray-500 focus:bg-white"
           />
@@ -93,7 +95,7 @@
 
   <!-- Derecha: acciones -->
   <div class="flex items-center gap-4 sm:gap-5">
-    @if (isInfoproductor() && !isAdmin()) {
+    @if (isInfoproductor() && !showAdminChrome()) {
       <button
         type="button"
         class="hidden rounded-lg border-none bg-[linear-gradient(180deg,#89ceff_0%,#ffffff_100%)] px-3.5 py-1.5 text-[13px] font-bold text-black transition-opacity hover:opacity-90 sm:inline-flex"
@@ -103,7 +105,7 @@
     }
 
     <div class="flex items-center gap-3 sm:gap-4">
-      @if (!isAdmin()) {
+      @if (!showAdminChrome()) {
       <!-- Notificaciones -->
       <div class="relative">
         <button

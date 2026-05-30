@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.Lesson;
@@ -14,6 +15,7 @@ import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.SectionRepository;
 import com.skillnet.service.CurriculumService;
+import com.skillnet.service.media.MediaStorageService;
 import com.skillnet.web.dto.request.CreateCurriculumLessonRequestDTO;
 import com.skillnet.web.dto.request.CreateSectionRequestDTO;
 import com.skillnet.web.dto.request.LessonUpdateRequestDTO;
@@ -41,6 +43,7 @@ public class CurriculumServiceImpl implements CurriculumService {
     private final LessonRepository lessonRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ObjectMapper objectMapper;
+    private final MediaStorageService mediaStorageService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -50,12 +53,14 @@ public class CurriculumServiceImpl implements CurriculumService {
             SectionRepository sectionRepository,
             LessonRepository lessonRepository,
             EnrollmentRepository enrollmentRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            MediaStorageService mediaStorageService) {
         this.courseRepository = courseRepository;
         this.sectionRepository = sectionRepository;
         this.lessonRepository = lessonRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.objectMapper = objectMapper;
+        this.mediaStorageService = mediaStorageService;
     }
 
     @Override
@@ -390,14 +395,40 @@ public class CurriculumServiceImpl implements CurriculumService {
         dto.setId(lesson.getId());
         dto.setTitle(lesson.getTitle());
         dto.setOrderIndex(lesson.getOrderIndex());
-        dto.setResourceUrl(lesson.getResourceUrl() != null ? lesson.getResourceUrl() : "");
 
         LessonContentPayload payload = parseLessonContent(lesson);
+        String resolvedResource = mediaStorageService.resolveMediaAccessUrl(
+                lesson.getResourceUrl() != null ? lesson.getResourceUrl() : "");
+        dto.setResourceUrl(resolvedResource != null ? resolvedResource : "");
         dto.setContentType(payload.uiContentType());
         dto.setTextContent(payload.textContent());
         dto.setQuizData(payload.quizData());
-        dto.setBlocks(payload.blocks());
+        dto.setBlocks(rewriteBlockMediaUrls(payload.blocks()));
         return dto;
+    }
+
+    private JsonNode rewriteBlockMediaUrls(JsonNode blocks) {
+        if (blocks == null || !blocks.isArray()) {
+            return blocks;
+        }
+        ArrayNode rewritten = objectMapper.createArrayNode();
+        for (JsonNode block : blocks) {
+            ObjectNode copy = block.deepCopy();
+            if (copy.hasNonNull("resourceUrl")) {
+                String resolved = mediaStorageService.resolveMediaAccessUrl(copy.get("resourceUrl").asText());
+                if (resolved != null) {
+                    copy.put("resourceUrl", resolved);
+                }
+            }
+            if (copy.hasNonNull("storageKey")) {
+                String resolved = mediaStorageService.resolvePublicUrl(copy.get("storageKey").asText());
+                if (resolved != null) {
+                    copy.put("resourceUrl", resolved);
+                }
+            }
+            rewritten.add(copy);
+        }
+        return rewritten;
     }
 
     private String buildLessonContentFromBlocks(JsonNode blocks, String primaryType) {

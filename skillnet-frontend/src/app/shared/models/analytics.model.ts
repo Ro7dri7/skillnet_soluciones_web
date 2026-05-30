@@ -63,6 +63,7 @@ export interface StudentLearningCourse {
   professor: string;
   category: string;
   slug: string | null;
+  thumbnailUrl?: string | null;
   progress: number;
   lessonsDone: number;
   lessonsTotal: number;

@@ -2,6 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { getSubcategories } from '../../../marketplace/data/categories.data';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
+import { CourseService } from '../../../../core/services/course.service';
+import { courseManagePath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
+import { firstValueFrom } from 'rxjs';
 import { SearchableSelectComponent } from '../../components/searchable-select/searchable-select.component';
 import { builderStepRoute } from '../../data/builder-steps.data';
 
@@ -14,6 +17,7 @@ import { builderStepRoute } from '../../data/builder-steps.data';
 export class BuilderSubcategoryStepComponent {
   private readonly router = inject(Router);
   private readonly builder = inject(CourseBuilderService);
+  private readonly courseService = inject(CourseService);
 
   readonly productLabel = this.builder.productLabel;
   readonly selectedCategory = this.builder.category;
@@ -39,7 +43,11 @@ export class BuilderSubcategoryStepComponent {
     }
     try {
       const courseId = await this.builder.ensureCourseId();
-      await this.router.navigate(['/instructor/courses', courseId, 'manage', 'audience']);
+      const slug = normalizeCourseSlugForUrl(
+        this.builder.state().courseSlug ??
+          (await firstValueFrom(this.courseService.getCourse(courseId))).slug,
+      );
+      await this.router.navigateByUrl(courseManagePath(slug, 'audience'));
     } catch {
       await this.router.navigateByUrl(builderStepRoute('audience'));
     }

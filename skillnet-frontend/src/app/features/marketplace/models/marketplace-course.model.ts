@@ -12,6 +12,7 @@ export interface MarketplaceCourse {
   rating: number;
   enrollmentCount: number;
   lessonsCount: number;
+  moduleCount: number;
   professorName: string;
   imageUrl: string | null;
 }

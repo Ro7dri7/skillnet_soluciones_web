@@ -3,6 +3,9 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
 import { CourseBuilderShellService } from '../../../../core/services/course-builder-shell.service';
+import { CourseService } from '../../../../core/services/course.service';
+import { courseManagePath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-builder-audience-step',
@@ -14,6 +17,7 @@ export class BuilderAudienceStepComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly builder = inject(CourseBuilderService);
   private readonly shell = inject(CourseBuilderShellService);
+  private readonly courseService = inject(CourseService);
 
   readonly goals = signal<string[]>(this.parseLines(this.builder.whatYouWillLearn(), 2));
   readonly audienceLines = signal<string[]>(this.parseLines(this.builder.targetAudience(), 1));
@@ -116,7 +120,11 @@ export class BuilderAudienceStepComponent implements OnInit, OnDestroy {
     this.error.set(null);
     try {
       const courseId = await this.builder.ensureCourseId();
-      void this.router.navigate(['/instructor/courses', courseId, 'manage', 'curriculum']);
+      const slug = normalizeCourseSlugForUrl(
+        this.builder.state().courseSlug ??
+          (await firstValueFrom(this.courseService.getCourse(courseId))).slug,
+      );
+      void this.router.navigateByUrl(courseManagePath(slug, 'curriculum'));
     } catch (error) {
       if (this.builder.isUnauthorizedError(error)) {
         this.error.set('Tu sesión expiró. Inicia sesión de nuevo para guardar el borrador.');

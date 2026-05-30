@@ -9,6 +9,7 @@ import {
 } from '../../data/categories.data';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
 import { MarketplaceCourseCardComponent } from '../../components/marketplace-course-card/marketplace-course-card.component';
+import { courseToMarketplace } from '../../../../shared/utils/marketplace-course.util';
 
 @Component({
   selector: 'app-catalog',
@@ -56,7 +57,7 @@ export class CatalogComponent implements OnInit {
       next: (items) => {
         const list = items
           .filter((c) => c.status === 'published')
-          .map((c, i) => this.mapCourse(c, i));
+          .map((c) => courseToMarketplace(c));
         this.courses.set(list);
         this.isLoading.set(false);
       },
@@ -65,27 +66,5 @@ export class CatalogComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
-  }
-
-  private mapCourse(
-    c: { id: number; title: string; slug: string; description: string; level: string; status: string; price: number },
-    index: number,
-  ): MarketplaceCourse {
-    return {
-      id: c.id,
-      title: c.title,
-      slug: c.slug,
-      description: c.description,
-      level: c.level,
-      status: c.status,
-      price: c.price,
-      category: MARKETPLACE_CATEGORIES[index % MARKETPLACE_CATEGORIES.length],
-      format: 'Curso',
-      rating: 4.6,
-      enrollmentCount: 100,
-      lessonsCount: 20,
-      professorName: 'Skillnet Academy',
-      imageUrl: null,
-    };
   }
 }

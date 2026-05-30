@@ -12,6 +12,7 @@ public class ProducerCourseSummaryDTO {
 
     private Long id;
     private String title;
+    private String slug;
     private String courseFormat;
     private String status;
     private Instant createdAt;

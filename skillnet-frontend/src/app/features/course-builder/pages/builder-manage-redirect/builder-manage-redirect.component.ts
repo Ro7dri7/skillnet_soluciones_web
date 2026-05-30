@@ -1,6 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
+import { CourseService } from '../../../../core/services/course.service';
+import { courseManagePath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
 
 /** Redirige rutas legacy del wizard a la shell unificada de gestión. */
 @Component({
@@ -12,6 +15,7 @@ export class BuilderManageRedirectComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly builder = inject(CourseBuilderService);
+  private readonly courseService = inject(CourseService);
 
   ngOnInit(): void {
     void this.redirect();
@@ -23,7 +27,14 @@ export class BuilderManageRedirectComponent implements OnInit {
 
     try {
       const courseId = await this.builder.ensureCourseId();
-      await this.router.navigate(['/instructor/courses', courseId, 'manage', targetStep]);
+      const draftSlug = this.builder.state().courseSlug;
+      let slug = draftSlug ? normalizeCourseSlugForUrl(draftSlug) : '';
+      if (!slug) {
+        const course = await firstValueFrom(this.courseService.getCourse(courseId));
+        slug = normalizeCourseSlugForUrl(course.slug);
+        this.builder.setCourseId(courseId, slug);
+      }
+      await this.router.navigate([courseManagePath(slug, targetStep)]);
     } catch {
       await this.router.navigate(['/infoproductor/courses/new/subcategory']);
     }

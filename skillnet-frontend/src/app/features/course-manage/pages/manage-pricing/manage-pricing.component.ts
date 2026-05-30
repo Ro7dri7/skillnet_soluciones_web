@@ -1,8 +1,8 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { CourseService } from '../../../../core/services/course.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
 import { ProducerCoursesService } from '../../../../core/services/producer-courses.service';
@@ -26,7 +26,7 @@ const PLATFORM_FEE_RATE = 0.08;
   styleUrl: './manage-pricing.component.scss',
 })
 export class ManagePricingComponent implements OnInit, OnDestroy {
-  private readonly route = inject(ActivatedRoute);
+  private readonly manageContext = inject(CourseManageContextService);
   private readonly courseService = inject(CourseService);
   private readonly producerCourses = inject(ProducerCoursesService);
   private readonly manageSave = inject(ManageLayoutSaveService);
@@ -47,7 +47,22 @@ export class ManagePricingComponent implements OnInit, OnDestroy {
   readonly discountError = signal<string | null>(null);
   readonly showInvalidBanner = signal(false);
 
-  private courseId: number | null = null;
+  private loadedCourseId: number | null = null;
+
+  constructor() {
+    effect(() => {
+      const id = this.manageContext.courseId();
+      if (id != null && id !== this.loadedCourseId) {
+        this.loadedCourseId = id;
+        untracked(() => void this.loadCourse(id));
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.manageSave.registerSaveHandler(() => this.persistPricing());
+  }
+
   private lastValidPrice = DEFAULT_POSITIVE_PRICE;
   private lastValidDiscount = '';
 
@@ -67,18 +82,6 @@ export class ManagePricingComponent implements OnInit, OnDestroy {
   readonly netSubtotal = computed(() => this.parsedPrice() * (1 - PLATFORM_FEE_RATE));
   readonly affiliateAmount = computed(() => this.netSubtotal() * (this.parsedCommission() / 100));
   readonly instructorEarnings = computed(() => this.netSubtotal() - this.affiliateAmount());
-
-  ngOnInit(): void {
-    const idParam = this.route.parent?.snapshot.paramMap.get('id');
-    const id = idParam ? Number(idParam) : NaN;
-    if (Number.isNaN(id)) {
-      this.loading.set(false);
-      return;
-    }
-    this.courseId = id;
-    this.manageSave.registerSaveHandler(() => this.persistPricing());
-    void this.loadCourse(id);
-  }
 
   ngOnDestroy(): void {
     this.manageSave.unregisterSaveHandler();
@@ -199,12 +202,13 @@ export class ManagePricingComponent implements OnInit, OnDestroy {
     const commission =
       this.affiliationType() === 'none' ? 0 : parseFloat(this.affiliateCommission()) || 0;
 
-    if (!this.courseId) {
+    const courseId = this.manageContext.courseId();
+    if (!courseId) {
       return;
     }
 
     await firstValueFrom(
-      this.producerCourses.updatePricing(this.courseId, {
+      this.producerCourses.updatePricing(courseId, {
         currency: this.currency(),
         price: base,
         onSale,

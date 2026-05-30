@@ -1,10 +1,11 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
 import { filter, firstValueFrom, map, tap } from 'rxjs';
 import { CourseService } from '../../../../core/services/course.service';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
+import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { ManageCurriculumService } from '../../../../core/services/manage-curriculum.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
 import {
@@ -36,7 +37,7 @@ interface MissingItem {
 })
 export class ManageBasicsComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
+  private readonly manageContext = inject(CourseManageContextService);
   private readonly courseService = inject(CourseService);
   private readonly producerCourses = inject(ProducerCoursesService);
   private readonly courseMedia = inject(CourseMediaService);
@@ -105,10 +106,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     return getSubcategories(category);
   });
 
-  readonly manageBasePath = computed(() => {
-    const id = this.courseId;
-    return id ? `/instructor/courses/${id}/manage` : '/courses';
-  });
+  readonly manageBasePath = this.manageContext.manageBasePath;
 
   readonly missingItems = computed((): MissingItem[] => {
     const base = this.manageBasePath();
@@ -147,18 +145,20 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     return items;
   });
 
-  private courseId: number | null = null;
+  private loadedCourseId: number | null = null;
+
+  constructor() {
+    effect(() => {
+      const id = this.manageContext.courseId();
+      if (id != null && id !== this.loadedCourseId) {
+        this.loadedCourseId = id;
+        untracked(() => void this.loadCourse(id));
+      }
+    });
+  }
 
   ngOnInit(): void {
-    const idParam = this.route.parent?.snapshot.paramMap.get('id');
-    const id = idParam ? Number(idParam) : NaN;
-    if (Number.isNaN(id)) {
-      this.loading.set(false);
-      return;
-    }
-    this.courseId = id;
     this.manageSave.registerSaveHandler(() => this.persistBasics());
-    void this.loadCourse(id);
   }
 
   ngOnDestroy(): void {
@@ -208,7 +208,8 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
   }
 
   private async uploadCover(file: File): Promise<void> {
-    if (this.courseId == null) {
+    const courseId = this.manageContext.courseId();
+    if (courseId == null) {
       return;
     }
     this.isImageUploading.set(true);
@@ -216,7 +217,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     try {
       await this.builder.ensureInfoproductorSession();
       const result = await firstValueFrom(
-        this.courseMedia.upload(this.courseId, 'cover', file).pipe(
+        this.courseMedia.upload(courseId, 'cover', file).pipe(
           tap(({ progress }) => this.imageUploadProgress.set(progress)),
           filter(({ event }) => event.type === HttpEventType.Response),
           map(({ event }) => (event as HttpResponse<CourseMediaUploadResponse>).body!),
@@ -237,7 +238,8 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
   }
 
   private async uploadPromoVideo(file: File): Promise<void> {
-    if (this.courseId == null) {
+    const courseId = this.manageContext.courseId();
+    if (courseId == null) {
       return;
     }
     this.isVideoUploading.set(true);
@@ -245,7 +247,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     try {
       await this.builder.ensureInfoproductorSession();
       const result = await firstValueFrom(
-        this.courseMedia.upload(this.courseId, 'promo_video', file).pipe(
+        this.courseMedia.upload(courseId, 'promo_video', file).pipe(
           tap(({ progress }) => this.videoUploadProgress.set(progress)),
           filter(({ event }) => event.type === HttpEventType.Response),
           map(({ event }) => (event as HttpResponse<CourseMediaUploadResponse>).body!),
@@ -310,7 +312,8 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
   }
 
   private async persistBasics(): Promise<void> {
-    if (this.form.invalid || this.courseId == null) {
+    const courseId = this.manageContext.courseId();
+    if (this.form.invalid || courseId == null) {
       this.form.markAllAsTouched();
       throw new Error('Formulario inválido');
     }
@@ -325,7 +328,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     await this.builder.ensureInfoproductorSession();
     const raw = this.form.getRawValue();
     await firstValueFrom(
-      this.producerCourses.updateBasics(this.courseId, {
+      this.producerCourses.updateBasics(courseId, {
         title: raw.title.trim(),
         description: raw.description.trim(),
         imageUrl: raw.imageUrl.trim(),

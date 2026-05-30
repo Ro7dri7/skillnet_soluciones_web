@@ -40,7 +40,7 @@ export class AdminLayoutComponent {
 
   logout(): void {
     this.authService.logout();
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/login'], { replaceUrl: true });
   }
 
   switchToStudent(): void {

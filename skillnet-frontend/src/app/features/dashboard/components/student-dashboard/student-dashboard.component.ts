@@ -216,18 +216,6 @@ export class StudentDashboardComponent {
     return Math.max(1, Math.min(30, active + 2));
   });
 
-  readonly showEmptyAccountHint = computed(() => {
-    const data = this.analyticsData();
-    if (!data) {
-      return false;
-    }
-    return (
-      data.kpis.purchasedCourses === 0 &&
-      data.kpis.activeCourses === 0 &&
-      data.learningCourses.length === 0
-    );
-  });
-
   welcomeName(user: User): string {
     const name = [user.firstName, user.lastName].filter(Boolean).join(' ');
     return name || user.username;
@@ -254,7 +242,18 @@ export class StudentDashboardComponent {
   }
 
   courseLearnLink(course: StudentLearningCourse): string[] {
-    return course.slug ? ['/marketplace/course', course.slug, 'learn'] : ['/mis-cursos'];
+    const slug = course.slug?.trim();
+    return slug ? ['/marketplace/course', slug, 'learn'] : ['/mis-cursos'];
+  }
+
+  learningActionLabel(progress: number): string {
+    if (progress >= 100) {
+      return 'Repasar Aprendizaje';
+    }
+    if (progress > 0) {
+      return 'Continuar Aprendizaje';
+    }
+    return 'Iniciar Aprendizaje';
   }
 
   private buildYearOptions(): string[] {

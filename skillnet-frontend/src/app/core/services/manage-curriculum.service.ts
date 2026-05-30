@@ -502,11 +502,13 @@ export class ManageCurriculumService {
           ? {
               passingScore: 80,
               timeLimitMinutes: 30,
+              maxAttempts: 3,
               questions: [
                 {
                   id: `q-${Date.now()}`,
-                  text: 'Pregunta 1',
-                  options: ['Opción A', 'Opción B'],
+                  type: 'multiple',
+                  text: '',
+                  options: [''],
                   correctIndex: 0,
                 },
               ],

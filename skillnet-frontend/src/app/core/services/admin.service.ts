@@ -78,6 +78,18 @@ export class AdminService {
   }
 
   getCourses(): Observable<CourseResponse[]> {
-    return this.http.get<CourseResponse[]>(`${environment.apiUrl}/courses`);
+    return this.http.get<CourseResponse[]>(`${this.baseUrl}/courses`);
+  }
+
+  publishCourse(courseId: number): Observable<CourseResponse> {
+    return this.http.put<CourseResponse>(`${this.baseUrl}/courses/${courseId}/publish`, null);
+  }
+
+  setCourseDraft(courseId: number): Observable<CourseResponse> {
+    return this.http.put<CourseResponse>(`${this.baseUrl}/courses/${courseId}/draft`, null);
+  }
+
+  takedownCourse(courseId: number): Observable<CourseResponse> {
+    return this.http.put<CourseResponse>(`${this.baseUrl}/courses/${courseId}/takedown`, null);
   }
 }

@@ -10,9 +10,9 @@
       <a routerLink="/mis-cursos" class="learn-link">Volver a Mis Cursos</a>
     </div>
   } @else if (page(); as data) {
-    <aside class="learn-sidebar">
+    <aside class="learn-sidebar" [class.learn-sidebar--collapsed]="sidebarCollapsed()">
       <div class="learn-sidebar-header">
-        <a [routerLink]="landingPath()" class="learn-back">
+        <a routerLink="/dashboard/estudiante" class="learn-back" title="Volver al panel de estudiante">
           <i class="ri-arrow-left-line"></i>
         </a>
         <div class="learn-sidebar-title-wrap">
@@ -64,10 +64,13 @@
                     type="button"
                     class="learn-lesson"
                     [class.active]="activeLessonId() === lesson.id"
+                    [class.completed]="completedLessonIds().has(lesson.id)"
                     (click)="selectLesson(lesson, mod.id)"
                   >
                     <span class="learn-lesson-dot">
-                      @if (activeLessonId() === lesson.id) {
+                      @if (completedLessonIds().has(lesson.id)) {
+                        <i class="ri-checkbox-circle-fill"></i>
+                      } @else if (activeLessonId() === lesson.id) {
                         <span class="learn-lesson-active-ring"></span>
                       } @else {
                         <i class="ri-play-circle-line"></i>
@@ -86,17 +89,69 @@
     </aside>
 
     <section class="learn-main">
-      <header class="learn-main-header">
-        <div>
-          <p class="learn-breadcrumb">Skillnet · Aprendizaje</p>
-          <h2 class="learn-lesson-heading">
-            {{ activeLesson()?.title ?? 'Bienvenido al curso' }}
-          </h2>
+      <header class="learn-course-header">
+        <div class="learn-course-header__left">
+          <button
+            type="button"
+            class="learn-sidebar-toggle hidden lg:flex"
+            (click)="toggleSidebar()"
+            title="Mostrar/ocultar temario"
+          >
+            <i class="ri-menu-2-line"></i>
+          </button>
+          <div class="learn-course-header__info">
+            <h1 class="learn-course-header__title">{{ data.title }}</h1>
+            <div class="learn-course-header__progress">
+              <span class="learn-course-header__progress-label">Mi progreso:</span>
+              <div class="learn-course-header__progress-track">
+                <div
+                  class="learn-course-header__progress-fill"
+                  [style.width.%]="courseProgressPercent()"
+                ></div>
+              </div>
+              <span class="learn-course-header__progress-value">{{ courseProgressPercent() }}%</span>
+            </div>
+          </div>
         </div>
-        <a routerLink="/mis-cursos" class="learn-mis-cursos">Mis Cursos</a>
+
+        <div class="learn-course-header__actions">
+          <button
+            type="button"
+            class="learn-header-btn"
+            (click)="goPrevLesson()"
+            [disabled]="!canGoPrev()"
+            title="Lección anterior"
+          >
+            <i class="ri-arrow-left-s-line"></i>
+          </button>
+          <button
+            type="button"
+            class="learn-header-btn learn-header-btn--primary"
+            (click)="goNextLesson()"
+            [disabled]="allLessonsFlat().length === 0"
+            title="Marcar lección y continuar"
+          >
+            <i class="ri-arrow-right-s-line"></i>
+          </button>
+          <button
+            type="button"
+            class="learn-header-btn"
+            (click)="toggleContentFullscreen()"
+            title="Pantalla completa"
+          >
+            <i class="ri-fullscreen-line"></i>
+          </button>
+          <button type="button" class="learn-header-btn" (click)="exitCourse()" title="Salir del curso">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
       </header>
 
-      <div class="learn-content">
+      <div
+        #contentAreaRef
+        class="learn-content"
+        [class.learn-content--fill]="activeLessonHasPdf()"
+      >
         @if (!activeLesson()) {
           <div class="learn-welcome">
             @if (data.welcomeMessage) {
@@ -107,45 +162,63 @@
           </div>
         } @else {
           @for (block of lessonBlocks(activeLesson()!); track block.id) {
-            <div class="learn-block learn-block--{{ block.contentType }}">
+            <div
+              class="learn-block learn-block--{{ block.contentType }}"
+              [class.learn-block--fill]="block.contentType === 'pdf'"
+            >
               @switch (block.contentType) {
                 @case ('text') {
                   <div class="learn-text" [innerHTML]="block.textContent"></div>
                 }
                 @case ('image') {
-                  @if (block.resourceUrl) {
-                    <img [src]="block.resourceUrl" [alt]="activeLesson()!.title" class="learn-image" />
+                  @if (block.resourceUrl; as imgUrl) {
+                    <img [src]="mediaUrl(imgUrl)" [alt]="activeLesson()!.title" class="learn-image" />
                   }
                 }
                 @case ('video') {
-                  @if (block.resourceUrl) {
-                    <video
-                      class="learn-video"
-                      controls
-                      playsinline
-                      [src]="block.resourceUrl"
-                    ></video>
+                  @if (block.resourceUrl; as videoUrl) {
+                    @if (isVideoUrl(videoUrl) && trustedResourceUrl(videoUrl); as videoSrc) {
+                      <video class="learn-video" controls playsinline [src]="videoSrc"></video>
+                    } @else {
+                      <a
+                        [href]="mediaAbsoluteUrl(videoUrl)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="learn-pdf-link"
+                      >
+                        <i class="ri-external-link-line"></i>
+                        Abrir vídeo
+                      </a>
+                    }
                   }
                 }
                 @case ('audio') {
-                  @if (block.resourceUrl) {
-                    <audio class="learn-audio" controls [src]="block.resourceUrl"></audio>
+                  @if (block.resourceUrl; as audioUrl) {
+                    @if (trustedResourceUrl(audioUrl); as audioSrc) {
+                      <audio class="learn-audio" controls [src]="audioSrc"></audio>
+                    }
                   }
                 }
                 @case ('pdf') {
-                  @if (block.resourceUrl) {
-                    <iframe
-                      class="learn-pdf"
-                      [src]="block.resourceUrl"
-                      title="Documento PDF"
-                    ></iframe>
+                  @if (block.resourceUrl; as pdfUrl) {
+                    <app-pdf-block-viewer
+                      [resourceUrl]="pdfUrl"
+                      [title]="activeLesson()!.title"
+                    />
                   }
                 }
                 @case ('quiz') {
-                  <div class="learn-quiz-placeholder">
-                    <i class="ri-question-answer-line"></i>
-                    <p>Evaluación disponible próximamente.</p>
-                  </div>
+                  @if (quizDataForBlock(block); as quiz) {
+                    <app-learn-quiz-player
+                      [quizData]="quiz"
+                      (passed)="onQuizPassed(activeLesson()!.id)"
+                    />
+                  } @else {
+                    <div class="learn-quiz-placeholder">
+                      <i class="ri-question-answer-line"></i>
+                      <p>Esta evaluación aún no tiene preguntas configuradas.</p>
+                    </div>
+                  }
                 }
               }
             </div>

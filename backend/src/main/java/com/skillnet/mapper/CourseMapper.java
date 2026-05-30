@@ -3,6 +3,7 @@ package com.skillnet.mapper;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.UserRepository;
+import com.skillnet.service.media.MediaStorageService;
 import com.skillnet.web.dto.request.CourseRequestDTO;
 import com.skillnet.web.dto.response.CourseResponseDTO;
 import com.skillnet.web.dto.response.CourseSummaryDTO;
@@ -13,10 +14,15 @@ public class CourseMapper {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final MediaStorageService mediaStorageService;
 
-    public CourseMapper(UserMapper userMapper, UserRepository userRepository) {
+    public CourseMapper(
+            UserMapper userMapper,
+            UserRepository userRepository,
+            MediaStorageService mediaStorageService) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
+        this.mediaStorageService = mediaStorageService;
     }
 
     public CourseResponseDTO toResponseDTO(Course course) {
@@ -56,9 +62,9 @@ public class CourseMapper {
         dto.setStatus(course.getStatus());
         dto.setCreatedAt(course.getCreatedAt());
         dto.setSlug(course.getSlug());
-        dto.setImageUrl(course.getImageUrl());
+        dto.setImageUrl(mediaStorageService.resolveCourseImageUrl(course.getImageUrl(), course.getImageFile()));
         dto.setImageFile(course.getImageFile());
-        dto.setVideoUrl(course.getVideoUrl());
+        dto.setVideoUrl(mediaStorageService.resolveCourseVideoUrl(course.getVideoUrl(), course.getVideoFile()));
         dto.setVideoFile(course.getVideoFile());
         dto.setAffiliateCommission(course.getAffiliateCommission());
         dto.setAffiliatePolicy(course.getAffiliatePolicy());

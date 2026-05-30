@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ProducerCoursesService } from '../../../../core/services/producer-courses.service';
 import { ProducerCourseSummary } from '../../../../shared/models/producer-course.model';
+import { courseManagePath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 
 @Component({
@@ -40,8 +41,9 @@ export class CourseListComponent implements OnInit {
     });
   }
 
-  manageCourse(id: number): void {
-    void this.router.navigate(['/instructor/courses', id, 'manage']);
+  manageCourse(course: ProducerCourseSummary): void {
+    const slug = course.slug ? normalizeCourseSlugForUrl(course.slug) : String(course.id);
+    void this.router.navigate([courseManagePath(slug, 'curriculum')]);
   }
 
   isDraft(status: string): boolean {

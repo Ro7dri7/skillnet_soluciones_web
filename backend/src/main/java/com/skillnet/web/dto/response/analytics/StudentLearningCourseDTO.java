@@ -14,6 +14,7 @@ public class StudentLearningCourseDTO {
     private String professor;
     private String category;
     private String slug;
+    private String thumbnailUrl;
     private int progress;
     private int lessonsDone;
     private int lessonsTotal;

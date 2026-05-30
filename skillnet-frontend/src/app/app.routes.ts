@@ -36,7 +36,7 @@ export const routes: Routes = [
     data: { manageStep: 'curriculum' },
   },
   {
-    path: 'instructor/courses/:id/manage',
+    path: 'instructor/courses/:slug/manage',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/course-manage/layout/course-manage-layout.component').then(

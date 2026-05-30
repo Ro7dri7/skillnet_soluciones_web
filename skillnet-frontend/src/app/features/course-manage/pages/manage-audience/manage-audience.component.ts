@@ -1,9 +1,9 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
+import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { CourseService } from '../../../../core/services/course.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
 import { ProducerCoursesService } from '../../../../core/services/producer-courses.service';
@@ -19,7 +19,7 @@ import {
   templateUrl: './manage-audience.component.html',
 })
 export class ManageAudienceComponent implements OnInit, OnDestroy {
-  private readonly route = inject(ActivatedRoute);
+  private readonly manageContext = inject(CourseManageContextService);
   private readonly builder = inject(CourseBuilderService);
   private readonly courseService = inject(CourseService);
   private readonly producerCourses = inject(ProducerCoursesService);
@@ -31,18 +31,20 @@ export class ManageAudienceComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly productNoun = signal('curso');
 
-  private courseId: number | null = null;
+  private loadedCourseId: number | null = null;
+
+  constructor() {
+    effect(() => {
+      const id = this.manageContext.courseId();
+      if (id != null && id !== this.loadedCourseId) {
+        this.loadedCourseId = id;
+        untracked(() => void this.loadCourse(id));
+      }
+    });
+  }
 
   ngOnInit(): void {
-    const idParam = this.route.parent?.snapshot.paramMap.get('id');
-    const id = idParam ? Number(idParam) : NaN;
-    if (Number.isNaN(id)) {
-      this.loading.set(false);
-      return;
-    }
-    this.courseId = id;
     this.manageSave.registerSaveHandler(() => this.persistAudience());
-    void this.loadCourse(id);
   }
 
   ngOnDestroy(): void {
@@ -122,7 +124,8 @@ export class ManageAudienceComponent implements OnInit, OnDestroy {
   }
 
   private async persistAudience(): Promise<void> {
-    if (!this.courseId) {
+    const courseId = this.manageContext.courseId();
+    if (!courseId) {
       return;
     }
     if (!this.canContinue()) {
@@ -144,7 +147,7 @@ export class ManageAudienceComponent implements OnInit, OnDestroy {
     await this.builder.ensureInfoproductorSession();
     try {
       await firstValueFrom(
-        this.producerCourses.updateBasics(this.courseId, {
+        this.producerCourses.updateBasics(courseId, {
           whatYouWillLearn,
           targetAudience,
         }),

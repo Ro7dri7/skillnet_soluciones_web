@@ -34,6 +34,7 @@ const EMPTY_DRAFT: CourseBuilderDraft = {
   targetAudience: '',
   curriculum: [],
   courseId: null,
+  courseSlug: null,
 };
 
 const BUILDER_COURSE_ID_KEY = 'skillnet_builder_course_id';
@@ -215,7 +216,7 @@ export class CourseBuilderService {
     const response = await firstValueFrom(
       this.producerCourses.createDraft(this.toCreateCoursePayload()),
     );
-    this.setCourseId(response.id);
+    this.setCourseId(response.id, response.slug ?? null);
     return response.id;
   }
 
@@ -266,8 +267,12 @@ export class CourseBuilderService {
     });
   }
 
-  setCourseId(id: number): void {
-    this.draft.update((d) => ({ ...d, courseId: id }));
+  setCourseId(id: number, slug?: string | null): void {
+    this.draft.update((d) => ({
+      ...d,
+      courseId: id,
+      courseSlug: slug ?? d.courseSlug,
+    }));
     localStorage.setItem(BUILDER_COURSE_ID_KEY, String(id));
   }
 

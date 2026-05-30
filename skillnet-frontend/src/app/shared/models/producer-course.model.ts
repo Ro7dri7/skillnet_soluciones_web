@@ -10,6 +10,7 @@ export interface CreateCourseRequest {
 export interface ProducerCourseSummary {
   id: number;
   title: string;
+  slug?: string | null;
   courseFormat: string;
   status: string;
   createdAt: string;

@@ -90,7 +90,7 @@ export class MainLayoutComponent {
 
   logout(): void {
     this.authService.logout();
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/login'], { replaceUrl: true });
   }
 
   displayName(user: User): string {
@@ -129,7 +129,7 @@ export class MainLayoutComponent {
   private isFullWidthRoute(): boolean {
     const path = this.router.url.split('?')[0];
     if (this.isCourseLearnRoute()) {
-      return false;
+      return true;
     }
     return FULL_WIDTH_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   }

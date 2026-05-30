@@ -31,6 +31,10 @@ interface CourseApiResponse {
   affiliatePolicy?: string | null;
   welcomeMessage?: string | null;
   congratulationsMessage?: string | null;
+  courseFormat?: string | null;
+  moduleCount?: number;
+  lessonsCount?: number;
+  enrollmentCount?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -120,6 +124,10 @@ export class CourseService {
       affiliatePolicy: item.affiliatePolicy ?? 'all',
       welcomeMessage: item.welcomeMessage ?? null,
       congratulationsMessage: item.congratulationsMessage ?? null,
+      courseFormat: item.courseFormat ?? null,
+      moduleCount: item.moduleCount ?? 0,
+      lessonsCount: item.lessonsCount ?? 0,
+      enrollmentCount: item.enrollmentCount ?? 0,
     };
   }
 

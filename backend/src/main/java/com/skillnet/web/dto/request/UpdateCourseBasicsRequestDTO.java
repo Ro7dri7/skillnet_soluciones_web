@@ -20,7 +20,7 @@ public class UpdateCourseBasicsRequestDTO {
     @DecimalMin(value = "0.0", inclusive = true, message = "price must be zero or greater")
     private BigDecimal price;
 
-    @Size(max = 200, message = "imageUrl must be at most 200 characters")
+    @Size(max = 1000, message = "imageUrl must be at most 1000 characters")
     private String imageUrl;
 
     @Size(max = 500, message = "videoUrl must be at most 500 characters")

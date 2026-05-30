@@ -117,13 +117,13 @@ public class Course {
     @Column(name = "slug", length = 300, unique = true)
     private String slug;
 
-    @Column(name = "image_url", length = 200)
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     @Column(name = "image_file", length = 500)
     private String imageFile;
 
-    @Column(name = "video_url", length = 200)
+    @Column(name = "video_url", length = 1000)
     private String videoUrl;
 
     @Column(name = "video_file", length = 500)

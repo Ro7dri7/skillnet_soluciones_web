@@ -39,3 +39,8 @@ export function courseLearnPath(slug: string): string {
 export function courseLandingPath(slug: string): string {
   return `/marketplace/course/${normalizeCourseSlugForUrl(slug)}`;
 }
+
+export function courseManagePath(slug: string, section?: string): string {
+  const base = `/instructor/courses/${normalizeCourseSlugForUrl(slug)}/manage`;
+  return section ? `${base}/${section}` : base;
+}

@@ -12,11 +12,17 @@ import {
 import { FormsModule } from '@angular/forms';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { ManageCurriculumService } from '../../../../core/services/manage-curriculum.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
+import { MediaService, type LessonResourceType } from '../../../../core/services/media.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import type { ContentBlockDTO, ContentType, LessonDTO, QuizQuestionDraft } from '../../../../shared/models/curriculum.model';
+import { QuizBuilderComponent } from '../quiz-builder/quiz-builder.component';
+import type { ContentBlockDTO, ContentType, LessonDTO, QuizData } from '../../../../shared/models/curriculum.model';
+import { normalizeQuizData } from '../../utils/quiz.util';
+import { firstValueFrom } from 'rxjs';
 
 interface ConfirmDialogState {
   title: string;
@@ -35,7 +41,7 @@ interface BlockTypeOption {
 @Component({
   selector: 'app-curriculum-workspace',
   standalone: true,
-  imports: [FormsModule, ConfirmDialogComponent],
+  imports: [FormsModule, ConfirmDialogComponent, QuizBuilderComponent],
   templateUrl: './curriculum-workspace.component.html',
   styleUrl: './curriculum-workspace.component.scss',
 })
@@ -45,6 +51,8 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   readonly courseReady = output<number>();
 
   readonly curriculum = inject(ManageCurriculumService);
+  private readonly manageContext = inject(CourseManageContextService);
+  private readonly mediaService = inject(MediaService);
   private readonly builder = inject(CourseBuilderService);
   private readonly manageSave = inject(ManageLayoutSaveService);
   readonly auth = inject(AuthService);
@@ -63,10 +71,12 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
 
   readonly draftTitle = signal('');
   readonly draftResourceUrl = signal('');
-  readonly draftQuizQuestion = signal('');
-  readonly quizQuestions = signal<QuizQuestionDraft[]>([]);
+  readonly blockUploadingId = signal<string | null>(null);
+  readonly blockUploadProgress = signal(0);
+  readonly quizQuestions = signal<QuizData['questions']>([]);
   readonly quizPassingScore = signal(80);
   readonly quizTimeLimit = signal(30);
+  readonly quizMaxAttempts = signal(3);
 
   readonly targetModuleId = computed(() => {
     const active = this.curriculum.activeModuleId();
@@ -105,18 +115,22 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       this.draftTitle.set(lesson.title);
 
       const quizBlock = lesson.blocks.find((b) => b.contentType === 'quiz');
-      if (quizBlock?.quizData) {
-        this.quizQuestions.set([...quizBlock.quizData.questions]);
-        this.quizPassingScore.set(quizBlock.quizData.passingScore);
-        this.quizTimeLimit.set(quizBlock.quizData.timeLimitMinutes);
-      } else if (lesson.quizData) {
-        this.quizQuestions.set([...lesson.quizData.questions]);
-        this.quizPassingScore.set(lesson.quizData.passingScore);
-        this.quizTimeLimit.set(lesson.quizData.timeLimitMinutes);
+      const rawQuiz = quizBlock?.quizData ?? lesson.quizData;
+      if (rawQuiz) {
+        const normalized = normalizeQuizData({
+          passingScore: rawQuiz.passingScore,
+          timeLimitMinutes: rawQuiz.timeLimitMinutes,
+          maxAttempts: rawQuiz.maxAttempts ?? 3,
+          questions: rawQuiz.questions,
+        });
+        this.quizQuestions.set([...normalized.questions]);
+        this.quizPassingScore.set(normalized.passingScore);
+        this.quizTimeLimit.set(normalized.timeLimitMinutes);
+        this.quizMaxAttempts.set(normalized.maxAttempts);
       }
 
       if (this.isLessonQuiz()) {
-        // keep current tab unless switching from non-quiz lesson
+        this.activeTab.set('evaluation');
       } else if (this.activeTab() === 'evaluation') {
         this.activeTab.set('content');
       }
@@ -209,6 +223,10 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     if (tab === 'evaluation' && !this.isLessonQuiz()) {
       return;
     }
+    if (tab === 'content' && this.isLessonQuiz()) {
+      this.activeTab.set('evaluation');
+      return;
+    }
     this.activeTab.set(tab);
   }
 
@@ -276,6 +294,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     }
     const lessonId = await this.curriculum.addQuizLesson(moduleId);
     this.curriculum.selectLesson(moduleId, lessonId);
+    this.activeTab.set('evaluation');
   }
 
   async createLessonFromBlockCenter(_contentType: ContentType): Promise<void> {
@@ -320,6 +339,80 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     this.scheduleSave();
   }
 
+  isUploadableBlock(contentType: ContentType): boolean {
+    return contentType === 'pdf' || contentType === 'image' || contentType === 'audio';
+  }
+
+  blockAcceptMime(contentType: ContentType): string {
+    if (contentType === 'pdf') {
+      return 'application/pdf,.pdf';
+    }
+    if (contentType === 'image') {
+      return 'image/*';
+    }
+    if (contentType === 'audio') {
+      return 'audio/*';
+    }
+    return '*/*';
+  }
+
+  onBlockFileSelected(blockId: string, contentType: ContentType, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    void this.uploadBlockResource(blockId, contentType, file);
+  }
+
+  private async uploadBlockResource(
+    blockId: string,
+    contentType: ContentType,
+    file: File,
+  ): Promise<void> {
+    const courseId = this.manageContext.courseId() ?? this.resolvedCourseId();
+    if (courseId == null) {
+      this.toast.error('Curso no cargado. Recarga la página.');
+      return;
+    }
+
+    if (contentType === 'pdf' && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      this.toast.error('Selecciona un archivo PDF.');
+      return;
+    }
+    if (contentType === 'image' && !file.type.startsWith('image/')) {
+      this.toast.error('Selecciona una imagen válida.');
+      return;
+    }
+    if (contentType === 'audio' && !file.type.startsWith('audio/')) {
+      this.toast.error('Selecciona un archivo de audio válido.');
+      return;
+    }
+
+    this.blockUploadingId.set(blockId);
+    this.blockUploadProgress.set(0);
+    try {
+      await this.builder.ensureInfoproductorSession();
+      const result = await firstValueFrom(
+        this.mediaService.uploadLessonResource(courseId, file, contentType as LessonResourceType),
+      );
+      if (result.url) {
+        const resolvedUrl = result.url.includes('/api/v1/media/files/')
+          ? result.url.slice(result.url.indexOf('/api/v1/media/files/'))
+          : result.url;
+        this.updateBlockField(blockId, 'resourceUrl', resolvedUrl);
+        await this.persistActiveLesson();
+        this.toast.success('Archivo subido correctamente');
+      }
+    } catch (err) {
+      this.toast.error(messageFromHttpError(err, 'No se pudo subir el archivo.'));
+    } finally {
+      this.blockUploadingId.set(null);
+      this.blockUploadProgress.set(0);
+    }
+  }
+
   updateBlockQuizData(): void {
     const lesson = this.activeLesson();
     const moduleId = this.curriculum.activeModuleId();
@@ -329,6 +422,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     const quizData = {
       passingScore: this.quizPassingScore(),
       timeLimitMinutes: this.quizTimeLimit(),
+      maxAttempts: this.quizMaxAttempts(),
       questions: this.quizQuestions(),
     };
     const blocks = lesson.blocks.map((block) =>
@@ -360,6 +454,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       ? {
           passingScore: this.quizPassingScore(),
           timeLimitMinutes: this.quizTimeLimit(),
+          maxAttempts: this.quizMaxAttempts(),
           questions: this.quizQuestions(),
         }
       : undefined;
@@ -414,33 +509,11 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateQuizQuestion(index: number, text: string): void {
-    this.quizQuestions.update((items) => {
-      const next = [...items];
-      next[index] = { ...next[index], text };
-      return next;
-    });
-    this.updateBlockQuizData();
-  }
-
-  addQuizQuestion(): void {
-    this.quizQuestions.update((items) => [
-      ...items,
-      {
-        id: `q-${Date.now()}`,
-        text: `Pregunta ${items.length + 1}`,
-        options: ['Opción A', 'Opción B'],
-        correctIndex: 0,
-      },
-    ]);
-    this.updateBlockQuizData();
-  }
-
-  removeQuizQuestion(index: number): void {
-    if (this.quizQuestions().length <= 1) {
-      return;
-    }
-    this.quizQuestions.update((items) => items.filter((_, i) => i !== index));
+  onQuizBuilderChange(data: QuizData): void {
+    this.quizQuestions.set([...data.questions]);
+    this.quizPassingScore.set(data.passingScore);
+    this.quizTimeLimit.set(data.timeLimitMinutes);
+    this.quizMaxAttempts.set(data.maxAttempts);
     this.updateBlockQuizData();
   }
 
@@ -558,10 +631,6 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
 
   goToEvaluationTab(): void {
     this.activeTab.set('evaluation');
-  }
-
-  optionLetter(index: number): string {
-    return String.fromCharCode(65 + index);
   }
 
   moduleLessons(moduleId: string) {

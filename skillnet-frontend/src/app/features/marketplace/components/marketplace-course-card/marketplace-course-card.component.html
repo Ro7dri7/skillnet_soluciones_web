@@ -54,7 +54,11 @@
       </span>
       <span class="flex items-center gap-1">
         <i class="ri-book-open-line"></i>
-        {{ course().lessonsCount }} lecciones
+        {{ course().moduleCount }} {{ course().moduleCount === 1 ? 'módulo' : 'módulos' }}
+      </span>
+      <span class="flex items-center gap-1">
+        <i class="ri-file-list-3-line"></i>
+        {{ course().lessonsCount }} {{ course().lessonsCount === 1 ? 'lección' : 'lecciones' }}
       </span>
       <span class="flex items-center gap-1">
         <i class="ri-bar-chart-line"></i>

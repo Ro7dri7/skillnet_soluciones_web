@@ -1,15 +1,21 @@
 export type ContentType = 'text' | 'image' | 'video' | 'pdf' | 'quiz' | 'audio';
 
+export type QuizQuestionType = 'multiple' | 'true_false' | 'matching' | 'free_response';
+
 export interface QuizQuestionDraft {
   id: string;
+  type?: QuizQuestionType;
   text: string;
   options: string[];
   correctIndex: number;
+  matches?: string[];
+  imageUrl?: string | null;
 }
 
 export interface QuizData {
   passingScore: number;
   timeLimitMinutes: number;
+  maxAttempts: number;
   questions: QuizQuestionDraft[];
 }
 

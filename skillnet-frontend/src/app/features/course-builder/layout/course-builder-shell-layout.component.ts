@@ -16,6 +16,11 @@ import { ActionFeedbackButtonComponent } from '../../../shared/components/action
 import type { ActionFeedbackPhase } from '../../../shared/components/action-feedback-button/action-feedback-button.component';
 import { messageFromHttpError } from '../../../shared/utils/http-error.util';
 import {
+  courseManagePath,
+  normalizeCourseSlugForUrl,
+  slugifyCourseTitle,
+} from '../../../shared/utils/course-slug.util';
+import {
   BUILDER_SHELL_NAV,
   BuilderShellNavItem,
 } from '../data/builder-shell-nav.data';
@@ -87,6 +92,16 @@ export class CourseBuilderShellLayoutComponent {
 
   readonly courseTitle = computed(() => this.builder.title());
   readonly courseId = computed(() => this.builder.state().courseId);
+
+  readonly courseManageBasicsLink = computed(() => {
+    const id = this.courseId();
+    if (!id) {
+      return null;
+    }
+    const slug =
+      this.builder.state().courseSlug ?? slugifyCourseTitle(this.builder.title() || 'curso');
+    return courseManagePath(normalizeCourseSlugForUrl(slug), 'basics');
+  });
 
   readonly sectionsComplete = computed(() => {
     const d = this.builder.state();
@@ -178,7 +193,10 @@ export class CourseBuilderShellLayoutComponent {
   resolveNavLink(item: BuilderShellNavItem): string[] {
     const id = this.courseId();
     if (id && MANAGE_LINKS.has(item.wizardPath)) {
-      return ['/instructor/courses', String(id), 'manage', item.managePath];
+      const slug =
+        this.builder.state().courseSlug ??
+        slugifyCourseTitle(this.builder.title() || 'curso');
+      return [courseManagePath(normalizeCourseSlugForUrl(slug), item.managePath)];
     }
     return [`${COURSE_NEW_BASE}/${item.wizardPath}`];
   }

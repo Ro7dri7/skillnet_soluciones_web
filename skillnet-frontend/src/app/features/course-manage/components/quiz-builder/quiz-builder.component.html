@@ -1,0 +1,259 @@
+<div class="quiz-builder">
+  <section class="quiz-global-config">
+    <span class="quiz-global-config__title">
+      <i class="ri-questionnaire-line" aria-hidden="true"></i>
+      Config. global
+    </span>
+    <div class="quiz-global-config__fields">
+      <div class="quiz-global-field">
+        <label class="quiz-global-field__label">Aprobación</label>
+        <div class="quiz-global-field__row">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            class="quiz-global-field__input"
+            [ngModel]="passingScore()"
+            (ngModelChange)="updatePassingScore(+$event)"
+          />
+          <span class="quiz-global-field__suffix">%</span>
+        </div>
+      </div>
+      <div class="quiz-global-field">
+        <label class="quiz-global-field__label">Tiempo</label>
+        <div class="quiz-global-field__row">
+          <input
+            type="number"
+            min="1"
+            class="quiz-global-field__input"
+            [ngModel]="timeLimitMinutes()"
+            (ngModelChange)="updateTimeLimit(+$event)"
+          />
+          <span class="quiz-global-field__suffix quiz-global-field__suffix--muted">min</span>
+        </div>
+      </div>
+      <div class="quiz-global-field">
+        <label class="quiz-global-field__label">Intentos</label>
+        <select
+          class="quiz-global-field__select"
+          [ngModel]="maxAttempts()"
+          (ngModelChange)="updateMaxAttempts(+$event)"
+        >
+          <option [ngValue]="1">1 intento</option>
+          <option [ngValue]="3">3 intentos</option>
+          <option [ngValue]="5">5 intentos</option>
+          <option [ngValue]="0">Ilimitados</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <div class="quiz-container">
+    <button type="button" class="quiz-add-question-btn" (click)="addQuestion()">
+      + Añadir pregunta
+    </button>
+
+    <div #quizStrip class="quiz-questions-strip" aria-label="Preguntas del quizz">
+      @for (q of questions(); track q.id; let idx = $index) {
+        <div
+          class="quiz-strip-card"
+          [class.is-active]="q.id === activeQuestionId()"
+          [attr.data-quiz-strip-id]="q.id"
+          role="button"
+          tabindex="0"
+          (click)="selectQuestion(q.id)"
+          (keydown)="onStripKeydown($event, q.id)"
+        >
+          @if (questions().length > 1) {
+            <button
+              type="button"
+              class="quiz-strip-delete"
+              title="Eliminar pregunta"
+              (click)="removeQuestion(q.id, $event)"
+            >
+              <i class="ri-close-line" aria-hidden="true"></i>
+            </button>
+          }
+          <div class="quiz-strip-card__body">
+            <div class="quiz-strip-card__head">
+              <span class="quiz-strip-card__index">P{{ idx + 1 }}</span>
+              <span class="quiz-strip-card__type">{{ typeLabel(q.type) }}</span>
+            </div>
+            <p class="quiz-strip-card__preview">{{ q.text || 'Nueva pregunta…' }}</p>
+            <span class="quiz-strip-card__meta">{{ optionCountLabel(q) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="quiz-editor">
+      @if (activeQuestion(); as activeQ) {
+        <header class="quiz-editor__header">
+          <div class="quiz-editor__title-row">
+            <div class="quiz-editor__badge">{{ activeQuestionIndex() + 1 }}</div>
+            <span class="quiz-editor__title">Editor de Pregunta</span>
+          </div>
+          <div class="quiz-editor__actions">
+            @if (activeQ.imageUrl) {
+              <button
+                type="button"
+                class="quiz-editor__image-preview"
+                title="Eliminar imagen"
+                (click)="clearQuestionImage(activeQ.id)"
+              >
+                <img [src]="activeQ.imageUrl" alt="Vista previa" />
+                <span class="quiz-editor__image-remove"><i class="ri-close-line"></i></span>
+              </button>
+            }
+            <button
+              type="button"
+              class="quiz-editor__image-btn"
+              [disabled]="imageUploadingId() === activeQ.id"
+              (click)="triggerImageUpload(activeQ.id)"
+            >
+              <i class="ri-image-add-line"></i>
+              {{
+                imageUploadingId() === activeQ.id
+                  ? 'Subiendo…'
+                  : activeQ.imageUrl
+                    ? 'Cambiar imagen'
+                    : 'Añadir imagen'
+              }}
+            </button>
+            <input
+              type="file"
+              [id]="'question-image-upload-' + activeQ.id"
+              accept="image/*"
+              class="sr-only"
+              (change)="onQuestionImageSelected(activeQ.id, $event)"
+            />
+          </div>
+        </header>
+
+        <section class="quiz-editor__type-section">
+          <label class="quiz-editor__label">Tipo de Pregunta</label>
+          <div class="quiz-type-buttons">
+            @for (item of questionTypes; track item.value) {
+              <button
+                type="button"
+                class="quiz-type-btn"
+                [class.is-active]="activeQ.type === item.value || (!activeQ.type && item.value === 'multiple')"
+                (click)="setQuestionType(activeQ.id, item.value)"
+              >
+                {{ item.label }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <div class="quiz-editor__field">
+          <label class="quiz-editor__label">Enunciado de la Pregunta</label>
+          <textarea
+            class="quiz-editor__textarea"
+            placeholder="Escribe la pregunta aquí..."
+            [ngModel]="activeQ.text"
+            (ngModelChange)="patchQuestion(activeQ.id, { text: $event })"
+          ></textarea>
+        </div>
+
+        <div class="quiz-editor__field">
+          <label class="quiz-editor__label">
+            @if (activeQ.type === 'matching') {
+              Define las parejas correspondientes
+            } @else if (activeQ.type === 'free_response') {
+              Instrucciones para la respuesta
+            } @else {
+              Opciones de respuesta
+            }
+          </label>
+
+          @if (activeQ.type === 'free_response') {
+            <div class="quiz-free-response-panel">
+              <p>Los estudiantes verán un campo de texto libre para su respuesta.</p>
+              <label class="quiz-editor__label quiz-editor__label--small">Placeholder del campo</label>
+              <input
+                type="text"
+                class="quiz-editor__input"
+                placeholder="Ej: Escribe tu respuesta aquí..."
+                [ngModel]="activeQ.options[0] || ''"
+                (ngModelChange)="patchQuestion(activeQ.id, { options: [$event] })"
+              />
+            </div>
+          } @else {
+            <div class="quiz-options-list">
+              @for (opt of activeQ.options; track $index; let i = $index) {
+                <div
+                  class="quiz-option-row"
+                  [class.is-correct]="activeQ.type !== 'matching' && activeQ.correctIndex === i"
+                >
+                  @if (activeQ.type !== 'matching') {
+                    <button
+                      type="button"
+                      class="quiz-option-check"
+                      [class.is-selected]="activeQ.correctIndex === i"
+                      (click)="setCorrectOption(activeQ.id, i)"
+                      [attr.aria-label]="'Marcar opción ' + (i + 1) + ' como correcta'"
+                    >
+                      @if (activeQ.correctIndex === i) {
+                        <i class="ri-check-line"></i>
+                      }
+                    </button>
+                  }
+
+                  <input
+                    type="text"
+                    class="quiz-option-input"
+                    [readonly]="activeQ.type === 'true_false'"
+                    [placeholder]="
+                      activeQ.type === 'matching'
+                        ? 'Elemento A'
+                        : 'Opción ' + optionLetter(i)
+                    "
+                    [ngModel]="opt"
+                    (ngModelChange)="updateOption(activeQ.id, i, $event)"
+                  />
+
+                  @if (activeQ.type === 'matching') {
+                    <i class="ri-arrow-right-line quiz-option-arrow" aria-hidden="true"></i>
+                    <input
+                      type="text"
+                      class="quiz-option-input"
+                      placeholder="Coincidencia B"
+                      [ngModel]="activeQ.matches?.[i] || ''"
+                      (ngModelChange)="updateMatch(activeQ.id, i, $event)"
+                    />
+                  }
+
+                  @if (activeQ.type !== 'true_false') {
+                    <button
+                      type="button"
+                      class="quiz-option-remove"
+                      (click)="removeOption(activeQ.id, i)"
+                      aria-label="Eliminar opción"
+                    >
+                      <i class="ri-close-line"></i>
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (canAddOption(activeQ)) {
+                <button type="button" class="quiz-add-option-btn" (click)="addOption(activeQ.id)">
+                  + Añadir opción
+                  @if (
+                    (activeQ.type === 'multiple' || activeQ.type === 'matching') &&
+                    activeQ.options.length >= maxOptions - 1
+                  ) {
+                    <span class="quiz-add-option-btn__hint"> (máx. {{ maxOptions }})</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="quiz-editor__empty">Selecciona o añade una pregunta.</p>
+      }
+    </div>
+  </div>
+</div>

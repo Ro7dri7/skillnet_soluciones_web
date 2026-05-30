@@ -4,8 +4,10 @@ import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.Enrollment;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.EnrollmentRepository;
+import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.projection.CategoryProgressProjection;
 import com.skillnet.persistence.repository.projection.DailyCountProjection;
+import com.skillnet.service.media.MediaStorageService;
 import com.skillnet.util.CourseSlugUtils;
 import com.skillnet.web.dto.response.analytics.CategoryProgressDTO;
 import com.skillnet.web.dto.response.analytics.DailyCountDTO;
@@ -29,6 +31,9 @@ public class StudentAnalyticsServiceImpl implements StudentAnalyticsService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final EnrollmentRepository enrollmentRepository;
+    private final LessonRepository lessonRepository;
+    private final MediaStorageService mediaStorageService;
+    private final StudentProgressService studentProgressService;
 
     @Override
     @Transactional(readOnly = true)
@@ -101,9 +106,22 @@ public class StudentAnalyticsServiceImpl implements StudentAnalyticsService {
         dto.setProfessor(formatAuthorName(professor));
         dto.setCategory(course != null && course.getCategory() != null ? course.getCategory() : "General");
         dto.setSlug(course != null ? CourseSlugUtils.normalizeIsoYearInSlug(course.getSlug()) : null);
-        dto.setProgress(enrollment.isCompleted() ? 100 : 0);
-        dto.setLessonsDone(enrollment.isCompleted() ? 1 : 0);
-        dto.setLessonsTotal(1);
+        dto.setThumbnailUrl(
+                course != null
+                        ? mediaStorageService.resolveCourseImageUrl(course.getImageUrl(), course.getImageFile())
+                        : null);
+        int progress = course != null
+                ? studentProgressService.progressPercent(enrollment.getUser().getId(), course.getId())
+                : (enrollment.isCompleted() ? 100 : 0);
+        dto.setProgress(progress);
+        long lessonsTotal = course != null ? lessonRepository.countByCourse_Id(course.getId()) : 0;
+        long lessonsDone = course != null
+                ? studentProgressService
+                        .completedLessonIds(enrollment.getUser().getId(), course.getId())
+                        .size()
+                : 0;
+        dto.setLessonsDone((int) lessonsDone);
+        dto.setLessonsTotal((int) lessonsTotal);
         if (enrollment.getEnrolledAt() != null) {
             dto.setEnrolledAt(enrollment.getEnrolledAt().toString());
         }

@@ -39,6 +39,7 @@ export interface CourseBuilderDraft {
   targetAudience: string;
   curriculum: BuilderModuleDraft[];
   courseId: number | null;
+  courseSlug: string | null;
 }
 
 export interface CourseBuilderRequest {

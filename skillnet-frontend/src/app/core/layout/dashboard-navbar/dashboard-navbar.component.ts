@@ -2,6 +2,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  computed,
   inject,
   input,
   output,
@@ -9,7 +10,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs';
 import { CartService } from '../../services/cart.service';
 import { OFFICIAL_CATEGORIES } from '../../../features/marketplace/data/categories.data';
 
@@ -37,6 +40,17 @@ export class DashboardNavbarComponent {
   readonly isAdmin = input(false);
 
   readonly logout = output<void>();
+
+  readonly showAdminChrome = computed(() => this.isAdmin() && this.isAdminPanelRoute());
+
+  private readonly isAdminPanelRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.onAdminPanelRoute()),
+      startWith(this.onAdminPanelRoute()),
+    ),
+    { initialValue: false },
+  );
 
   private readonly hostRef = inject(ElementRef<HTMLElement>);
 
@@ -163,5 +177,10 @@ export class DashboardNavbarComponent {
     this.showProfile.set(false);
     this.showCategories.set(false);
     this.showCart.set(false);
+  }
+
+  private onAdminPanelRoute(): boolean {
+    const path = this.router.url.split('?')[0];
+    return path === '/admin' || path.startsWith('/admin/');
   }
 }

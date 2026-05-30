@@ -1,0 +1,139 @@
+@if (questions().length === 0) {
+  <div class="learn-quiz learn-quiz--empty">
+    <p>Esta evaluación aún no tiene preguntas.</p>
+  </div>
+} @else if (phase() === 'intro') {
+  <div class="learn-quiz learn-quiz--intro">
+    <i class="ri-questionnaire-line learn-quiz__icon" aria-hidden="true"></i>
+    <h2 class="learn-quiz__title">Evaluación</h2>
+    <p class="learn-quiz__intro-text">
+      Para aprobar necesitas al menos <strong>{{ normalized().passingScore }}%</strong> de respuestas correctas.
+    </p>
+    <ul class="learn-quiz__meta-list">
+      <li>{{ questions().length }} pregunta{{ questions().length === 1 ? '' : 's' }}</li>
+      @if (normalized().timeLimitMinutes > 0) {
+        <li>Tiempo límite: {{ normalized().timeLimitMinutes }} min</li>
+      }
+      @if (normalized().maxAttempts > 0) {
+        <li>Máx. {{ normalized().maxAttempts }} intento{{ normalized().maxAttempts === 1 ? '' : 's' }}</li>
+      } @else {
+        <li>Intentos ilimitados</li>
+      }
+    </ul>
+    <button type="button" class="learn-quiz__primary-btn" (click)="startQuiz()">
+      Comenzar evaluación
+    </button>
+  </div>
+} @else if (phase() === 'taking' && currentQuestion(); as q) {
+  <div class="learn-quiz learn-quiz--taking">
+    <div class="learn-quiz__pagination">
+      @for (item of questions(); track item.id; let i = $index) {
+        <button
+          type="button"
+          class="learn-quiz__page-btn"
+          [class.is-active]="currentIndex() === i"
+          (click)="goToQuestion(i)"
+        >
+          {{ i + 1 }}
+        </button>
+      }
+    </div>
+
+    <div class="learn-quiz__question-head">
+      <span class="learn-quiz__question-badge">P{{ currentIndex() + 1 }}</span>
+      <span class="learn-quiz__question-type">{{ typeLabel(q.type) }}</span>
+    </div>
+
+    <h3 class="learn-quiz__question-text">{{ q.text || 'Pregunta sin enunciado' }}</h3>
+
+    @if (q.imageUrl) {
+      <img [src]="q.imageUrl" alt="" class="learn-quiz__question-image" />
+    }
+
+    @if (q.type === 'free_response') {
+      <textarea
+        class="learn-quiz__textarea"
+        [placeholder]="q.options[0] || 'Escribe tu respuesta aquí...'"
+        [ngModel]="freeResponseValue(q.id)"
+        (ngModelChange)="setFreeResponse(q.id, $event)"
+      ></textarea>
+    } @else if (q.type === 'matching') {
+      <div class="learn-quiz__matching-list">
+        @for (opt of q.options; track $index; let i = $index) {
+          <div class="learn-quiz__matching-row">
+            <span class="learn-quiz__matching-left">{{ opt || 'Elemento ' + (i + 1) }}</span>
+            <i class="ri-arrow-right-line" aria-hidden="true"></i>
+            <input
+              type="text"
+              class="learn-quiz__matching-input"
+              placeholder="Tu respuesta"
+              [ngModel]="matchingValue(q.id, i)"
+              (ngModelChange)="setMatchingAnswer(q.id, i, $event)"
+            />
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="learn-quiz__options">
+        @for (opt of q.options; track $index; let i = $index) {
+          <label
+            class="learn-quiz__option"
+            [class.is-selected]="selectedOptionIndex(q.id) === i"
+          >
+            <input
+              type="radio"
+              [name]="'quiz-q-' + q.id"
+              [checked]="selectedOptionIndex(q.id) === i"
+              (change)="selectOption(q.id, i)"
+            />
+            <span>{{ opt || 'Opción ' + optionLetter(i) }}</span>
+          </label>
+        }
+      </div>
+    }
+
+    <div class="learn-quiz__footer">
+      <button type="button" class="learn-quiz__secondary-btn" [disabled]="currentIndex() === 0" (click)="goPrev()">
+        Anterior
+      </button>
+      <button
+        type="button"
+        class="learn-quiz__primary-btn"
+        [disabled]="!canAdvance()"
+        (click)="goNext()"
+      >
+        {{ isLastQuestion() ? 'Finalizar evaluación' : 'Siguiente' }}
+      </button>
+    </div>
+  </div>
+} @else if (phase() === 'results') {
+  <div class="learn-quiz learn-quiz--results" [class.is-passed]="hasPassed()">
+    <div class="learn-quiz__score-ring">
+      <span class="learn-quiz__score-value">{{ scorePercent() }}%</span>
+    </div>
+    <h2 class="learn-quiz__title">
+      {{ hasPassed() ? '¡Evaluación aprobada!' : 'Evaluación no aprobada' }}
+    </h2>
+    <p class="learn-quiz__intro-text">
+      Obtuviste {{ scorePercent() }}% (mínimo requerido: {{ normalized().passingScore }}%).
+    </p>
+
+    <div class="learn-quiz__pagination learn-quiz__pagination--results">
+      @for (item of questions(); track item.id; let i = $index) {
+        <span
+          class="learn-quiz__page-btn"
+          [class.is-correct]="questionStatus(i) === 'correct'"
+          [class.is-incorrect]="questionStatus(i) === 'incorrect'"
+        >
+          {{ i + 1 }}
+        </span>
+      }
+    </div>
+
+    @if (!hasPassed()) {
+      <button type="button" class="learn-quiz__secondary-btn" (click)="retryQuiz()">
+        Intentar de nuevo
+      </button>
+    }
+  </div>
+}

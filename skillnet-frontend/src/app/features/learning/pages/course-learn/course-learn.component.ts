@@ -1,25 +1,46 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CourseLearnPage,
   LearnLesson,
   LearnModule,
   StudentService,
 } from '../../../../core/services/student.service';
-import { ContentBlockDTO } from '../../../../shared/models/curriculum.model';
+import { ContentBlockDTO, QuizData } from '../../../../shared/models/curriculum.model';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
-import { courseLandingPath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
+import { absoluteMediaUrl, mediaBackendUrl } from '../../../../shared/utils/media-url.util';
+import { normalizeQuizData } from '../../../course-manage/utils/quiz.util';
+import { LearnQuizPlayerComponent } from '../../components/learn-quiz-player/learn-quiz-player.component';
+import { PdfBlockViewerComponent } from '../../components/pdf-block-viewer/pdf-block-viewer.component';
+
+interface FlatLesson {
+  lesson: LearnLesson;
+  moduleId: number;
+}
 
 @Component({
   selector: 'app-course-learn',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, PdfBlockViewerComponent, LearnQuizPlayerComponent],
   templateUrl: './course-learn.component.html',
   styleUrl: './course-learn.component.scss',
 })
 export class CourseLearnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly studentService = inject(StudentService);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  private readonly contentAreaRef = viewChild<ElementRef<HTMLElement>>('contentAreaRef');
 
   readonly page = signal<CourseLearnPage | null>(null);
   readonly loading = signal(true);
@@ -27,6 +48,11 @@ export class CourseLearnComponent implements OnInit {
   readonly expandedModules = signal<Set<number>>(new Set());
   readonly activeLessonId = signal<number | null>(null);
   readonly searchQuery = signal('');
+  readonly sidebarCollapsed = signal(false);
+  readonly completedLessonIds = signal<Set<number>>(new Set());
+  readonly savingProgress = signal(false);
+
+  private courseSlug = '';
 
   readonly activeLesson = computed(() => {
     const lessonId = this.activeLessonId();
@@ -37,6 +63,33 @@ export class CourseLearnComponent implements OnInit {
       if (hit) return hit;
     }
     return null;
+  });
+
+  readonly allLessonsFlat = computed((): FlatLesson[] => {
+    const data = this.page();
+    if (!data) return [];
+    return data.modules.flatMap((mod) =>
+      mod.lessons.map((lesson) => ({ lesson, moduleId: mod.id })),
+    );
+  });
+
+  readonly currentLessonIndex = computed(() => {
+    const id = this.activeLessonId();
+    if (id == null) return -1;
+    return this.allLessonsFlat().findIndex((item) => item.lesson.id === id);
+  });
+
+  readonly courseProgressPercent = computed(() => {
+    const total = this.allLessonsFlat().length;
+    if (total === 0) return 0;
+    const done = this.completedLessonIds().size;
+    return Math.round((done / total) * 100);
+  });
+
+  readonly activeLessonHasPdf = computed(() => {
+    const lesson = this.activeLesson();
+    if (!lesson) return false;
+    return this.lessonBlocks(lesson).some((b) => b.contentType === 'pdf' && b.resourceUrl);
   });
 
   readonly filteredModules = computed(() => {
@@ -55,11 +108,6 @@ export class CourseLearnComponent implements OnInit {
       .filter((mod) => mod.lessons.length > 0 || mod.title.toLowerCase().includes(q));
   });
 
-  readonly canonicalSlug = computed(() => {
-    const data = this.page();
-    return data ? normalizeCourseSlugForUrl(data.slug) : '';
-  });
-
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug');
     if (!slug) {
@@ -67,9 +115,11 @@ export class CourseLearnComponent implements OnInit {
       this.loading.set(false);
       return;
     }
+    this.courseSlug = slug;
     this.studentService.getLearnPage(slug).subscribe({
       next: (data) => {
         this.page.set(data);
+        this.completedLessonIds.set(new Set(data.completedLessonIds ?? []));
         this.loading.set(false);
         const firstLesson = data.modules.flatMap((m) => m.lessons)[0];
         if (firstLesson) {
@@ -82,6 +132,10 @@ export class CourseLearnComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((v) => !v);
   }
 
   toggleModule(moduleId: number): void {
@@ -105,9 +159,75 @@ export class CourseLearnComponent implements OnInit {
     this.expandedModules.update((prev) => new Set(prev).add(moduleId));
   }
 
+  goPrevLesson(): void {
+    const idx = this.currentLessonIndex();
+    if (idx <= 0) return;
+    const prev = this.allLessonsFlat()[idx - 1];
+    this.selectLesson(prev.lesson, prev.moduleId);
+  }
+
+  goNextLesson(): void {
+    const idx = this.currentLessonIndex();
+    const flat = this.allLessonsFlat();
+    if (idx < 0 || flat.length === 0) return;
+
+    const currentId = this.activeLessonId();
+    if (currentId == null) return;
+
+    const advance = (): void => {
+      if (idx < flat.length - 1) {
+        const next = flat[idx + 1];
+        this.selectLesson(next.lesson, next.moduleId);
+      }
+    };
+
+    if (this.completedLessonIds().has(currentId)) {
+      advance();
+      return;
+    }
+
+    this.savingProgress.set(true);
+    this.studentService.markLessonComplete(this.courseSlug, currentId).subscribe({
+      next: (result) => {
+        this.completedLessonIds.update((set) => new Set(set).add(result.lessonId));
+        this.savingProgress.set(false);
+        advance();
+      },
+      error: () => {
+        this.savingProgress.set(false);
+        advance();
+      },
+    });
+  }
+
+  canGoPrev(): boolean {
+    return this.currentLessonIndex() > 0;
+  }
+
+  canGoNext(): boolean {
+    const idx = this.currentLessonIndex();
+    return idx >= 0 && idx < this.allLessonsFlat().length - 1;
+  }
+
+  toggleContentFullscreen(): void {
+    const el = this.contentAreaRef()?.nativeElement;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      void el.requestFullscreen().catch(() => undefined);
+    } else {
+      void document.exitFullscreen();
+    }
+  }
+
+  exitCourse(): void {
+    void this.router.navigate(['/mis-cursos']);
+  }
+
   moduleProgress(mod: LearnModule): number {
     if (!mod.lessons.length) return 0;
-    return 0;
+    const completed = this.completedLessonIds();
+    const done = mod.lessons.filter((l) => completed.has(l.id)).length;
+    return Math.round((done / mod.lessons.length) * 100);
   }
 
   lessonBlocks(lesson: LearnLesson): ContentBlockDTO[] {
@@ -121,6 +241,7 @@ export class CourseLearnComponent implements OnInit {
         resourceUrl: lesson.resourceUrl ?? '',
         textContent: lesson.textContent ?? '',
         orderIndex: 0,
+        quizData: lesson.quizData,
       },
     ];
   }
@@ -143,8 +264,42 @@ export class CourseLearnComponent implements OnInit {
     return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url) || url.includes('video');
   }
 
-  landingPath(): string {
-    const slug = this.canonicalSlug();
-    return slug ? courseLandingPath(slug) : '/marketplace';
+  trustedResourceUrl(url: string | null | undefined): SafeResourceUrl | null {
+    const resolved = mediaBackendUrl(url);
+    if (!resolved) {
+      return null;
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl(resolved);
+  }
+
+  mediaUrl(url: string | null | undefined): string {
+    return mediaBackendUrl(url);
+  }
+
+  mediaAbsoluteUrl(url: string | null | undefined): string {
+    return absoluteMediaUrl(url);
+  }
+
+  quizDataForBlock(block: ContentBlockDTO): QuizData | null {
+    if (!block.quizData) {
+      return null;
+    }
+    return normalizeQuizData({
+      passingScore: block.quizData.passingScore,
+      timeLimitMinutes: block.quizData.timeLimitMinutes,
+      maxAttempts: block.quizData.maxAttempts ?? 3,
+      questions: block.quizData.questions ?? [],
+    });
+  }
+
+  onQuizPassed(lessonId: number): void {
+    if (this.completedLessonIds().has(lessonId)) {
+      return;
+    }
+    this.studentService.markLessonComplete(this.courseSlug, lessonId).subscribe({
+      next: (result) => {
+        this.completedLessonIds.update((set) => new Set(set).add(result.lessonId));
+      },
+    });
   }
 }

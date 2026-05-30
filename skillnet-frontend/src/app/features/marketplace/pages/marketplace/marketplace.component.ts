@@ -3,10 +3,10 @@ import { Router, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { User } from '../../../../shared/models/auth.model';
-import { CourseResponse } from '../../../../shared/models/course.model';
 import { MARKETPLACE_CATEGORIES, OFFER_FORMATS } from '../../data/categories.data';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
 import { MarketplaceCarouselComponent } from '../../components/marketplace-carousel/marketplace-carousel.component';
+import { courseToMarketplace } from '../../../../shared/utils/marketplace-course.util';
 
 @Component({
   selector: 'app-marketplace',
@@ -40,7 +40,7 @@ export class MarketplaceComponent implements OnInit {
       next: (items) => {
         const published = items
           .filter((c) => c.status === 'published')
-          .map((c, i) => this.toMarketplaceCourse(c, i));
+          .map((c) => courseToMarketplace(c));
         const list = published.length > 0 ? published : this.mockCourses();
         this.courses.set(list);
         this.buildCategories(list);
@@ -102,27 +102,6 @@ export class MarketplaceComponent implements OnInit {
     this.categorized.set(map);
   }
 
-  private toMarketplaceCourse(course: CourseResponse, index: number): MarketplaceCourse {
-    const categories = [...MARKETPLACE_CATEGORIES];
-    return {
-      id: course.id,
-      title: course.title,
-      slug: course.slug,
-      description: course.description,
-      level: course.level,
-      status: course.status,
-      price: course.price,
-      originalPrice: Math.round(course.price * 1.25),
-      category: categories[index % categories.length],
-      format: index % 2 === 0 ? 'Curso' : 'Ebook',
-      rating: 4.2 + (index % 8) * 0.1,
-      enrollmentCount: 120 + index * 37,
-      lessonsCount: 12 + (index % 20),
-      professorName: 'Skillnet Academy',
-      imageUrl: null,
-    };
-  }
-
   private mockCourses(): MarketplaceCourse[] {
     return Array.from({ length: 12 }).map((_, i) => ({
       id: i + 1,
@@ -138,6 +117,7 @@ export class MarketplaceComponent implements OnInit {
       rating: 4.5,
       enrollmentCount: 200 + i * 10,
       lessonsCount: 24,
+      moduleCount: 3,
       professorName: 'Prof. Skillnet',
       imageUrl: null,
     }));

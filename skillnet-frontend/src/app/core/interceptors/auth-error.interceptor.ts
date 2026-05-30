@@ -38,6 +38,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
         if (hadToken && !url.startsWith('/login') && !stayOnPage) {
           void router.navigate(['/login'], {
             queryParams: { returnUrl: url },
+            replaceUrl: true,
           });
         }
       }
@@ -45,6 +46,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 403 && !authService.isLoggedIn() && !url.startsWith('/login')) {
         void router.navigate(['/login'], {
           queryParams: { returnUrl: url },
+          replaceUrl: true,
         });
       }
 

@@ -1,5 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { CurriculumWorkspaceComponent } from '../../components/curriculum-workspace/curriculum-workspace.component';
 
 @Component({
@@ -14,15 +14,8 @@ import { CurriculumWorkspaceComponent } from '../../components/curriculum-worksp
     }
   `,
 })
-export class ManageCurriculumComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
+export class ManageCurriculumComponent {
+  private readonly manageContext = inject(CourseManageContextService);
 
-  readonly courseId = signal<number | null>(null);
-
-  ngOnInit(): void {
-    const id = this.route.parent?.snapshot.paramMap.get('id');
-    if (id && !Number.isNaN(Number(id))) {
-      this.courseId.set(Number(id));
-    }
-  }
+  readonly courseId = this.manageContext.courseId;
 }

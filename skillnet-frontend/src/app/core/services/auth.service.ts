@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, WritableSignal, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { SocialAuthService } from '@abacritt/angularx-social-login';
 import { Observable, tap } from 'rxjs';
 import { dashboardPathForRole } from '../../shared/utils/user-role.util';
 import { environment } from '../../../environments/environment';
@@ -22,6 +23,7 @@ export type AppRole = 'student' | 'infoproductor' | 'admin';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly socialAuthService = inject(SocialAuthService, { optional: true });
   private readonly apiUrl = environment.apiUrl;
 
   private readonly currentUserSignal: WritableSignal<User | null> = signal(this.loadStoredUser());
@@ -63,6 +65,7 @@ export class AuthService {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
     this.currentUserSignal.set(null);
+    void this.socialAuthService?.signOut(true).catch(() => undefined);
   }
 
   isLoggedIn(): boolean {

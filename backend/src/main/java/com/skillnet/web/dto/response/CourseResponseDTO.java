@@ -51,4 +51,7 @@ public class CourseResponseDTO {
     private String securityStatus;
     private JsonNode securityScanReport;
     private Instant lastScannedAt;
+    private int moduleCount;
+    private int lessonsCount;
+    private long enrollmentCount;
 }

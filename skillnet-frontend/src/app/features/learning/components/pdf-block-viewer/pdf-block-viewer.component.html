@@ -1,0 +1,50 @@
+<div #containerRef class="pdf-viewer" (contextmenu)="$event.preventDefault()">
+  @if (loading()) {
+    <div class="pdf-viewer__state">
+      <span class="pdf-viewer__spinner" aria-hidden="true"></span>
+      <p>Cargando documento…</p>
+    </div>
+  } @else if (error()) {
+    <div class="pdf-viewer__state">
+      <p>No se pudo cargar el PDF.</p>
+      @if (downloadUrl()) {
+        <a [href]="downloadUrl()" target="_blank" rel="noopener noreferrer" class="pdf-viewer__link">
+          <i class="ri-external-link-line"></i>
+          Abrir en nueva pestaña
+        </a>
+      }
+    </div>
+  } @else if (safeBlobUrl(); as src) {
+    <div class="pdf-viewer__toolbar">
+      <span class="pdf-viewer__title">{{ title() }}</span>
+      <div class="pdf-viewer__tools">
+        <button type="button" class="pdf-viewer__btn" (click)="zoomOut()" title="Reducir zoom">
+          <i class="ri-zoom-out-line"></i>
+        </button>
+        <span class="pdf-viewer__zoom">{{ zoomPercent() }}%</span>
+        <button type="button" class="pdf-viewer__btn" (click)="zoomIn()" title="Aumentar zoom">
+          <i class="ri-zoom-in-line"></i>
+        </button>
+        <button type="button" class="pdf-viewer__btn pdf-viewer__btn--accent" (click)="toggleFullscreen()" title="Pantalla completa">
+          <i [class]="isFullscreen() ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'"></i>
+        </button>
+        @if (downloadUrl()) {
+          <a
+            [href]="downloadUrl()"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="pdf-viewer__btn pdf-viewer__btn--link"
+            title="Abrir en nueva pestaña"
+          >
+            <i class="ri-external-link-line"></i>
+          </a>
+        }
+      </div>
+    </div>
+    <div class="pdf-viewer__canvas">
+      <div class="pdf-viewer__scaler" [style.transform]="'scale(' + zoom() + ')'" [style.width.%]="100 / zoom()">
+        <iframe class="pdf-viewer__iframe" [src]="src" [title]="title()"></iframe>
+      </div>
+    </div>
+  }
+</div>

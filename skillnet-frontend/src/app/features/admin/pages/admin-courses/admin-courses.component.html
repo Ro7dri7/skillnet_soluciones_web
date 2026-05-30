@@ -1,7 +1,11 @@
 <section class="page-head">
   <h1>Cursos</h1>
-  <p>Catálogo completo del marketplace (todos los estados).</p>
+  <p>Gestión de publicación: publicar, borrador o dar de baja cursos del marketplace.</p>
 </section>
+
+@if (toast()) {
+  <p class="toast">{{ toast() }}</p>
+}
 
 @if (loading()) {
   <p class="state">Cargando cursos…</p>
@@ -17,6 +21,7 @@
           <th>Slug</th>
           <th>Estado</th>
           <th>Precio</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -29,6 +34,46 @@
               <span [class]="'status ' + course.status">{{ statusLabel(course.status) }}</span>
             </td>
             <td>{{ course.price | currency: 'USD' }}</td>
+            <td>
+              <div class="actions">
+                @if (canPublish(course)) {
+                  <button
+                    type="button"
+                    class="action-btn action-btn--publish"
+                    [disabled]="isBusy(course.id)"
+                    (click)="publishCourse(course)"
+                    title="Publicar curso"
+                  >
+                    <i class="ri-check-line"></i>
+                    Publicar
+                  </button>
+                }
+                @if (canDraft(course)) {
+                  <button
+                    type="button"
+                    class="action-btn action-btn--draft"
+                    [disabled]="isBusy(course.id)"
+                    (click)="setDraft(course)"
+                    title="Pasar a borrador"
+                  >
+                    <i class="ri-draft-line"></i>
+                    Borrador
+                  </button>
+                }
+                @if (canTakedown(course)) {
+                  <button
+                    type="button"
+                    class="action-btn action-btn--danger"
+                    [disabled]="isBusy(course.id)"
+                    (click)="takedownCourse(course)"
+                    title="Dar de baja"
+                  >
+                    <i class="ri-forbid-line"></i>
+                    Baja
+                  </button>
+                }
+              </div>
+            </td>
           </tr>
         }
       </tbody>

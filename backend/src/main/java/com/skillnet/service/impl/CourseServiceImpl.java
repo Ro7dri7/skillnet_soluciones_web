@@ -4,6 +4,9 @@ import com.skillnet.mapper.CourseMapper;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.CourseRepository;
+import com.skillnet.persistence.repository.EnrollmentRepository;
+import com.skillnet.persistence.repository.LessonRepository;
+import com.skillnet.persistence.repository.SectionRepository;
 import com.skillnet.service.CourseService;
 import com.skillnet.util.CourseSlugUtils;
 import com.skillnet.web.dto.request.CourseRequestDTO;
@@ -20,10 +23,21 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
+    private final SectionRepository sectionRepository;
+    private final LessonRepository lessonRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
-    public CourseServiceImpl(CourseRepository courseRepository, CourseMapper courseMapper) {
+    public CourseServiceImpl(
+            CourseRepository courseRepository,
+            CourseMapper courseMapper,
+            SectionRepository sectionRepository,
+            LessonRepository lessonRepository,
+            EnrollmentRepository enrollmentRepository) {
         this.courseRepository = courseRepository;
         this.courseMapper = courseMapper;
+        this.sectionRepository = sectionRepository;
+        this.lessonRepository = lessonRepository;
+        this.enrollmentRepository = enrollmentRepository;
     }
 
     @Override
@@ -35,7 +49,7 @@ public class CourseServiceImpl implements CourseService {
         } else {
             course.setSlug(CourseSlugUtils.normalizeIsoYearInSlug(course.getSlug().trim()));
         }
-        return courseMapper.toResponseDTO(courseRepository.save(course));
+        return enrichPublicStats(courseMapper.toResponseDTO(courseRepository.save(course)));
     }
 
     @Override
@@ -43,7 +57,7 @@ public class CourseServiceImpl implements CourseService {
     public Optional<CourseResponseDTO> update(Long id, CourseRequestDTO dto) {
         return courseRepository.findById(id).map(existing -> {
             courseMapper.applyToEntity(existing, dto);
-            return courseMapper.toResponseDTO(courseRepository.save(existing));
+            return enrichPublicStats(courseMapper.toResponseDTO(courseRepository.save(existing)));
         });
     }
 
@@ -67,32 +81,32 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public Optional<CourseResponseDTO> findById(Long id) {
-        return courseRepository.findById(id).map(courseMapper::toResponseDTO);
+        return courseRepository.findById(id).map(this::mapWithPublicStats);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CourseResponseDTO> findAll() {
-        return courseRepository.findAll().stream().map(courseMapper::toResponseDTO).toList();
+        return courseRepository.findAll().stream().map(this::mapWithPublicStats).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<CourseResponseDTO> findBySlug(String slug) {
-        return courseRepository.findBySlug(slug).map(courseMapper::toResponseDTO);
+        return courseRepository.findBySlug(slug).map(this::mapWithPublicStats);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<CourseResponseDTO> findBySlugVariants(String slug) {
-        return CourseSlugUtils.resolveCourse(courseRepository, slug).map(courseMapper::toResponseDTO);
+        return CourseSlugUtils.resolveCourse(courseRepository, slug).map(this::mapWithPublicStats);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CourseResponseDTO> findByProfessorId(Long professorId) {
         return courseRepository.findByProfessor_Id(professorId).stream()
-                .map(courseMapper::toResponseDTO)
+                .map(this::mapWithPublicStats)
                 .toList();
     }
 
@@ -100,7 +114,22 @@ public class CourseServiceImpl implements CourseService {
     @Transactional(readOnly = true)
     public List<CourseResponseDTO> findByStatus(String status) {
         return courseRepository.findByStatus(status).stream()
-                .map(courseMapper::toResponseDTO)
+                .map(this::mapWithPublicStats)
                 .toList();
+    }
+
+    private CourseResponseDTO mapWithPublicStats(Course course) {
+        return enrichPublicStats(courseMapper.toResponseDTO(course));
+    }
+
+    private CourseResponseDTO enrichPublicStats(CourseResponseDTO dto) {
+        if (dto == null || dto.getId() == null) {
+            return dto;
+        }
+        long courseId = dto.getId();
+        dto.setModuleCount((int) sectionRepository.countByCourse_Id(courseId));
+        dto.setLessonsCount((int) lessonRepository.countByCourse_Id(courseId));
+        dto.setEnrollmentCount(enrollmentRepository.countByCourse_Id(courseId));
+        return dto;
     }
 }
