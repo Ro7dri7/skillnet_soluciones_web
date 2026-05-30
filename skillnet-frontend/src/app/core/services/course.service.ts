@@ -50,6 +50,12 @@ export class CourseService {
       .pipe(map((item) => this.toCourseResponse(item)));
   }
 
+  getCourseBySlug(slug: string): Observable<CourseResponse> {
+    return this.http
+      .get<CourseApiResponse>(`${this.baseUrl}/by-slug/${encodeURIComponent(slug)}`)
+      .pipe(map((item) => this.toCourseResponse(item)));
+  }
+
   createCourse(course: CourseRequest, professorId?: number): Observable<CourseResponse> {
     return this.http
       .post<CourseApiResponse>(this.baseUrl, this.toApiPayload(course, professorId))

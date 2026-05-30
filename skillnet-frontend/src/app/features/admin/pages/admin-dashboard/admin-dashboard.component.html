@@ -1,0 +1,190 @@
+@if (loading()) {
+  <div class="admin-loading">Cargando dashboard…</div>
+} @else if (error()) {
+  <div class="admin-error">{{ error() }}</div>
+} @else if (data(); as dash) {
+  <section class="hero">
+    <div>
+      <p class="hero-greeting">{{ dash.periodLabel }}</p>
+      <h1 class="hero-title">Resumen operativo, <span>{{ greeting() }}</span></h1>
+      <p class="hero-sub">
+        Control central del marketplace Skillnet. KPIs según vista y período seleccionado.
+      </p>
+    </div>
+  </section>
+
+  <section class="alerts-row">
+    <div class="alert-card a">
+      <div class="alert-icon a"><i class="ri-book-upload-line"></i></div>
+      <div>
+        <div class="alert-title a">{{ dash.pendingDraftCourses }} cursos en borrador</div>
+        <div class="alert-sub">Pendientes de revisión o publicación.</div>
+      </div>
+    </div>
+    <div class="alert-card r">
+      <div class="alert-icon r"><i class="ri-user-unfollow-line"></i></div>
+      <div>
+        <div class="alert-title r">{{ dash.inactiveUsersTotal }} usuarios inactivos</div>
+        <div class="alert-sub">Cuentas dadas de baja o desactivadas.</div>
+      </div>
+    </div>
+    <div class="alert-card g">
+      <div class="alert-icon g"><i class="ri-shield-check-line"></i></div>
+      <div>
+        <div class="alert-title g">Pasarela operativa</div>
+        <div class="alert-sub">Stripe conectado en entorno local.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pbar">
+    <span class="pbar-label">Período</span>
+    <div class="pbtns">
+      @for (opt of periodOptions; track opt.value) {
+        <button
+          type="button"
+          class="pbtn"
+          [class.on]="period() === opt.value"
+          (click)="setPeriod(opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      }
+    </div>
+
+    <div class="pbar-view">
+      <label for="dash-view-select">Vista</label>
+      <select
+        id="dash-view-select"
+        [ngModel]="view()"
+        (ngModelChange)="view.set($event); onViewChange()"
+      >
+        @for (opt of viewOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (period() === 'personalizado') {
+      <div class="pcustom">
+        <input type="date" [ngModel]="customStart()" (ngModelChange)="customStart.set($event)" />
+        <input type="date" [ngModel]="customEnd()" (ngModelChange)="customEnd.set($event)" />
+        <button type="button" class="pbtn on" (click)="applyCustomRange()">Aplicar</button>
+      </div>
+    } @else {
+      <div class="prange">
+        <i class="ri-calendar-line"></i>
+        <span>{{ dash.periodLabel }}</span>
+      </div>
+    }
+
+    <button type="button" class="pclear" (click)="clearFilters()">
+      <i class="ri-filter-off-line"></i> Limpiar filtros
+    </button>
+  </section>
+
+  <section class="kpi-grid">
+    @for (kpi of dash.kpis; track kpi.id) {
+      <article class="kcard">
+        <div class="kcard-accent" [style.background]="kpi.accentColor"></div>
+        <div class="kcard-top">
+          <div>
+            <div class="kcard-lbl">{{ kpi.label }}</div>
+            <div class="kcard-val">{{ kpi.value }}</div>
+          </div>
+          <div class="kcard-icon" [style.background]="kpi.accentColor + '18'">
+            <i [class]="kpi.icon" [style.color]="kpi.accentColor"></i>
+          </div>
+        </div>
+        <div class="kcard-foot">
+          <span [class]="pillClass(kpi.changeDirection)">{{ kpi.changePercent }}</span>
+          <span class="kcard-meta">{{ kpi.meta }}</span>
+        </div>
+      </article>
+    }
+  </section>
+
+  <section class="chart-row c11">
+    <article class="ccard">
+      <header class="ccard-hd">
+        <div>
+          <h2 class="ccard-title">Evolución de ingresos netos</h2>
+          <p class="ccard-sub">Facturación del período (USD)</p>
+        </div>
+      </header>
+      <div echarts [options]="revenueChart()" class="ccanvas"></div>
+    </article>
+    <article class="ccard">
+      <header class="ccard-hd">
+        <div>
+          <h2 class="ccard-title">Adquisición de alumnos</h2>
+          <p class="ccard-sub">Nuevos registros en la plataforma</p>
+        </div>
+      </header>
+      <div echarts [options]="usersChart()" class="ccanvas"></div>
+    </article>
+  </section>
+
+  <section class="chart-row c21">
+    <article class="tcard">
+      <header class="tcard-hd">
+        <div>
+          <h2 class="tcard-title">Transacciones recientes</h2>
+          <p class="ccard-sub">Últimos cobros procesados</p>
+        </div>
+      </header>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Curso</th>
+            <th>Monto</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tx of dash.recentTransactions; track tx.id) {
+            <tr>
+              <td>
+                <div class="tx-user">
+                  <span class="av">{{ tx.buyerInitials }}</span>
+                  <span>{{ tx.buyerName }}</span>
+                </div>
+              </td>
+              <td>{{ tx.courseTitle }}</td>
+              <td class="tx-amount">{{ tx.amount | currency: 'USD' }}</td>
+              <td><span [class]="statusClass(tx.status)">{{ tx.status }}</span></td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty-cell">Sin transacciones aún.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </article>
+
+    <article class="ccard">
+      <header class="ccard-hd">
+        <div>
+          <h2 class="ccard-title">Top infoproductores</h2>
+          <p class="ccard-sub">Por volumen de ventas del período</p>
+        </div>
+      </header>
+      <div class="mlist">
+        @for (p of dash.topProducers; track p.id; let i = $index) {
+          <div class="mrow">
+            <span class="mrank" [class.top]="i < 3">{{ i + 1 }}</span>
+            <div class="minfo">
+              <div class="mname">{{ p.name }}</div>
+              <div class="mmeta">{{ p.category }}</div>
+            </div>
+            <div class="mval">{{ p.revenue | currency: 'USD' }}</div>
+          </div>
+        } @empty {
+          <p class="empty-cell">Sin ventas en este período.</p>
+        }
+      </div>
+    </article>
+  </section>
+}

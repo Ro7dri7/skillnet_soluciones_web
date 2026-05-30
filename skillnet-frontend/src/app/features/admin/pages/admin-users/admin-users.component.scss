@@ -1,0 +1,82 @@
+.page-head {
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #032b60;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: #4a6fa5;
+    font-size: 13px;
+  }
+}
+
+.state {
+  padding: 1rem;
+  color: #4a6fa5;
+
+  &.error {
+    color: #c03030;
+  }
+}
+
+.table-wrap {
+  background: #fff;
+  border: 1px solid #eef2ff;
+  border-radius: 12px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #8099bc;
+  padding: 10px 14px;
+  background: #f8f9ff;
+  border-bottom: 1px solid #eef2ff;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eef2ff;
+  font-size: 12px;
+  color: #1a3a6b;
+}
+
+.role-badge {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(20, 91, 255, 0.1);
+  color: #145bff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+
+  &.ok {
+    background: #e0fbf4;
+    color: #00a87e;
+  }
+  &.off {
+    background: #feecec;
+    color: #c03030;
+  }
+}

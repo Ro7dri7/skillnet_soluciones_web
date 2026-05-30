@@ -26,8 +26,8 @@
           }
         </select>
         <select
-          [(ngModel)]="selectedYear"
-          (ngModelChange)="onFiltersChange()"
+          [ngModel]="selectedYear()"
+          (ngModelChange)="selectedYear.set($event); onFiltersChange()"
           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
         >
           @for (year of years; track year) {
@@ -35,8 +35,8 @@
           }
         </select>
         <select
-          [(ngModel)]="selectedMonth"
-          (ngModelChange)="onFiltersChange()"
+          [ngModel]="selectedMonth()"
+          (ngModelChange)="selectedMonth.set($event); onFiltersChange()"
           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-skillnet-dark shadow-sm outline-none focus:border-skillnet-accent focus:ring-2 focus:ring-skillnet-accent/20"
         >
           @for (month of months; track month) {
@@ -46,10 +46,27 @@
       </div>
     </div>
 
+    @if (loadError(); as err) {
+      <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</div>
+    }
+
+    @if (showEmptyAccountHint()) {
+      <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Esta cuenta no tiene cursos comprados todavía. Los KPIs se alimentan de la base de datos local:
+        inicia sesión con la cuenta que completó el checkout (por ejemplo Google con la que compraste) o compra un
+        curso desde el marketplace. El filtro de mes solo afecta al gráfico de compras del periodo.
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="flex min-h-[320px] items-center justify-center rounded-xl border border-slate-200 bg-white">
+        <span class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-skillnet-accent border-t-transparent"></span>
+      </div>
+    } @else {
     <div class="grid grid-cols-12 gap-8">
       <!-- Columna principal -->
       <section class="col-span-12 space-y-8 lg:col-span-9">
-        <!-- Continuar aprendiendo -->
+        @if (continueCourse(); as featured) {
         <article
           class="group relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-xl bg-skillnet-dark p-8 text-white shadow-card"
         >
@@ -68,30 +85,34 @@
               Continuar aprendiendo
             </span>
             <h2 class="mb-2 text-2xl font-bold leading-tight md:text-3xl">
-              Maestría en Ciencia de Datos
+              {{ featured.title }}
             </h2>
-            <p class="mb-6 text-sm text-white/80">Módulo 2: Tipos de datos — 24 minutos restantes</p>
+            <p class="mb-6 text-sm text-white/80">{{ featured.professor }}</p>
 
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div class="flex-1">
                 <div class="mb-2 flex justify-between text-xs font-bold uppercase tracking-widest text-white/70">
                   <span>Progreso del curso</span>
-                  <span>64%</span>
+                  <span>{{ featured.progress }}%</span>
                 </div>
                 <div class="h-3 overflow-hidden rounded-full bg-white/20">
-                  <div class="h-full w-[64%] rounded-full bg-skillnet-cyan shadow-[0_0_15px_rgba(57,184,253,0.5)]"></div>
+                  <div
+                    class="h-full rounded-full bg-skillnet-cyan shadow-[0_0_15px_rgba(57,184,253,0.5)]"
+                    [style.width.%]="featured.progress"
+                  ></div>
                 </div>
               </div>
-              <button
-                type="button"
-                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-skillnet-dark transition-colors hover:bg-skillnet-sky"
+              <a
+                [routerLink]="courseLearnLink(featured)"
+                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-skillnet-dark no-underline transition-colors hover:bg-skillnet-sky"
               >
                 <i class="ri-play-fill text-lg"></i>
                 Reanudar clase
-              </button>
+              </a>
             </div>
           </div>
         </article>
+        }
 
         <!-- KPIs -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -112,14 +133,7 @@
                 }
               </div>
               <p class="mb-1 text-sm font-medium text-skillnet-muted">{{ kpi.label }}</p>
-              @if (kpi.label === 'Horas Invertidas') {
-                <p class="flex items-baseline gap-1 text-3xl font-bold text-skillnet-dark">
-                  {{ kpi.value }}
-                  <span class="text-sm font-normal text-skillnet-muted">h</span>
-                </p>
-              } @else {
-                <p class="text-3xl font-bold text-skillnet-dark">{{ kpi.value }}</p>
-              }
+              <p class="text-3xl font-bold text-skillnet-dark">{{ kpi.value }}</p>
             </article>
           }
         </div>
@@ -160,8 +174,7 @@
                 >
                   <div class="relative h-40 overflow-hidden">
                     <div
-                      class="h-full w-full bg-gradient-to-br transition-transform duration-500 group-hover:scale-110"
-                      [class]="course.gradient"
+                      class="h-full w-full bg-gradient-to-br from-skillnet-dark via-skillnet-accent/80 to-skillnet-cyan/60 transition-transform duration-500 group-hover:scale-110"
                     ></div>
                     <span
                       class="absolute left-3 top-3 rounded bg-white/90 px-2 py-1 text-[10px] font-bold uppercase text-skillnet-dark backdrop-blur"
@@ -222,31 +235,8 @@
           </div>
 
           <div class="mt-8 border-t border-slate-200 pt-8">
-            <h4 class="mb-4 text-sm font-bold text-skillnet-dark">Ruta de Aprendizaje</h4>
-            <ol class="relative space-y-6 pl-6 before:absolute before:bottom-2 before:left-[7px] before:top-2 before:w-0.5 before:bg-slate-200">
-              @for (step of learningPath; track step.title) {
-                <li class="relative">
-                  <span
-                    class="absolute -left-6 top-0.5 h-4 w-4 rounded-full border-4 border-white"
-                    [class]="pathDotClass(step.status)"
-                  ></span>
-                  <p class="text-xs font-bold text-skillnet-dark">{{ step.title }}</p>
-                  <p class="text-[10px] text-skillnet-muted">
-                    @switch (step.status) {
-                      @case ('completed') {
-                        Completado
-                      }
-                      @case ('in_progress') {
-                        En progreso
-                      }
-                      @default {
-                        Siguiente paso
-                      }
-                    }
-                  </p>
-                </li>
-              }
-            </ol>
+            <h4 class="mb-4 text-sm font-bold text-skillnet-dark">Compras en el periodo</h4>
+            <div echarts [options]="purchaseChartOptions()" class="h-48 w-full"></div>
           </div>
         </article>
       </aside>
@@ -301,5 +291,6 @@
         </div>
       </section>
     </div>
+    }
   </div>
 </div>

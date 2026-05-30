@@ -1,6 +1,7 @@
 package com.skillnet.persistence.repository;
 
 import com.skillnet.persistence.entity.core.Course;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByCategoryIgnoreCase(String category);
 
     boolean existsBySlug(String slug);
+
+    boolean existsBySlugAndIdNot(String slug, Long id);
+
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant start, Instant end);
+
+    long countByStatus(String status);
 }

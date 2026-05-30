@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CourseLevel, CourseStatus } from '../../../../shared/models/course.model';
+import { slugifyCourseTitle } from '../../../../shared/utils/course-slug.util';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 
 @Component({
@@ -120,12 +121,6 @@ export class CourseFormComponent implements OnInit {
   }
 
   private slugify(value: string): string {
-    return value
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 300);
+    return slugifyCourseTitle(value);
   }
 }

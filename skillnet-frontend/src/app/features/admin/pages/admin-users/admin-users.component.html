@@ -1,0 +1,39 @@
+<section class="page-head">
+  <h1>Usuarios</h1>
+  <p>Gestión central de cuentas registradas en Skillnet.</p>
+</section>
+
+@if (loading()) {
+  <p class="state">Cargando usuarios…</p>
+} @else if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Registro</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>{{ displayName(user) }}</td>
+            <td>{{ user.email }}</td>
+            <td><span class="role-badge">{{ roleLabel(user) }}</span></td>
+            <td>
+              <span [class]="user.active !== false ? 'status ok' : 'status off'">
+                {{ user.active !== false ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>{{ user.dateJoined | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

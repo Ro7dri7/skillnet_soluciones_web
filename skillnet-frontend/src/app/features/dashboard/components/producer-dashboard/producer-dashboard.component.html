@@ -39,6 +39,19 @@
       </div>
     </div>
 
+    @if (loadError(); as err) {
+      <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</div>
+    }
+
+    @if (showEmptyProducerHint()) {
+      <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        No hay ventas ni cursos publicados para esta cuenta. Publica un curso como infoproductor o ejecuta
+        <code class="rounded bg-amber-100 px-1">python backend/scripts/seed_demo_analytics.py</code>
+        para datos demo en local. Los ingresos del gráfico dependen del mes/año seleccionado; el KPI de cursos
+        vendidos muestra el total acumulado.
+      </div>
+    }
+
     @if (isLoading()) {
       <div
         class="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-gray-100 bg-white p-8 shadow-sm"
@@ -90,10 +103,10 @@
         <article class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-skillnet-muted">
-              Cursos Publicados
+              Cursos Vendidos
             </p>
-            <p class="mt-1 text-2xl font-bold text-skillnet-dark">{{ data.kpis.publishedCourses }}</p>
-            <p class="mt-1.5 text-[10px] text-gray-500">Estado publicado en catálogo</p>
+            <p class="mt-1 text-2xl font-bold text-skillnet-dark">{{ data.kpis.coursesSold | number }}</p>
+            <p class="mt-1.5 text-[10px] text-gray-500">{{ selectedMonth() }} {{ selectedYear() }}</p>
           </div>
           <span
             class="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700"
@@ -123,7 +136,7 @@
 
       <!-- Fila 2: gráficos -->
       <section class="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-8">
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-5">
           <div class="mb-2 flex items-center justify-between">
             <div>
               <h2 class="text-sm font-bold text-skillnet-dark">Evolución de Ingresos</h2>
@@ -132,6 +145,14 @@
             <span class="text-[10px] font-medium text-skillnet-muted">USD</span>
           </div>
           <div echarts [options]="revenueChartOptions()" class="h-72 w-full"></div>
+        </article>
+
+        <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-3">
+          <div class="mb-2">
+            <h2 class="text-sm font-bold text-skillnet-dark">Cursos vendidos</h2>
+            <p class="text-[11px] text-gray-500">Ventas completadas por día</p>
+          </div>
+          <div echarts [options]="salesCountChartOptions()" class="h-72 w-full"></div>
         </article>
 
         <article class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:col-span-4">

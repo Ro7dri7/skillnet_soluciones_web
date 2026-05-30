@@ -11,6 +11,14 @@ function isBuilderOrManageRoute(url: string): boolean {
   );
 }
 
+function isAuthEndpoint(url: string): boolean {
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/google')
+  );
+}
+
 export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -24,7 +32,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
       const url = router.url;
       const stayOnPage = isBuilderOrManageRoute(url);
 
-      if (error.status === 401) {
+      if (error.status === 401 && !isAuthEndpoint(req.url)) {
         const hadToken = Boolean(authService.getToken());
         authService.logout();
         if (hadToken && !url.startsWith('/login') && !stayOnPage) {

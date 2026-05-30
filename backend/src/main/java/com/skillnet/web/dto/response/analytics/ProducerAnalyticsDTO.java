@@ -13,6 +13,7 @@ public class ProducerAnalyticsDTO {
 
     private KpiDTO kpis;
     private List<DailyRevenueDTO> revenueTrend = new ArrayList<>();
+    private List<DailyCountDTO> coursesSoldTrend = new ArrayList<>();
     private List<CategorySalesDTO> salesByCategory = new ArrayList<>();
     private List<TopCourseDTO> topCourses = new ArrayList<>();
     private List<RecentTransactionDTO> recentTransactions = new ArrayList<>();

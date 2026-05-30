@@ -86,6 +86,8 @@ public class UserMapper {
         dto.setActiveRole(activeRole);
         dto.setStudent(user.isStudent());
         dto.setInfoproductor(user.isInfoproductor());
+        dto.setSuperUser(user.isSuperUser());
+        dto.setStaff(user.isStaff());
         dto.setProfilePicture(user.getProfilePicture());
         return dto;
     }

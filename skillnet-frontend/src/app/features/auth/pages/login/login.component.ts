@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   GoogleSigninButtonDirective,
   SocialAuthService,
@@ -10,6 +10,7 @@ import { Subscription, filter } from 'rxjs';
 import { AuthNavbarComponent } from '../../../../core/layout/auth-navbar/auth-navbar.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
+import { returnUrlFromQuery } from '../../../../shared/utils/return-url.util';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -28,6 +29,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly socialAuthService = inject(SocialAuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   private authStateSub?: Subscription;
   private googleLoginInProgress = false;
@@ -45,6 +47,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    if (this.authService.isLoggedIn()) {
+      this.navigateAfterAuth();
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       const onResize = () => this.isMobile.set(window.innerWidth <= 900);
       window.addEventListener('resize', onResize);
@@ -109,6 +116,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   private navigateAfterAuth(): void {
     this.isLoading.set(false);
     this.googleLoginInProgress = false;
-    void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser());
+    const returnUrl = returnUrlFromQuery(this.route.snapshot.queryParams);
+    const target = returnUrl ?? this.authService.dashboardPathForCurrentUser();
+    void this.router.navigateByUrl(target);
   }
 }

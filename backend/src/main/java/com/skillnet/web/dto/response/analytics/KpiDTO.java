@@ -13,5 +13,7 @@ public class KpiDTO {
     private BigDecimal totalRevenue;
     private Long activeStudents;
     private Integer publishedCourses;
+    /** Ventas completadas (pagos) en el periodo seleccionado. */
+    private Long coursesSold;
     private Double avgRating;
 }

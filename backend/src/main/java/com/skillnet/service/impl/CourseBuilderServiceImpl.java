@@ -13,6 +13,7 @@ import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.SectionRepository;
 import com.skillnet.persistence.repository.UserRepository;
 import com.skillnet.service.CourseBuilderService;
+import com.skillnet.util.CourseSlugUtils;
 import com.skillnet.web.dto.request.CourseBuilderRequestDTO;
 import com.skillnet.web.dto.request.CurriculumLessonRequestDTO;
 import com.skillnet.web.dto.request.CurriculumModuleRequestDTO;
@@ -61,7 +62,7 @@ public class CourseBuilderServiceImpl implements CourseBuilderService {
         course.setSoftware(JsonNodeFactory.instance.arrayNode());
         course.setOriginalPrice(BigDecimal.ZERO);
         course.setPrice(BigDecimal.ZERO);
-        course.setSlug(generateUniqueSlug(request.getTitle()));
+        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, request.getTitle(), null));
 
         Course saved = courseRepository.save(course);
         persistCurriculum(saved, request.getCurriculum());
@@ -180,17 +181,6 @@ public class CourseBuilderServiceImpl implements CourseBuilderService {
     }
 
     private String generateUniqueSlug(String title) {
-        String base = title == null ? "curso" : title.trim().toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9\\s-]", "")
-                .replaceAll("\\s+", "-");
-        if (base.isBlank()) {
-            base = "curso";
-        }
-        String candidate = base;
-        int suffix = 1;
-        while (courseRepository.existsBySlug(candidate)) {
-            candidate = base + "-" + suffix++;
-        }
-        return candidate;
+        return CourseSlugUtils.uniqueSlug(courseRepository, title, null);
     }
 }

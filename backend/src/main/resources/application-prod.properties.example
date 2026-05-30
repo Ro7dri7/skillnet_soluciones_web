@@ -1,0 +1,21 @@
+# Plantilla producción — copiar a application-prod.properties y completar secretos.
+# Activar: --spring.profiles.active=prod
+
+spring.datasource.url=jdbc:postgresql://skillnet-db-prod.c78u2kwwc352.us-east-2.rds.amazonaws.com:5432/skillnet_db?sslmode=verify-full&sslrootcert=classpath:global-bundle.pem
+spring.datasource.username=postgres_aws
+spring.datasource.password=CHANGE_ME
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.show-sql=false
+spring.jpa.hibernate.ddl-auto=validate
+
+aws.region=us-east-2
+aws.s3.bucket.name=skillnet-media-prod
+aws.access.key.id=CHANGE_ME
+aws.secret.access.key=CHANGE_ME
+
+skillnet.media.storage=s3
+skillnet.media.s3-bucket=${aws.s3.bucket.name}
+skillnet.media.s3-region=${aws.region}
+skillnet.media.s3-access-key=${aws.access.key.id}
+skillnet.media.s3-secret-key=${aws.secret.access.key}

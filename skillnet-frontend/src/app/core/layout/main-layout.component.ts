@@ -5,7 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../services/auth.service';
 import { User } from '../../shared/models/auth.model';
-import { isStudentRole } from '../../shared/utils/user-role.util';
+import { isAdminAccount, isStudentRole } from '../../shared/utils/user-role.util';
 import { DashboardNavbarComponent } from './dashboard-navbar/dashboard-navbar.component';
 import { DashboardSidebarComponent } from './dashboard-sidebar/dashboard-sidebar.component';
 import { MarketplaceCategoryBarComponent } from '../../features/marketplace/components/marketplace-category-bar/marketplace-category-bar.component';
@@ -13,6 +13,8 @@ import { isWizardOnlyStep, isWizardStepWithoutMainSidebar } from '../../features
 
 const FULL_WIDTH_PREFIXES = ['/marketplace', '/catalog', '/checkout'];
 const CATEGORY_BAR_PREFIXES = ['/marketplace', '/catalog'];
+const ADMIN_ROUTE = /^\/admin(\/|$)/;
+const LEARN_ROUTE = /\/marketplace\/course\/[^/]+\/learn$/;
 
 @Component({
   selector: 'app-main-layout',
@@ -46,6 +48,24 @@ export class MainLayoutComponent {
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       map(() => this.isWizardWithoutMainSidebar()),
       startWith(this.isWizardWithoutMainSidebar()),
+    ),
+    { initialValue: false },
+  );
+
+  readonly isLearnRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.isCourseLearnRoute()),
+      startWith(this.isCourseLearnRoute()),
+    ),
+    { initialValue: false },
+  );
+
+  readonly isAdminRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.isAdminPanelRoute()),
+      startWith(this.isAdminPanelRoute()),
     ),
     { initialValue: false },
   );
@@ -91,7 +111,11 @@ export class MainLayoutComponent {
   }
 
   isAdmin(user: User): boolean {
-    return user.role === 'admin';
+    return isAdminAccount(user, this.authService.getToken()) || this.isAdminPanelRoute();
+  }
+
+  private isAdminPanelRoute(): boolean {
+    return ADMIN_ROUTE.test(this.router.url.split('?')[0]);
   }
 
   private isWizardWithoutMainSidebar(): boolean {
@@ -104,11 +128,21 @@ export class MainLayoutComponent {
 
   private isFullWidthRoute(): boolean {
     const path = this.router.url.split('?')[0];
+    if (this.isCourseLearnRoute()) {
+      return false;
+    }
     return FULL_WIDTH_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+  }
+
+  private isCourseLearnRoute(): boolean {
+    return LEARN_ROUTE.test(this.router.url.split('?')[0]);
   }
 
   private isCategoryBarRoute(): boolean {
     const path = this.router.url.split('?')[0];
+    if (this.isCourseLearnRoute() || this.isAdminPanelRoute()) {
+      return false;
+    }
     return CATEGORY_BAR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   }
 }

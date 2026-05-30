@@ -14,6 +14,7 @@ import com.skillnet.service.media.MediaStorageService;
 import com.skillnet.service.media.StoredMedia;
 import com.skillnet.web.dto.request.CreateCourseCouponRequestDTO;
 import com.skillnet.web.dto.request.CreateCourseRequestDTO;
+import com.skillnet.util.CourseSlugUtils;
 import com.skillnet.web.dto.request.UpdateCourseBasicsRequestDTO;
 import com.skillnet.web.dto.request.UpdateCourseMessagesRequestDTO;
 import com.skillnet.web.dto.request.UpdateCoursePricingRequestDTO;
@@ -76,7 +77,7 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         course.setTargetAudience(dto.getTargetAudience());
         course.setStatus(CourseStatus.DRAFT.getDbValue());
         course.setCreatedAt(Instant.now());
-        course.setSlug(generateUniqueSlug(title));
+        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, title, null));
         applyDefaults(course);
 
         Course saved = courseRepository.save(course);
@@ -114,6 +115,7 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         Course course = requireCourseOwned(courseId, professorId);
         if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
             course.setTitle(dto.getTitle().trim());
+            course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, dto.getTitle().trim(), course.getId()));
         }
         if (dto.getDescription() != null) {
             course.setDescription(dto.getDescription());
@@ -383,17 +385,6 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
     }
 
     private String generateUniqueSlug(String title) {
-        String base = title == null ? "curso" : title.trim().toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9\\s-]", "")
-                .replaceAll("\\s+", "-");
-        if (base.isBlank()) {
-            base = "curso";
-        }
-        String candidate = base;
-        int suffix = 1;
-        while (courseRepository.existsBySlug(candidate)) {
-            candidate = base + "-" + suffix++;
-        }
-        return candidate;
+        return CourseSlugUtils.uniqueSlug(courseRepository, title, null);
     }
 }

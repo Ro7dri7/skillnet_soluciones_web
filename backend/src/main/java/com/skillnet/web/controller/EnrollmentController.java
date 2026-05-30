@@ -42,14 +42,14 @@ public class EnrollmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<EnrollmentResponseDTO> create(@Valid @RequestBody EnrollmentRequestDTO dto) {
         EnrollmentResponseDTO created = enrollmentService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<EnrollmentResponseDTO> update(
             @PathVariable Long id, @Valid @RequestBody EnrollmentRequestDTO dto) {
         return ResponseEntity.ok(enrollmentService.update(id, dto)
@@ -57,7 +57,7 @@ public class EnrollmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (enrollmentService.findById(id).isEmpty()) {
             throw new EntityNotFoundException("Enrollment not found with id: " + id);

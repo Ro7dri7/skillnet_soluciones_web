@@ -1,5 +1,6 @@
 package com.skillnet.api.controller.student;
 
+import com.skillnet.api.dto.student.CourseLearnResponseDTO;
 import com.skillnet.api.dto.student.MyCourseResponseDTO;
 import com.skillnet.security.CustomUserDetails;
 import com.skillnet.service.student.StudentLearningService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,5 +31,15 @@ public class StudentLearningController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         }
         return ResponseEntity.ok(studentLearningService.getMyCourses(userDetails.getId()));
+    }
+
+    @GetMapping("/courses/{slug}/learn")
+    public ResponseEntity<CourseLearnResponseDTO> getLearnPage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String slug) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return ResponseEntity.ok(studentLearningService.getLearnPage(slug, userDetails.getId()));
     }
 }

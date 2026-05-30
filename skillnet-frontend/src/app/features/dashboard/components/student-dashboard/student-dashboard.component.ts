@@ -1,6 +1,17 @@
-import { Component, computed, ElementRef, input, signal, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import type { EChartsCoreOption } from 'echarts/core';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import { catchError, combineLatest, of, switchMap, tap } from 'rxjs';
 import { CourseCardComponent } from '../../../../shared/components/course-card/course-card.component';
+import { StudentAnalyticsService } from '../../../../core/services/student-analytics.service';
+import {
+  StudentAnalyticsResponse,
+  StudentLearningCourse,
+} from '../../../../shared/models/analytics.model';
 import { User } from '../../../../shared/models/auth.model';
 
 export type CategoryFilter = 'Todas' | 'Tecnología' | 'Finanzas' | 'Marketing' | 'Diseño';
@@ -19,23 +30,6 @@ interface ProgressItem {
   categories: CategoryFilter[];
 }
 
-interface LearningCourse {
-  id: number;
-  title: string;
-  professor: string;
-  category: CategoryFilter;
-  tab: Exclude<LearningTab, 'todos'>;
-  progress: number;
-  lessonsDone: number;
-  lessonsTotal: number;
-  gradient: string;
-}
-
-interface LearningPathStep {
-  title: string;
-  status: 'completed' | 'in_progress' | 'pending';
-}
-
 interface RecommendedCourse {
   id: number;
   title: string;
@@ -46,47 +40,43 @@ interface RecommendedCourse {
   students: string;
 }
 
-interface KpiSlice {
-  enrolled: number;
-  completed: number;
-  certificates: number;
-  hours: number;
-  enrolledBadge?: string;
-}
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+] as const;
+
+const EMPTY_ANALYTICS: StudentAnalyticsResponse = {
+  kpis: { purchasedCourses: 0, purchasedInPeriod: 0, completedCourses: 0, certificates: 0, activeCourses: 0 },
+  purchaseTrend: [],
+  progressByCategory: [],
+  learningCourses: [],
+};
 
 @Component({
   selector: 'app-student-dashboard',
   standalone: true,
-  imports: [FormsModule, CourseCardComponent],
+  imports: [FormsModule, RouterLink, CourseCardComponent, NgxEchartsDirective],
   templateUrl: './student-dashboard.component.html',
 })
 export class StudentDashboardComponent {
-  readonly user = input.required<User>();
+  private readonly analyticsService = inject(StudentAnalyticsService);
 
+  readonly user = input.required<User>();
   readonly carouselRef = viewChild<ElementRef<HTMLElement>>('carouselTrack');
 
-  readonly years = ['2024', '2025', '2026'];
-  readonly months = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
-  ];
-  readonly categories: CategoryFilter[] = [
-    'Todas',
-    'Tecnología',
-    'Finanzas',
-    'Marketing',
-    'Diseño',
-  ];
+  readonly months = [...MONTH_NAMES];
+  readonly years = this.buildYearOptions();
+  readonly categories: CategoryFilter[] = ['Todas', 'Tecnología', 'Finanzas', 'Marketing', 'Diseño'];
   readonly learningTabs: { id: LearningTab; label: string }[] = [
     { id: 'todos', label: 'Todos' },
     { id: 'videocursos', label: 'Videocursos' },
@@ -94,80 +84,37 @@ export class StudentDashboardComponent {
     { id: 'audiolibros', label: 'Audiolibros' },
   ];
 
-  selectedYear = '2026';
-  selectedMonth = 'Mayo';
+  readonly selectedYear = signal(String(new Date().getFullYear()));
+  readonly selectedMonth = signal(MONTH_NAMES[new Date().getMonth()]);
   selectedCategory: CategoryFilter = 'Todas';
-  activeLearningTab = signal<LearningTab>('todos');
+  readonly activeLearningTab = signal<LearningTab>('todos');
 
-  private readonly kpiByPeriod: Record<string, KpiSlice> = {
-    '2026-Mayo-Todas': { enrolled: 12, completed: 24, certificates: 8, hours: 342.5, enrolledBadge: '+2 hoy' },
-    '2026-Mayo-Tecnología': { enrolled: 5, completed: 11, certificates: 4, hours: 156.2, enrolledBadge: '+1 hoy' },
-    '2026-Mayo-Finanzas': { enrolled: 4, completed: 8, certificates: 2, hours: 98.0 },
-    '2026-Mayo-Marketing': { enrolled: 2, completed: 3, certificates: 1, hours: 45.5 },
-    '2026-Mayo-Diseño': { enrolled: 1, completed: 2, certificates: 1, hours: 42.8 },
-    '2026-Abril-Todas': { enrolled: 10, completed: 20, certificates: 6, hours: 298.0 },
-    '2025-Diciembre-Todas': { enrolled: 8, completed: 18, certificates: 5, hours: 210.5 },
-  };
+  readonly isLoading = signal(true);
+  readonly loadError = signal<string | null>(null);
 
-  private readonly allProgress: ProgressItem[] = [
-    { subject: 'Tecnología', percent: 92, categories: ['Todas', 'Tecnología'] },
-    { subject: 'Finanzas', percent: 85, categories: ['Todas', 'Finanzas'] },
-    { subject: 'Marketing', percent: 45, categories: ['Todas', 'Marketing'] },
-    { subject: 'Diseño', percent: 62, categories: ['Todas', 'Diseño'] },
-  ];
-
-  private readonly allLearningCourses: LearningCourse[] = [
-    {
-      id: 1,
-      title: 'Desarrollo Web Fullstack',
-      professor: 'Prof. Maria Elena Castro',
-      category: 'Tecnología',
-      tab: 'videocursos',
-      progress: 85,
-      lessonsDone: 24,
-      lessonsTotal: 28,
-      gradient: 'from-skillnet-dark via-skillnet-accent/80 to-skillnet-cyan/60',
-    },
-    {
-      id: 2,
-      title: 'Inversiones en Mercados Globales',
-      professor: 'Prof. David Chen',
-      category: 'Finanzas',
-      tab: 'videocursos',
-      progress: 42,
-      lessonsDone: 12,
-      lessonsTotal: 30,
-      gradient: 'from-emerald-900 via-emerald-700 to-teal-600',
-    },
-    {
-      id: 3,
-      title: 'UX/UI Design Pro',
-      professor: 'Prof. Sarah Johnson',
-      category: 'Diseño',
-      tab: 'ebooks',
-      progress: 15,
-      lessonsDone: 4,
-      lessonsTotal: 32,
-      gradient: 'from-violet-900 via-purple-700 to-fuchsia-600',
-    },
-    {
-      id: 4,
-      title: 'Growth Marketing 2026',
-      professor: 'Prof. Laura Méndez',
-      category: 'Marketing',
-      tab: 'audiolibros',
-      progress: 58,
-      lessonsDone: 14,
-      lessonsTotal: 24,
-      gradient: 'from-orange-900 via-amber-700 to-yellow-600',
-    },
-  ];
-
-  readonly learningPath: LearningPathStep[] = [
-    { title: 'Fundamentos de Python', status: 'completed' },
-    { title: 'Análisis de Datos con Pandas', status: 'in_progress' },
-    { title: 'Machine Learning Avanzado', status: 'pending' },
-  ];
+  readonly analyticsData = toSignal<StudentAnalyticsResponse | null>(
+    combineLatest([toObservable(this.selectedYear), toObservable(this.selectedMonth)]).pipe(
+      tap(() => {
+        this.isLoading.set(true);
+        this.loadError.set(null);
+      }),
+      switchMap(([yearStr, monthName]) => {
+        const year = Number.parseInt(yearStr, 10);
+        const month = this.months.indexOf(monthName) + 1;
+        return this.analyticsService.getAnalytics(year, month).pipe(
+          tap(() => this.isLoading.set(false)),
+          catchError((err: unknown) => {
+            this.isLoading.set(false);
+            if (!(err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403))) {
+              this.loadError.set('No se pudieron cargar tus métricas de aprendizaje.');
+            }
+            return of(EMPTY_ANALYTICS);
+          }),
+        );
+      }),
+    ),
+    { initialValue: null },
+  );
 
   readonly recommendedCourses: RecommendedCourse[] = [
     {
@@ -188,61 +135,97 @@ export class StudentDashboardComponent {
       rating: 4.8,
       students: '1.8k alumnos',
     },
-    {
-      id: 3,
-      title: 'Branding Digital Avanzado',
-      price: 59.99,
-      category: 'Marketing',
-      imageUrl: null,
-      rating: 4.7,
-      students: '980 alumnos',
-    },
-    {
-      id: 4,
-      title: 'Figma para Product Designers',
-      price: 49.99,
-      category: 'Diseño',
-      imageUrl: null,
-      rating: 4.9,
-      students: '3.1k alumnos',
-    },
   ];
 
   readonly filteredKpis = computed<KpiMetric[]>(() => {
-    const slice = this.resolveKpiSlice();
+    const kpis = this.analyticsData()?.kpis;
+    if (!kpis) {
+      return [];
+    }
     return [
       {
-        label: 'Cursos Activos',
-        value: slice.enrolled,
-        icon: 'ri-book-open-line',
-        badge: slice.enrolledBadge,
+        label: 'Cursos Comprados',
+        value: kpis.purchasedCourses,
+        icon: 'ri-shopping-bag-line',
+        badge:
+          (kpis.purchasedInPeriod ?? 0) > 0
+            ? `+${kpis.purchasedInPeriod} ${this.selectedMonth()}`
+            : undefined,
       },
-      { label: 'Completados', value: slice.completed, icon: 'ri-checkbox-circle-line' },
-      { label: 'Certificados', value: slice.certificates, icon: 'ri-award-line' },
-      { label: 'Horas Invertidas', value: slice.hours, icon: 'ri-time-line' },
+      { label: 'Completados', value: kpis.completedCourses, icon: 'ri-checkbox-circle-line' },
+      { label: 'Certificados', value: kpis.certificates, icon: 'ri-award-line' },
+      { label: 'En progreso', value: kpis.activeCourses, icon: 'ri-book-open-line' },
     ];
   });
 
-  readonly filteredProgress = computed(() =>
-    this.allProgress.filter(
-      (p) => this.selectedCategory === 'Todas' || p.categories.includes(this.selectedCategory),
-    ),
-  );
+  readonly filteredProgress = computed<ProgressItem[]>(() => {
+    const rows = this.analyticsData()?.progressByCategory ?? [];
+    return rows
+      .filter((row) => this.matchesCategory(row.categoryName, this.selectedCategory))
+      .map((row) => ({
+        subject: row.categoryName,
+        percent: row.percent,
+        categories: ['Todas', row.categoryName as CategoryFilter],
+      }));
+  });
 
-  readonly filteredLearningCourses = computed(() =>
-    this.allLearningCourses.filter((c) => {
-      const categoryOk =
-        this.selectedCategory === 'Todas' || c.category === this.selectedCategory;
+  readonly filteredLearningCourses = computed(() => {
+    const courses = this.analyticsData()?.learningCourses ?? [];
+    return courses.filter((c) => {
+      const categoryOk = this.matchesCategory(c.category, this.selectedCategory);
       const tab = this.activeLearningTab();
-      const tabOk = tab === 'todos' || c.tab === tab;
+      const tabOk = tab === 'todos' || tab === 'videocursos';
       return categoryOk && tabOk;
-    }),
-  );
+    });
+  });
+
+  readonly continueCourse = computed(() => {
+    const courses = this.analyticsData()?.learningCourses ?? [];
+    return courses.find((c) => c.progress < 100) ?? courses[0] ?? null;
+  });
+
+  readonly purchaseChartOptions = computed<EChartsCoreOption>(() => {
+    const trend = this.analyticsData()?.purchaseTrend ?? [];
+    return {
+      grid: { left: 36, right: 12, top: 16, bottom: 28 },
+      tooltip: { trigger: 'axis' },
+      xAxis: {
+        type: 'category',
+        data: trend.map((p) => this.formatChartDate(p.date)),
+        axisLabel: { fontSize: 10, color: '#6b7280' },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { fontSize: 10, color: '#6b7280' },
+      },
+      series: [
+        {
+          name: 'Compras',
+          type: 'bar',
+          data: trend.map((p) => p.count),
+          itemStyle: { color: '#145bff', borderRadius: [4, 4, 0, 0] },
+          barMaxWidth: 24,
+        },
+      ],
+    };
+  });
 
   readonly streakDays = computed(() => {
-    const base = 3;
-    const monthOffset = this.months.indexOf(this.selectedMonth);
-    return base + (monthOffset % 4);
+    const active = this.analyticsData()?.kpis.activeCourses ?? 0;
+    return Math.max(1, Math.min(30, active + 2));
+  });
+
+  readonly showEmptyAccountHint = computed(() => {
+    const data = this.analyticsData();
+    if (!data) {
+      return false;
+    }
+    return (
+      data.kpis.purchasedCourses === 0 &&
+      data.kpis.activeCourses === 0 &&
+      data.learningCourses.length === 0
+    );
   });
 
   welcomeName(user: User): string {
@@ -259,7 +242,7 @@ export class StudentDashboardComponent {
   }
 
   onFiltersChange(): void {
-    /* ngModel ya actualiza; computed reacciona automáticamente */
+    /* selectedYear / selectedMonth recargan vía toSignal */
   }
 
   scrollCarousel(direction: 'left' | 'right'): void {
@@ -270,44 +253,28 @@ export class StudentDashboardComponent {
     el.scrollBy({ left: direction === 'left' ? -320 : 320, behavior: 'smooth' });
   }
 
-  pathDotClass(status: LearningPathStep['status']): string {
-    if (status === 'completed') {
-      return 'bg-emerald-500';
-    }
-    if (status === 'in_progress') {
-      return 'bg-skillnet-cyan animate-pulse';
-    }
-    return 'bg-slate-300';
+  courseLearnLink(course: StudentLearningCourse): string[] {
+    return course.slug ? ['/marketplace/course', course.slug, 'learn'] : ['/mis-cursos'];
   }
 
-  private resolveKpiSlice(): KpiSlice {
-    const exact = this.kpiByPeriod[`${this.selectedYear}-${this.selectedMonth}-${this.selectedCategory}`];
-    if (exact) {
-      return exact;
-    }
-    const period =
-      this.kpiByPeriod[`${this.selectedYear}-${this.selectedMonth}-Todas`] ??
-      this.kpiByPeriod['2026-Mayo-Todas'];
-    if (this.selectedCategory === 'Todas') {
-      return period;
-    }
-    const factor = this.categoryFactor(this.selectedCategory);
-    return {
-      enrolled: Math.max(1, Math.round(period.enrolled * factor)),
-      completed: Math.max(0, Math.round(period.completed * factor)),
-      certificates: Math.max(0, Math.round(period.certificates * factor)),
-      hours: Math.round(period.hours * factor * 10) / 10,
-    };
+  private buildYearOptions(): string[] {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 4 }, (_, i) => String(currentYear - 2 + i));
   }
 
-  private categoryFactor(category: CategoryFilter): number {
-    const map: Record<CategoryFilter, number> = {
-      Todas: 1,
-      Tecnología: 0.45,
-      Finanzas: 0.35,
-      Marketing: 0.25,
-      Diseño: 0.2,
-    };
-    return map[category];
+  private matchesCategory(categoryName: string, filter: CategoryFilter): boolean {
+    if (filter === 'Todas') {
+      return true;
+    }
+    const normalized = categoryName.toLowerCase();
+    return normalized.includes(filter.toLowerCase()) || filter.toLowerCase().includes(normalized);
+  }
+
+  private formatChartDate(isoDate: string): string {
+    const parsed = new Date(isoDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return isoDate;
+    }
+    return parsed.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 }

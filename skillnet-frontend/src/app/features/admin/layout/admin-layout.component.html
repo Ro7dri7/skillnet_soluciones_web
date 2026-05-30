@@ -1,0 +1,47 @@
+@if (currentUser$ | async; as user) {
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <a routerLink="/admin" class="admin-logo">
+        <span class="admin-logo-box"><i class="ri-shield-star-line"></i></span>
+        <span class="admin-logo-text">Skill<span>Net</span></span>
+        <span class="admin-logo-badge">Admin</span>
+      </a>
+      <div class="admin-topbar-spacer"></div>
+      <div class="admin-topbar-actions">
+        <button type="button" class="admin-view-btn" (click)="switchToStudent()">
+          <i class="ri-graduation-cap-line"></i> Vista estudiante
+        </button>
+        <button type="button" class="admin-view-btn" (click)="switchToInfoproductor()">
+          <i class="ri-store-2-line"></i> Vista infoproductor
+        </button>
+        <div class="admin-user-chip">
+          <span class="admin-user-av">{{ initials(user) }}</span>
+          <div>
+            <div class="admin-user-name">{{ displayName(user) }}</div>
+            <div class="admin-user-role">Super Admin</div>
+          </div>
+        </div>
+        <button type="button" class="admin-logout-btn" (click)="logout()">
+          <i class="ri-logout-box-r-line"></i>
+        </button>
+      </div>
+    </header>
+
+    <nav class="admin-nav">
+      @for (item of navItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.route === '/admin' }"
+          class="admin-nav-tab"
+        >
+          <i [class]="item.icon"></i>{{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <main class="admin-main">
+      <router-outlet />
+    </main>
+  </div>
+}

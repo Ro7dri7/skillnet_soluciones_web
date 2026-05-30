@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.Lesson;
 import com.skillnet.persistence.entity.core.Section;
+import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.CourseRepository;
+import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.SectionRepository;
 import com.skillnet.service.CurriculumService;
@@ -37,6 +39,7 @@ public class CurriculumServiceImpl implements CurriculumService {
     private final CourseRepository courseRepository;
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final ObjectMapper objectMapper;
 
     @PersistenceContext
@@ -46,10 +49,12 @@ public class CurriculumServiceImpl implements CurriculumService {
             CourseRepository courseRepository,
             SectionRepository sectionRepository,
             LessonRepository lessonRepository,
+            EnrollmentRepository enrollmentRepository,
             ObjectMapper objectMapper) {
         this.courseRepository = courseRepository;
         this.sectionRepository = sectionRepository;
         this.lessonRepository = lessonRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -57,7 +62,23 @@ public class CurriculumServiceImpl implements CurriculumService {
     @Transactional(readOnly = true)
     public List<CurriculumModuleResponseDTO> getCurriculum(Long courseId, Long professorId) {
         Course course = requireCourseOwned(courseId, professorId);
-        List<Section> sections = sectionRepository.findByCourse_IdOrderByOrderIndexAsc(course.getId());
+        return buildCurriculumModules(course.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CurriculumModuleResponseDTO> getCurriculumForLearner(Long courseId, Long userId) {
+        Course course = courseRepository
+                .findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
+        if (!canAccessCurriculum(course, userId)) {
+            throw new AccessDeniedException("No tienes acceso al temario de este curso");
+        }
+        return buildCurriculumModules(course.getId());
+    }
+
+    private List<CurriculumModuleResponseDTO> buildCurriculumModules(Long courseId) {
+        List<Section> sections = sectionRepository.findByCourse_IdOrderByOrderIndexAsc(courseId);
         List<CurriculumModuleResponseDTO> result = new ArrayList<>();
 
         for (Section section : sections) {
@@ -73,6 +94,14 @@ public class CurriculumServiceImpl implements CurriculumService {
             result.add(moduleDto);
         }
         return result;
+    }
+
+    private boolean canAccessCurriculum(Course course, Long userId) {
+        User professor = course.getProfessor();
+        if (professor != null && professor.getId().equals(userId)) {
+            return true;
+        }
+        return enrollmentRepository.existsByUser_IdAndCourse_Id(userId, course.getId());
     }
 
     @Override

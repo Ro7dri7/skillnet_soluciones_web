@@ -34,6 +34,7 @@ export class DashboardNavbarComponent {
   readonly displayName = input.required<string>();
   readonly avatarSrc = input.required<string>();
   readonly isInfoproductor = input(false);
+  readonly isAdmin = input(false);
 
   readonly logout = output<void>();
 

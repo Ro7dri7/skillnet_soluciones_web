@@ -7,7 +7,7 @@
 >
   <div class="flex flex-col items-center gap-1 border-b border-white/10 px-2 py-4">
     <a
-      [routerLink]="authService.dashboardPathForCurrentUser()"
+      [routerLink]="isAdminRoute() ? '/admin' : authService.dashboardPathForCurrentUser()"
       class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5"
       title="Skillnet"
     >
@@ -102,16 +102,24 @@
           class="flex flex-1 items-center justify-center rounded-md py-1 transition-all"
           [class.bg-skillnet-sky]="authService.currentUser()?.role === 'infoproductor'"
           [class.text-skillnet-dark]="authService.currentUser()?.role === 'infoproductor'"
-          [class.shadow-md]="authService.currentUser()?.role === 'infoproductor'"
-          [class.shadow-skillnet-sky/20]="authService.currentUser()?.role === 'infoproductor'"
           [class.text-white/80]="authService.currentUser()?.role !== 'infoproductor'"
-          [class.hover:bg-white/10]="authService.currentUser()?.role !== 'infoproductor'"
-          [class.hover:text-white]="authService.currentUser()?.role !== 'infoproductor'"
           title="Vista Infoproductor"
-          [attr.aria-pressed]="authService.currentUser()?.role === 'infoproductor'"
         >
-          <i class="ri-graduation-cap-line text-base"></i>
+          <i class="ri-store-2-line text-base"></i>
         </button>
+        @if (isAdminUser()) {
+          <button
+            type="button"
+            (click)="switchToRole('admin')"
+            class="flex flex-1 items-center justify-center rounded-md py-1 transition-all"
+            [class.bg-skillnet-sky]="authService.currentUser()?.role === 'admin'"
+            [class.text-skillnet-dark]="authService.currentUser()?.role === 'admin'"
+            [class.text-white/80]="authService.currentUser()?.role !== 'admin'"
+            title="Vista Admin"
+          >
+            <i class="ri-shield-star-line text-base"></i>
+          </button>
+        }
       </div>
       @if (roleSwitchError(); as err) {
         <p class="mt-2 px-1 text-[10px] leading-snug text-red-300" role="alert">{{ err }}</p>

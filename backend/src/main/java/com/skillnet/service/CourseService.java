@@ -19,6 +19,8 @@ public interface CourseService {
 
     Optional<CourseResponseDTO> findBySlug(String slug);
 
+    Optional<CourseResponseDTO> findBySlugVariants(String slug);
+
     List<CourseResponseDTO> findByProfessorId(Long professorId);
 
     List<CourseResponseDTO> findByStatus(String status);

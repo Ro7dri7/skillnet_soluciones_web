@@ -43,6 +43,12 @@ public class CourseController {
         return ResponseEntity.ok(courseService.findAll());
     }
 
+    @GetMapping("/by-slug/{slug}")
+    public ResponseEntity<CourseResponseDTO> findBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(courseService.findBySlugVariants(slug)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with slug: " + slug)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(courseService.findById(id)
@@ -50,14 +56,14 @@ public class CourseController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<CourseResponseDTO> create(@Valid @RequestBody CourseRequestDTO dto) {
         CourseResponseDTO created = courseService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<CourseResponseDTO> update(
             @PathVariable Long id, @Valid @RequestBody CourseRequestDTO dto) {
         return ResponseEntity.ok(courseService.update(id, dto)
@@ -65,7 +71,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {

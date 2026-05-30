@@ -10,10 +10,27 @@ function roleFromJwt(token: string | null): string | undefined {
       return undefined;
     }
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-    const payload = JSON.parse(atob(padded)) as { role?: string };
+    const payload = JSON.parse(atob(padded)) as { role?: string; roles?: string[] };
     return typeof payload.role === 'string' ? payload.role.toLowerCase() : undefined;
   } catch {
     return undefined;
+  }
+}
+
+function adminCapableFromToken(token: string | null): boolean {
+  if (!token) {
+    return false;
+  }
+  try {
+    const base64 = token.split('.')[1]?.replace(/-/g, '+').replace(/_/g, '/');
+    if (!base64) {
+      return false;
+    }
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const payload = JSON.parse(atob(padded)) as { roles?: string[] };
+    return Array.isArray(payload.roles) && payload.roles.some((r) => r.toLowerCase() === 'admin');
+  } catch {
+    return false;
   }
 }
 
@@ -41,6 +58,19 @@ export function resolveUserRole(user: User | null, token: string | null = null):
   return undefined;
 }
 
+export function isAdminAccount(user: User | null, token: string | null = null): boolean {
+  if (!user) {
+    return false;
+  }
+  if (user.superUser === true || user.staff === true) {
+    return true;
+  }
+  if (user.role === 'admin' || user.activeRole === 'admin') {
+    return true;
+  }
+  return adminCapableFromToken(token);
+}
+
 export function isStudentRole(user: User | null, token: string | null = null): boolean {
   return resolveUserRole(user, token) === 'student';
 }
@@ -49,33 +79,39 @@ export function isInfoproductorRole(user: User | null, token: string | null = nu
   return resolveUserRole(user, token) === 'infoproductor';
 }
 
-export type DashboardSlug = 'estudiante' | 'infoproductor';
+export type DashboardSlug = 'estudiante' | 'infoproductor' | 'admin';
 
-/** Segmento de URL del panel según el rol activo. */
 export function dashboardSlugForRole(role: string | undefined): DashboardSlug {
+  if (role === 'admin') {
+    return 'admin';
+  }
   return role === 'infoproductor' ? 'infoproductor' : 'estudiante';
 }
 
 export function dashboardPathForRole(role: string | undefined): string {
-  return `/dashboard/${dashboardSlugForRole(role)}`;
+  if (role === 'admin') {
+    return '/admin';
+  }
+  return `/dashboard/${role === 'infoproductor' ? 'infoproductor' : 'estudiante'}`;
 }
 
-/** Puede usar la vista infoproductor (modelo dual Hotmart / Lernymart). */
 export function canAssumeInfoproductorRole(user: User | null): boolean {
   if (!user) {
     return false;
   }
-  if (user.role === 'admin') {
-    return false;
+  if (isAdminAccount(user)) {
+    return true;
   }
   return user.infoproductor !== false;
 }
 
-/** Muestra el conmutador Estudiante / Infoproductor (oculto solo para admin). */
+/** Admin puede alternar entre las tres vistas. */
 export function canSwitchDashboardRole(user: User | null): boolean {
   if (!user) {
     return false;
   }
-  const role = resolveUserRole(user);
-  return role !== 'admin';
+  if (isAdminAccount(user)) {
+    return true;
+  }
+  return resolveUserRole(user) !== 'admin';
 }

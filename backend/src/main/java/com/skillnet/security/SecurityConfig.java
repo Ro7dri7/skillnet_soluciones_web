@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/media/files/**")
                         .permitAll()
-                        .requestMatchers("/api/v1/producer/**")
+                        .requestMatchers("/api/v1/producer/**", "/api/v1/student/**")
                         .hasAnyAuthority("ROLE_STUDENT", "ROLE_INFOPRODUCTOR", "ROLE_ADMIN")
                         .anyRequest()
                         .authenticated())

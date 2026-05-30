@@ -40,7 +40,7 @@ public class LessonController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'infoproductor')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INFOPRODUCTOR')")
     public ResponseEntity<LessonResponseDTO> create(@Valid @RequestBody LessonRequestDTO dto) {
         LessonResponseDTO created = lessonService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);

@@ -46,12 +46,21 @@
             <p class="mb-6 text-4xl font-black text-skillnet-accent">
               {{ course()!.price | currency: 'USD' : 'symbol' : '1.0-0' }}
             </p>
-            <button
-              type="button"
-              class="mb-3 w-full rounded-xl bg-skillnet-accent py-3.5 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-skillnet-dark"
-            >
-              Comprar ahora
-            </button>
+            @if (isEnrolled()) {
+              <a
+                [routerLink]="learnPath()"
+                class="mb-3 flex w-full items-center justify-center rounded-xl bg-skillnet-accent py-3.5 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-skillnet-dark"
+              >
+                Continuar aprendiendo
+              </a>
+            } @else {
+              <button
+                type="button"
+                class="mb-3 w-full rounded-xl bg-skillnet-accent py-3.5 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-skillnet-dark"
+              >
+                Comprar ahora
+              </button>
+            }
             <button
               type="button"
               class="w-full rounded-xl border-2 border-skillnet-dark py-3 text-sm font-bold text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white"

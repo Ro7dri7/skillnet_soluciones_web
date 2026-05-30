@@ -11,7 +11,8 @@ import {
   RegisterRequest,
   User,
 } from '../../shared/models/auth.model';
-import { resolveUserRole } from '../../shared/utils/user-role.util';
+import { resolveUserRole, isAdminAccount } from '../../shared/utils/user-role.util';
+import { hasValidSessionToken } from '../../shared/utils/return-url.util';
 
 const TOKEN_STORAGE_KEY = 'skillnet_token';
 const USER_STORAGE_KEY = 'skillnet_user';
@@ -65,7 +66,7 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return this.getToken() !== null;
+    return hasValidSessionToken(this.getToken());
   }
 
   getCurrentUser(): User | null {
@@ -113,18 +114,19 @@ export class AuthService {
     }
   }
 
-  /** Asegura `role` desde API, flags legacy o claim JWT (sesiones antiguas). */
-  private normalizeUser(user: User, token?: string): User {
+    private normalizeUser(user: User, token?: string): User {
     const jwt = token ?? this.getToken();
     const role = resolveUserRole(user, jwt) ?? user.activeRole ?? user.role;
     if (!role) {
       return user;
     }
-    const isAdmin = role === 'admin';
+    const isAdmin = role === 'admin' || isAdminAccount(user, jwt);
     return {
       ...user,
       role,
       activeRole: role,
+      superUser: user.superUser,
+      staff: user.staff,
       student: isAdmin ? user.student === true : user.student !== false,
       infoproductor: isAdmin ? user.infoproductor === true : user.infoproductor !== false,
     };

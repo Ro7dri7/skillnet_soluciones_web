@@ -12,6 +12,8 @@ public interface CurriculumService {
 
     List<CurriculumModuleResponseDTO> getCurriculum(Long courseId, Long professorId);
 
+    List<CurriculumModuleResponseDTO> getCurriculumForLearner(Long courseId, Long userId);
+
     CurriculumModuleResponseDTO createSection(
             Long courseId, Long professorId, CreateSectionRequestDTO request);
 

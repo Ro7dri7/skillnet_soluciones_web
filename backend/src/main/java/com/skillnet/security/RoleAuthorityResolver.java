@@ -20,6 +20,8 @@ public final class RoleAuthorityResolver {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (user != null && isAdminAccount(user)) {
             authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_STUDENT"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_INFOPRODUCTOR"));
             return authorities;
         }
         // Hotmart / Lernymart: toda cuenta estándar puede usar APIs de estudiante e infoproductor.

@@ -20,5 +20,7 @@ public class UserSummaryDTO {
     private String activeRole;
     private boolean student;
     private boolean infoproductor;
+    private boolean superUser;
+    private boolean staff;
     private String profilePicture;
 }

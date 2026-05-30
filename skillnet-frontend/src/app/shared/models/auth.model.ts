@@ -6,6 +6,8 @@ export interface User {
   activeRole?: string;
   student?: boolean;
   infoproductor?: boolean;
+  superUser?: boolean;
+  staff?: boolean;
   profilePicture?: string;
   firstName?: string;
   lastName?: string;

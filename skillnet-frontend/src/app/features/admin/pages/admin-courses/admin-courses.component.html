@@ -1,0 +1,37 @@
+<section class="page-head">
+  <h1>Cursos</h1>
+  <p>Catálogo completo del marketplace (todos los estados).</p>
+</section>
+
+@if (loading()) {
+  <p class="state">Cargando cursos…</p>
+} @else if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Slug</th>
+          <th>Estado</th>
+          <th>Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (course of courses(); track course.id) {
+          <tr>
+            <td>{{ course.id }}</td>
+            <td>{{ course.title }}</td>
+            <td><code>{{ course.slug }}</code></td>
+            <td>
+              <span [class]="'status ' + course.status">{{ statusLabel(course.status) }}</span>
+            </td>
+            <td>{{ course.price | currency: 'USD' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

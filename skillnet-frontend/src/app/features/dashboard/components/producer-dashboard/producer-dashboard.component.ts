@@ -36,8 +36,9 @@ const MONTH_NAMES = [
 ] as const;
 
 const EMPTY_ANALYTICS: ProducerAnalyticsResponse = {
-  kpis: { totalRevenue: 0, activeStudents: 0, publishedCourses: 0, avgRating: 0 },
+  kpis: { totalRevenue: 0, activeStudents: 0, publishedCourses: 0, coursesSold: 0, avgRating: 0 },
   revenueTrend: [],
+  coursesSoldTrend: [],
   salesByCategory: [],
   topCourses: [],
   recentTransactions: [],
@@ -98,9 +99,21 @@ export class ProducerDashboardComponent {
     this.buildRevenueChart(this.analyticsData() ?? null),
   );
 
+  readonly salesCountChartOptions = computed<EChartsCoreOption>(() =>
+    this.buildSalesCountChart(this.analyticsData() ?? null),
+  );
+
   readonly categoryChartOptions = computed<EChartsCoreOption>(() =>
     this.buildCategoryChart(this.analyticsData() ?? null),
   );
+
+  readonly showEmptyProducerHint = computed(() => {
+    const data = this.analyticsData();
+    if (!data) {
+      return false;
+    }
+    return data.kpis.publishedCourses === 0 && data.kpis.coursesSold === 0;
+  });
 
   onFiltersChange(): void {
     // selectedYear / selectedMonth disparan la recarga vía combineLatest + switchMap.
@@ -123,6 +136,37 @@ export class ProducerDashboardComponent {
   private buildYearOptions(): string[] {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 4 }, (_, i) => String(currentYear - 2 + i));
+  }
+
+  private buildSalesCountChart(data: ProducerAnalyticsResponse | null): EChartsCoreOption {
+    const trend = data?.coursesSoldTrend ?? [];
+    const labels = trend.map((point) => this.formatChartDate(point.date));
+    const values = trend.map((point) => Number(point.count) || 0);
+
+    return {
+      animationDuration: 900,
+      grid: { left: 40, right: 16, top: 24, bottom: 32 },
+      tooltip: { trigger: 'axis' },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLabel: { color: '#6b7280', fontSize: 10 },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#6b7280', fontSize: 10 },
+      },
+      series: [
+        {
+          name: 'Cursos vendidos',
+          type: 'bar',
+          data: values,
+          itemStyle: { color: '#39b8fd', borderRadius: [4, 4, 0, 0] },
+          barMaxWidth: 28,
+        },
+      ],
+    };
   }
 
   private buildRevenueChart(data: ProducerAnalyticsResponse | null): EChartsCoreOption {

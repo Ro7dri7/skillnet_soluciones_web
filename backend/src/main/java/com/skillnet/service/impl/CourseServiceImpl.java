@@ -5,6 +5,7 @@ import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.CourseRepository;
 import com.skillnet.service.CourseService;
+import com.skillnet.util.CourseSlugUtils;
 import com.skillnet.web.dto.request.CourseRequestDTO;
 import com.skillnet.web.dto.response.CourseResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +30,11 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public CourseResponseDTO create(CourseRequestDTO dto) {
         Course course = courseMapper.toEntity(dto);
+        if (course.getSlug() == null || course.getSlug().isBlank()) {
+            course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, dto.getTitle(), null));
+        } else {
+            course.setSlug(CourseSlugUtils.normalizeIsoYearInSlug(course.getSlug().trim()));
+        }
         return courseMapper.toResponseDTO(courseRepository.save(course));
     }
 
@@ -74,6 +80,12 @@ public class CourseServiceImpl implements CourseService {
     @Transactional(readOnly = true)
     public Optional<CourseResponseDTO> findBySlug(String slug) {
         return courseRepository.findBySlug(slug).map(courseMapper::toResponseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CourseResponseDTO> findBySlugVariants(String slug) {
+        return CourseSlugUtils.resolveCourse(courseRepository, slug).map(courseMapper::toResponseDTO);
     }
 
     @Override

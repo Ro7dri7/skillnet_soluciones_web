@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StudentService, MyCourse } from '../../../../core/services/student.service';
+import { courseLearnPath, normalizeCourseSlugForUrl } from '../../../../shared/utils/course-slug.util';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 
 @Component({
@@ -32,6 +33,6 @@ export class MyProductsComponent implements OnInit {
   }
 
   courseRoute(slug: string): string {
-    return `/marketplace/course/${slug}`;
+    return courseLearnPath(slug);
   }
 }

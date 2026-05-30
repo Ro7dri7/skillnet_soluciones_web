@@ -30,4 +30,6 @@ Thumbs.db
 .env
 .env.*
 application-secret.yml
+backend/src/main/resources/application-prod.properties
 *.pem
+!backend/src/main/resources/global-bundle.pem

@@ -1,0 +1,166 @@
+.admin-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9ff;
+  color: #032b60;
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  padding: 0 24px;
+  background: #032b60;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.admin-logo-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #145bff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-logo-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+
+  span {
+    color: #89ceff;
+  }
+}
+
+.admin-logo-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(137, 206, 255, 0.4);
+  color: #89ceff;
+  background: rgba(20, 91, 255, 0.15);
+}
+
+.admin-topbar-spacer {
+  flex: 1;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+}
+
+.admin-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.admin-user-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #145bff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-user-role {
+  font-size: 10px;
+  font-weight: 600;
+  color: #89ceff;
+}
+
+.admin-logout-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 2px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid #eef2ff;
+}
+
+.admin-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a6fa5;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+
+  &.active,
+  &:hover {
+    color: #032b60;
+  }
+
+  &.active {
+    border-bottom-color: #145bff;
+  }
+}
+
+.admin-main {
+  flex: 1;
+  padding: 20px 24px;
+}

@@ -3,15 +3,27 @@
 >
   <!-- Izquierda: logo, categorías, búsqueda -->
   <div class="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
-    <a routerLink="/marketplace" class="flex shrink-0 items-center" title="Ir al marketplace">
+    <a
+      [routerLink]="isAdmin() ? '/admin' : '/marketplace'"
+      class="flex shrink-0 items-center gap-2"
+      [title]="isAdmin() ? 'Panel Admin' : 'Ir al marketplace'"
+    >
       <img
         src="/assets/images/logo_skillnet.png"
         alt="Skillnet"
         class="h-[38px] w-auto object-contain"
         onerror="this.onerror=null;this.src='assets/images/avatar-placeholder.png'"
       />
+      @if (isAdmin()) {
+        <span
+          class="hidden rounded border border-skillnet-accent/40 bg-skillnet-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-skillnet-accent sm:inline"
+        >
+          Admin
+        </span>
+      }
     </a>
 
+    @if (!isAdmin()) {
     <div class="relative hidden md:block">
       <button
         type="button"
@@ -52,18 +64,36 @@
             id="navbar-search"
             type="search"
             name="search"
-            placeholder="¿Qué quieres aprender hoy?"
+            [placeholder]="isAdmin() ? 'Buscar usuarios, cursos, transacciones…' : '¿Qué quieres aprender hoy?'"
             autocomplete="off"
             class="h-full w-full rounded-3xl border-none bg-[#f3f4f6] py-0 pl-11 pr-4 text-[15px] font-medium text-[#111] outline-none transition-colors placeholder:text-gray-500 focus:bg-white"
           />
         </div>
       </div>
     </div>
+    } @else {
+    <div class="relative hidden min-w-0 max-w-[420px] flex-1 sm:block">
+      <div
+        class="rounded-lg border-2 border-transparent bg-[linear-gradient(#f3f4f6,#f3f4f6),linear-gradient(90deg,#89ceff_0%,#145bff_100%)] bg-origin-border bg-clip-padding"
+      >
+        <div class="relative flex h-9 items-center">
+          <i class="ri-search-line pointer-events-none absolute left-4 text-sm text-black"></i>
+          <input
+            type="search"
+            name="admin-search"
+            placeholder="Buscar usuarios, cursos, transacciones…"
+            autocomplete="off"
+            class="h-full w-full rounded-3xl border-none bg-[#f3f4f6] py-0 pl-11 pr-4 text-[15px] font-medium text-[#111] outline-none transition-colors placeholder:text-gray-500 focus:bg-white"
+          />
+        </div>
+      </div>
+    </div>
+    }
   </div>
 
   <!-- Derecha: acciones -->
   <div class="flex items-center gap-4 sm:gap-5">
-    @if (isInfoproductor()) {
+    @if (isInfoproductor() && !isAdmin()) {
       <button
         type="button"
         class="hidden rounded-lg border-none bg-[linear-gradient(180deg,#89ceff_0%,#ffffff_100%)] px-3.5 py-1.5 text-[13px] font-bold text-black transition-opacity hover:opacity-90 sm:inline-flex"
@@ -73,6 +103,7 @@
     }
 
     <div class="flex items-center gap-3 sm:gap-4">
+      @if (!isAdmin()) {
       <!-- Notificaciones -->
       <div class="relative">
         <button
@@ -228,6 +259,7 @@
           <span [class]="badgeClass()">{{ wishlistCount() }}</span>
         }
       </a>
+      }
     </div>
 
     <!-- Perfil -->
@@ -271,11 +303,11 @@
             Mi Perfil
           </a>
           <a
-            routerLink="/dashboard"
+            [routerLink]="isAdmin() ? '/admin' : '/dashboard'"
             class="flex items-center px-5 py-2.5 text-sm text-white no-underline transition-colors hover:bg-white/5"
           >
             <i class="ri-dashboard-line mr-2 text-skillnet-sky"></i>
-            Panel de Control
+            {{ isAdmin() ? 'Panel Admin' : 'Panel de Control' }}
           </a>
           <button
             type="button"

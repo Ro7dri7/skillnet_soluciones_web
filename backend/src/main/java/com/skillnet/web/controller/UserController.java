@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<List<UserResponseDTO>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
@@ -52,7 +52,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('admin') or authentication.principal.id == #id")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or authentication.principal.id == #id")
     public ResponseEntity<UserResponseDTO> update(
             @PathVariable Long id, @Valid @RequestBody UserRequestDTO dto) {
         return ResponseEntity.ok(userService.update(id, dto)
@@ -60,7 +60,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('admin') or authentication.principal.id == #id")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or authentication.principal.id == #id")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (userService.findById(id).isEmpty()) {
             throw new EntityNotFoundException("User not found with id: " + id);

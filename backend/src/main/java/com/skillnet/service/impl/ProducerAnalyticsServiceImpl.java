@@ -9,9 +9,11 @@ import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.PaymentRepository;
 import com.skillnet.persistence.repository.projection.CategorySalesProjection;
 import com.skillnet.persistence.repository.projection.CourseRevenueProjection;
+import com.skillnet.persistence.repository.projection.DailyCountProjection;
 import com.skillnet.persistence.repository.projection.DailyRevenueProjection;
 import com.skillnet.service.ProducerAnalyticsService;
 import com.skillnet.web.dto.response.analytics.CategorySalesDTO;
+import com.skillnet.web.dto.response.analytics.DailyCountDTO;
 import com.skillnet.web.dto.response.analytics.DailyRevenueDTO;
 import com.skillnet.web.dto.response.analytics.KpiDTO;
 import com.skillnet.web.dto.response.analytics.ProducerAnalyticsDTO;
@@ -73,19 +75,18 @@ public class ProducerAnalyticsServiceImpl implements ProducerAnalyticsService {
         Map<Long, Course> coursesById = professorCourses.stream()
                 .collect(Collectors.toMap(Course::getId, Function.identity()));
 
-        String completedStatus = PaymentRepository.COMPLETED_STATUS;
-
         List<Payment> periodPayments = paymentRepository.findCompletedWithDetailsByCourseIdsAndPeriod(
-                courseIds, completedStatus, periodStart, periodEnd);
+                courseIds, periodStart, periodEnd);
 
         KpiDTO kpis = buildKpis(professorId, courseIds, periodPayments, periodStart, periodEnd);
 
         ProducerAnalyticsDTO analytics = new ProducerAnalyticsDTO();
         analytics.setKpis(kpis);
-        analytics.setRevenueTrend(buildRevenueTrend(courseIds, completedStatus, periodStart, periodEnd));
-        analytics.setSalesByCategory(buildSalesByCategory(courseIds, completedStatus, periodStart, periodEnd));
+        analytics.setRevenueTrend(buildRevenueTrend(courseIds, periodStart, periodEnd));
+        analytics.setCoursesSoldTrend(buildCoursesSoldTrend(courseIds, periodStart, periodEnd));
+        analytics.setSalesByCategory(buildSalesByCategory(courseIds, periodStart, periodEnd));
         analytics.setTopCourses(buildTopCourses(
-                courseIds, coursesById, completedStatus, periodStart, periodEnd));
+                courseIds, coursesById, periodStart, periodEnd));
         analytics.setRecentTransactions(buildRecentTransactions(periodPayments));
 
         return analytics;
@@ -96,11 +97,13 @@ public class ProducerAnalyticsServiceImpl implements ProducerAnalyticsService {
         kpis.setTotalRevenue(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
         kpis.setActiveStudents(0L);
         kpis.setPublishedCourses((int) courseRepository.countByProfessor_IdAndStatus(professorId, PUBLISHED_STATUS));
+        kpis.setCoursesSold(0L);
         kpis.setAvgRating(0.0);
 
         ProducerAnalyticsDTO analytics = new ProducerAnalyticsDTO();
         analytics.setKpis(kpis);
         analytics.setRevenueTrend(Collections.emptyList());
+        analytics.setCoursesSoldTrend(Collections.emptyList());
         analytics.setSalesByCategory(Collections.emptyList());
         analytics.setTopCourses(Collections.emptyList());
         analytics.setRecentTransactions(Collections.emptyList());
@@ -137,14 +140,30 @@ public class ProducerAnalyticsServiceImpl implements ProducerAnalyticsService {
         kpis.setTotalRevenue(totalRevenue);
         kpis.setActiveStudents(activeStudents);
         kpis.setPublishedCourses(publishedCourses);
+        kpis.setCoursesSold(paymentRepository.countCompletedSalesByCourseIds(courseIds));
         kpis.setAvgRating(avgRating);
         return kpis;
     }
 
+    private List<DailyCountDTO> buildCoursesSoldTrend(
+            List<Long> courseIds, Instant periodStart, Instant periodEnd) {
+        return paymentRepository.countDailySalesByCourseIdsAndPeriod(courseIds, periodStart, periodEnd)
+                .stream()
+                .map(this::toDailyCountDto)
+                .toList();
+    }
+
+    private DailyCountDTO toDailyCountDto(DailyCountProjection projection) {
+        DailyCountDTO dto = new DailyCountDTO();
+        LocalDate date = projection.getDate();
+        dto.setDate(date != null ? date.format(DATE_FORMAT) : null);
+        dto.setCount(projection.getCount() != null ? projection.getCount() : 0L);
+        return dto;
+    }
+
     private List<DailyRevenueDTO> buildRevenueTrend(
-            List<Long> courseIds, String completedStatus, Instant periodStart, Instant periodEnd) {
-        return paymentRepository.sumDailyRevenueByCourseIdsAndPeriod(
-                        courseIds, completedStatus, periodStart, periodEnd)
+            List<Long> courseIds, Instant periodStart, Instant periodEnd) {
+        return paymentRepository.sumDailyRevenueByCourseIdsAndPeriod(courseIds, periodStart, periodEnd)
                 .stream()
                 .map(this::toDailyRevenueDto)
                 .toList();
@@ -159,9 +178,8 @@ public class ProducerAnalyticsServiceImpl implements ProducerAnalyticsService {
     }
 
     private List<CategorySalesDTO> buildSalesByCategory(
-            List<Long> courseIds, String completedStatus, Instant periodStart, Instant periodEnd) {
-        return paymentRepository.sumSalesByCategoryForCourseIdsAndPeriod(
-                        courseIds, completedStatus, periodStart, periodEnd)
+            List<Long> courseIds, Instant periodStart, Instant periodEnd) {
+        return paymentRepository.sumSalesByCategoryForCourseIdsAndPeriod(courseIds, periodStart, periodEnd)
                 .stream()
                 .map(this::toCategorySalesDto)
                 .toList();
@@ -177,12 +195,11 @@ public class ProducerAnalyticsServiceImpl implements ProducerAnalyticsService {
     private List<TopCourseDTO> buildTopCourses(
             List<Long> courseIds,
             Map<Long, Course> coursesById,
-            String completedStatus,
             Instant periodStart,
             Instant periodEnd) {
 
         List<CourseRevenueProjection> revenueRows = paymentRepository.sumRevenueByCourseForCourseIdsAndPeriod(
-                courseIds, completedStatus, periodStart, periodEnd);
+                courseIds, periodStart, periodEnd);
 
         return revenueRows.stream()
                 .limit(TOP_COURSES_LIMIT)

@@ -29,7 +29,7 @@ public class CourseBuilderController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('infoproductor', 'admin')")
+    @PreAuthorize("hasAnyAuthority('ROLE_INFOPRODUCTOR', 'ROLE_ADMIN')")
     public ResponseEntity<CourseBuilderResponseDTO> saveDraft(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CourseBuilderRequestDTO request) {
@@ -38,7 +38,7 @@ public class CourseBuilderController {
     }
 
     @GetMapping("/{courseId}")
-    @PreAuthorize("hasAnyRole('infoproductor', 'admin')")
+    @PreAuthorize("hasAnyAuthority('ROLE_INFOPRODUCTOR', 'ROLE_ADMIN')")
     public ResponseEntity<CourseBuilderResponseDTO> getByCourseId(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long courseId) {

@@ -1,42 +1,86 @@
 @if (currentUser$ | async; as user) {
+
   <div class="flex h-screen overflow-hidden bg-white">
+
     @if (!hideSidebar() && !hideMainSidebarOnWizard()) {
+
       <app-dashboard-sidebar
+
         [user]="user"
+
         [isStudent]="isStudent(user)"
+
         [isInfoproductor]="isInfoproductor(user)"
+
         [isAdmin]="isAdmin(user)"
+
         [forceExpanded]="isWizardRoute() && !hideMainSidebarOnWizard()"
+
         (logout)="logout()"
+
       />
+
     }
 
+
+
     <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+
       <header class="sticky top-0 z-[1010] shrink-0">
+
         <app-dashboard-navbar
+
           [displayName]="displayName(user)"
+
           [avatarSrc]="avatarSrc(user)"
+
           [isInfoproductor]="isInfoproductor(user)"
+
+          [isAdmin]="isAdmin(user)"
+
           (logout)="logout()"
+
         />
 
+
+
         @if (showCategoryBar()) {
+
           <app-marketplace-category-bar />
+
         }
+
       </header>
 
+
+
       <main
+
         class="flex min-h-0 flex-1 flex-col overflow-x-hidden"
-        [class.overflow-y-auto]="!isWizardRoute()"
-        [class.overflow-hidden]="isWizardRoute()"
-        [class.bg-skillnet-surface]="!hideSidebar() && !isWizardRoute()"
-        [class.bg-white]="hideSidebar() || isWizardRoute()"
-        [class.p-6]="!hideSidebar() && !isWizardRoute()"
-        [class.md:p-8]="!hideSidebar() && !isWizardRoute()"
-        [class.p-0]="hideSidebar() || isWizardRoute()"
+
+        [class.overflow-y-auto]="!isWizardRoute() && !isLearnRoute()"
+
+        [class.overflow-hidden]="isWizardRoute() || isLearnRoute()"
+
+        [class.bg-skillnet-surface]="!hideSidebar() && !isWizardRoute() && !isLearnRoute() && !isAdminRoute()"
+
+        [class.bg-white]="hideSidebar() || isWizardRoute() || isLearnRoute() || isAdminRoute()"
+
+        [class.p-6]="!hideSidebar() && !isWizardRoute() && !isLearnRoute()"
+
+        [class.md:p-8]="!hideSidebar() && !isWizardRoute() && !isLearnRoute()"
+
+        [class.p-0]="hideSidebar() || isWizardRoute() || isLearnRoute()"
+
       >
+
         <router-outlet />
+
       </main>
+
     </div>
+
   </div>
+
 }
+

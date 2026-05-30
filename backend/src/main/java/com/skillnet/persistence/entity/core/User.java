@@ -1,6 +1,7 @@
 package com.skillnet.persistence.entity.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -188,4 +191,15 @@ public class User {
 
     @Column(name = "address", length = 255)
     private String address;
+
+    @PrePersist
+    @PreUpdate
+    private void ensureJsonDefaults() {
+        if (specialties == null) {
+            specialties = JsonNodeFactory.instance.objectNode();
+        }
+        if (socialLinks == null) {
+            socialLinks = JsonNodeFactory.instance.objectNode();
+        }
+    }
 }

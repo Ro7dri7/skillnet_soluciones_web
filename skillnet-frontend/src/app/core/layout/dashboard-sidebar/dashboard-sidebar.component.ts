@@ -1,8 +1,10 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../../shared/models/auth.model';
-import { canSwitchDashboardRole, dashboardPathForRole } from '../../../shared/utils/user-role.util';
+import { canSwitchDashboardRole, dashboardPathForRole, isAdminAccount } from '../../../shared/utils/user-role.util';
 import { HttpErrorResponse } from '@angular/common/http';
 export interface SidebarNavItem {
   label: string;
@@ -35,6 +37,15 @@ export class DashboardSidebarComponent {
 
   readonly activeRole = computed(() => this.authService.currentUser()?.role);
 
+  readonly isAdminRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.onAdminRoute()),
+      startWith(this.onAdminRoute()),
+    ),
+    { initialValue: false },
+  );
+
   readonly showRoleSwitcher = computed(() =>
     canSwitchDashboardRole(this.authService.getCurrentUser()),
   );
@@ -49,12 +60,30 @@ export class DashboardSidebarComponent {
     });
   }
 
-  readonly roleLabel = computed(() =>
-    this.activeRole() === 'infoproductor' ? 'Infoproductor' : 'Estudiante',
+  readonly roleLabel = computed(() => {
+    const role = this.activeRole();
+    if (role === 'admin' || this.isAdminRoute()) return 'Administrador';
+    return role === 'infoproductor' ? 'Infoproductor' : 'Estudiante';
+  });
+
+  readonly isAdminUser = computed(() =>
+    isAdminAccount(this.authService.getCurrentUser(), this.authService.getToken()),
   );
+
+  readonly adminNavItems: SidebarNavItem[] = [
+    { label: 'Panel Admin', icon: 'ri-shield-star-line', route: '/admin' },
+    { label: 'Usuarios', icon: 'ri-user-settings-line', route: '/admin/users' },
+    { label: 'Cursos', icon: 'ri-book-2-line', route: '/admin/courses' },
+    { label: 'Ventas', icon: 'ri-coin-line', href: '#' },
+    { label: 'Reportes', icon: 'ri-bar-chart-box-line', href: '#' },
+    { label: 'Marketplace', icon: 'ri-store-2-line', route: '/marketplace' },
+  ];
 
   readonly navItems = computed<SidebarNavItem[]>(() => {
     const role = this.authService.currentUser()?.role;
+    if (this.isAdminRoute() || role === 'admin') {
+      return this.adminNavItems;
+    }
     if (role === 'student') {
       return [
         { label: 'Panel de Control', icon: 'ri-dashboard-line', route: '/dashboard/estudiante' },
@@ -76,14 +105,13 @@ export class DashboardSidebarComponent {
         { label: 'Alumnos', icon: 'ri-group-line', href: '#' },
       ];
     }
-    if (this.isAdmin()) {
-      return [
-        { label: 'Panel Global', icon: 'ri-dashboard-line', href: '#' },
-        { label: 'Usuarios', icon: 'ri-user-settings-line', href: '#' },
-      ];
-    }
     return [{ label: 'Inicio', icon: 'ri-home-line', route: '/dashboard/estudiante' }];
   });
+
+  private onAdminRoute(): boolean {
+    const path = this.router.url.split('?')[0];
+    return path === '/admin' || path.startsWith('/admin/');
+  }
 
   onMouseEnter(): void {
     this.expanded.set(true);
@@ -99,19 +127,19 @@ export class DashboardSidebarComponent {
     this.logout.emit();
   }
 
-  switchToRole(role: 'student' | 'infoproductor'): void {
+  switchToRole(role: 'student' | 'infoproductor' | 'admin'): void {
     const user = this.authService.getCurrentUser();
     this.roleSwitchError.set(null);
 
     if (!user || user.role === role) {
-      this.navigateAfterRoleSwitch();
+      this.navigateAfterRoleSwitch(role);
       return;
     }
 
     this.authService.switchRole(role).subscribe({
       next: () => {
         this.roleSwitchError.set(null);
-        this.navigateAfterRoleSwitch();
+        this.navigateAfterRoleSwitch(role);
       },
       error: (err: unknown) => {
         const message =
@@ -123,8 +151,9 @@ export class DashboardSidebarComponent {
     });
   }
 
-  navigateAfterRoleSwitch(): void {
-    const path = dashboardPathForRole(this.authService.getCurrentUser()?.role);
+  navigateAfterRoleSwitch(role?: 'student' | 'infoproductor' | 'admin'): void {
+    const active = role ?? this.authService.getCurrentUser()?.role;
+    const path = dashboardPathForRole(active);
     void this.router.navigateByUrl(path);
   }
 }

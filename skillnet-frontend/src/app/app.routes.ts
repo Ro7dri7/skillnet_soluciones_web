@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { adminRoleGuard } from './core/guards/admin-role.guard';
 import { dashboardRoleGuard } from './core/guards/dashboard-role.guard';
 
 export const routes: Routes = [
@@ -166,6 +167,34 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 
       {
+        path: 'admin',
+        canActivate: [adminRoleGuard],
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/admin/pages/admin-dashboard/admin-dashboard.component').then(
+                (m) => m.AdminDashboardComponent,
+              ),
+          },
+          {
+            path: 'users',
+            loadComponent: () =>
+              import('./features/admin/pages/admin-users/admin-users.component').then(
+                (m) => m.AdminUsersComponent,
+              ),
+          },
+          {
+            path: 'courses',
+            loadComponent: () =>
+              import('./features/admin/pages/admin-courses/admin-courses.component').then(
+                (m) => m.AdminCoursesComponent,
+              ),
+          },
+        ],
+      },
+
+      {
         path: 'dashboard',
         children: [
           {
@@ -201,6 +230,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/marketplace/pages/marketplace/marketplace.component').then(
             (m) => m.MarketplaceComponent,
+          ),
+      },
+      {
+        path: 'marketplace/course/:slug/learn',
+        loadComponent: () =>
+          import('./features/learning/pages/course-learn/course-learn.component').then(
+            (m) => m.CourseLearnComponent,
           ),
       },
       {
