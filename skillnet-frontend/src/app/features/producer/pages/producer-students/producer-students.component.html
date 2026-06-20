@@ -1,0 +1,553 @@
+<div class="mx-auto w-full max-w-[1300px] px-1 sm:px-2">
+  <header class="mb-8">
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="flex flex-wrap items-center gap-2 text-xl font-bold text-skillnet-dark lg:text-2xl">
+          <span class="font-medium text-gray-400">Tus Métricas</span>
+          <i class="ri-arrow-right-s-line text-lg text-gray-400"></i>
+          <span>Progreso de Usuarios</span>
+        </h1>
+        <p class="mt-1 text-sm font-medium text-gray-500">
+          Visualiza el avance de tus estudiantes, exámenes y revisiones pendientes.
+        </p>
+      </div>
+      <a routerLink="/courses" class="text-sm font-bold text-skillnet-dark hover:text-skillnet-sky">
+        ← Mis Infoproductos
+      </a>
+    </div>
+
+    @if (selectedCourse(); as activeCourse) {
+      <div
+        class="inline-flex max-w-full items-center gap-2 rounded-xl border border-skillnet-sky/30 bg-skillnet-sky/10 px-3 py-1.5"
+      >
+        <i class="ri-book-open-line text-skillnet-dark"></i>
+        <span class="text-[11px] font-bold uppercase tracking-wide text-skillnet-dark/70">
+          Curso activo:
+        </span>
+        <span class="max-w-[620px] truncate text-xs font-semibold text-skillnet-dark">
+          {{ activeCourse.title }}
+        </span>
+      </div>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="state">Cargando métricas…</p>
+  } @else if (error()) {
+    <p class="state error">{{ error() }}</p>
+  } @else if (courses().length === 0) {
+    <div class="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+      <p class="text-gray-500">Aún no tienes infoproductos publicados.</p>
+      <a
+        routerLink="/courses"
+        class="mt-4 inline-block text-sm font-bold text-skillnet-dark hover:text-skillnet-sky"
+      >
+        Ir a Mis Infoproductos
+      </a>
+    </div>
+  } @else {
+    <!-- Course carousel -->
+    <section class="mb-10">
+      <div class="mb-6 flex items-center gap-3">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-skillnet-accent shadow-sm"
+        >
+          <i class="ri-graduation-cap-fill text-xl text-skillnet-dark"></i>
+        </div>
+        <h2 class="text-lg font-bold text-skillnet-dark">Seleccionar curso</h2>
+      </div>
+
+      <div class="group/carousel relative flex items-center">
+        <button
+          type="button"
+          (click)="scrollCarousel('left')"
+          class="absolute -ml-4 left-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-500 opacity-0 shadow-lg transition-all hover:border-skillnet-dark hover:text-skillnet-dark group-hover/carousel:opacity-100"
+        >
+          <i class="ri-arrow-left-s-line text-xl"></i>
+        </button>
+
+        <div
+          #courseCarousel
+          class="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-2 pb-6 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          @for (course of orderedCourses(); track course.id) {
+            <button
+              type="button"
+              (click)="selectCourse(course)"
+              class="group/card flex w-[280px] flex-none snap-start flex-col overflow-hidden rounded-[20px] p-1.5 text-left transition-all sm:w-[320px]"
+              [class.border-[1.5px]]="selectedCourseId() === course.id"
+              [class.border-skillnet-sky]="selectedCourseId() === course.id"
+              [class.shadow-[0_10px_30px_-10px_rgba(137,206,255,0.45)]]="selectedCourseId() === course.id"
+              [class.scale-[1.02]]="selectedCourseId() === course.id"
+              [class.border]="selectedCourseId() !== course.id"
+              [class.border-gray-200]="selectedCourseId() !== course.id"
+              [class.shadow-sm]="selectedCourseId() !== course.id"
+              [class.hover:-translate-y-1]="selectedCourseId() !== course.id"
+              [class.hover:border-skillnet-sky]="selectedCourseId() !== course.id"
+              [class.hover:shadow-md]="selectedCourseId() !== course.id"
+            >
+              <div
+                class="relative mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-[14px] bg-gray-50"
+              >
+                <img
+                  [src]="courseImage(course)"
+                  [alt]="course.title"
+                  class="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                />
+              </div>
+
+              <div class="flex flex-1 flex-col px-3 pb-2">
+                <h3 class="mb-2 line-clamp-2 min-h-[32px] break-words text-xs font-bold text-skillnet-dark">
+                  {{ course.title }}
+                </h3>
+
+                <div class="mb-3 flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                  <i class="ri-team-line text-skillnet-sky"></i>
+                  {{ course.totalStudents }} Estudiantes
+                </div>
+
+                <div class="mb-3 h-px bg-gray-100"></div>
+
+                <div
+                  class="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-center text-[10px] font-bold uppercase transition-all"
+                  [class.bg-skillnet-accent]="selectedCourseId() === course.id"
+                  [class.text-skillnet-dark]="selectedCourseId() === course.id"
+                  [class.shadow-lg]="selectedCourseId() === course.id"
+                  [class.bg-skillnet-dark]="selectedCourseId() !== course.id"
+                  [class.text-white]="selectedCourseId() !== course.id"
+                  [class.group-hover/card:bg-skillnet-accent]="selectedCourseId() !== course.id"
+                  [class.group-hover/card:text-skillnet-dark]="selectedCourseId() !== course.id"
+                >
+                  @if (selectedCourseId() === course.id) {
+                    <i class="ri-check-line"></i>
+                    SELECCIONADO
+                  } @else {
+                    <i class="ri-cursor-line"></i>
+                    SELECCIONAR
+                  }
+                </div>
+              </div>
+            </button>
+          }
+        </div>
+
+        <button
+          type="button"
+          (click)="scrollCarousel('right')"
+          class="absolute -mr-4 right-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-500 opacity-0 shadow-lg transition-all hover:border-skillnet-dark hover:text-skillnet-dark group-hover/carousel:opacity-100"
+        >
+          <i class="ri-arrow-right-s-line text-xl"></i>
+        </button>
+      </div>
+    </section>
+
+    @if (selectedCourse(); as course) {
+      <!-- Students section -->
+      <section
+        class="mb-8 w-full rounded-[24px] border border-gray-200 bg-white shadow-sm transition-all"
+        [class.p-4]="!studentsSectionOpen()"
+        [class.p-6]="studentsSectionOpen()"
+        [class.lg:p-10]="studentsSectionOpen()"
+      >
+        <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+          <button
+            type="button"
+            (click)="toggleStudentsSection()"
+            class="flex w-full items-center justify-between gap-4 text-left"
+            [attr.aria-expanded]="studentsSectionOpen()"
+          >
+            <div class="flex min-w-0 items-center gap-4">
+              <div
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-skillnet-sky/10"
+              >
+                <i class="ri-group-line text-2xl text-skillnet-sky"></i>
+              </div>
+              <div class="min-w-0">
+                <h2 class="text-xl font-black tracking-tight text-gray-900">Lista de estudiantes</h2>
+                <p class="text-xs font-medium text-gray-400">
+                  {{ filteredStudents().length }} inscritos en este curso
+                </p>
+              </div>
+            </div>
+            <i
+              class="ri-arrow-down-s-line shrink-0 text-2xl text-gray-400 transition-transform duration-300"
+              [class.rotate-180]="studentsSectionOpen()"
+            ></i>
+          </button>
+
+          @if (studentsSectionOpen()) {
+            <div class="relative min-w-[280px] sm:min-w-[320px]">
+              <input
+                id="student-search-input"
+                name="student-search"
+                type="search"
+                placeholder="Filtrar por nombre o email..."
+                autocomplete="off"
+                class="h-10 w-full rounded-[8px] border border-gray-100 bg-gray-50 pl-5 pr-12 text-[13px] outline-none transition-all placeholder:text-gray-400 focus:border-skillnet-sky focus:bg-white"
+                [value]="searchTerm()"
+                (input)="searchTerm.set($any($event.target).value)"
+              />
+              <div
+                class="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-[8px] bg-skillnet-dark text-white"
+              >
+                <i class="ri-search-2-line text-lg"></i>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (studentsSectionOpen()) {
+          @if (filteredStudents().length === 0) {
+            <p class="state mt-8">No se encontraron estudiantes con ese filtro.</p>
+          } @else {
+            <div class="mt-10 flex flex-col gap-4">
+              @for (student of filteredStudents(); track student.enrollmentId) {
+                <article
+                  class="group flex flex-col rounded-[12px] border border-gray-100 bg-white p-4 transition-all hover:border-skillnet-sky/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+                >
+                  <div class="flex flex-col gap-6 lg:flex-row lg:items-center">
+                    <div class="flex flex-1 items-center gap-4">
+                      <div
+                        class="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-gray-50 transition-colors group-hover:border-skillnet-sky/50"
+                      >
+                        @if (student.profilePictureUrl) {
+                          <img
+                            [src]="student.profilePictureUrl"
+                            [alt]="student.userName"
+                            class="h-full w-full object-cover"
+                          />
+                        } @else {
+                          <i class="ri-user-3-fill text-2xl text-gray-200"></i>
+                        }
+                      </div>
+                      <div>
+                        <p class="mb-1 text-sm font-semibold leading-tight text-gray-900">
+                          {{ student.userName }}
+                        </p>
+                        <div class="flex items-center gap-2">
+                          <p class="max-w-[180px] truncate text-[11px] font-medium text-gray-400">
+                            {{ student.userEmail }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex-[1.5] px-0 lg:px-8">
+                      <div class="mb-2 flex items-end justify-between">
+                        <span class="text-[9px] font-medium uppercase tracking-[0.1em] text-gray-400">
+                          AVANCE
+                        </span>
+                        <span class="text-[13px] font-semibold text-gray-900">
+                          {{ student.progressPercent | number: '1.0-2' }}
+                          <span class="ml-0.5 text-[10px] text-skillnet-sky">%</span>
+                        </span>
+                      </div>
+                      <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          class="h-full rounded-full bg-gradient-to-r from-skillnet-sky to-skillnet-accent transition-all duration-1000 ease-out"
+                          [style.width.%]="student.progressPercent"
+                        ></div>
+                      </div>
+                      <p class="mt-1 text-[10px] text-gray-400">
+                        {{ student.completedLessons }}/{{ student.totalLessons }} lecciones
+                      </p>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-3">
+                      <button
+                        type="button"
+                        disabled
+                        class="flex h-9 items-center gap-2 rounded-[8px] border border-gray-100 bg-gray-50 px-4 text-[10px] font-bold uppercase tracking-wider text-gray-300"
+                        title="El alumno debe completar el 100% para habilitar el certificado"
+                      >
+                        <i class="ri-medal-fill text-sm"></i>
+                        <span>SUBIR CERTIFICADO</span>
+                      </button>
+                      <button
+                        type="button"
+                        (click)="toggleStudent(student.userId)"
+                        class="flex h-9 items-center gap-2 rounded-[8px] border px-4 text-[10px] font-bold uppercase tracking-wider transition-all"
+                        [class.border-skillnet-dark]="expandedStudentId() === student.userId"
+                        [class.bg-skillnet-dark]="expandedStudentId() === student.userId"
+                        [class.text-white]="expandedStudentId() === student.userId"
+                        [class.border-gray-200]="expandedStudentId() !== student.userId"
+                        [class.text-gray-400]="expandedStudentId() !== student.userId"
+                        [class.hover:border-skillnet-sky]="expandedStudentId() !== student.userId"
+                        [class.hover:bg-skillnet-sky/5]="expandedStudentId() !== student.userId"
+                        [class.hover:text-skillnet-dark]="expandedStudentId() !== student.userId"
+                      >
+                        <span>{{ expandedStudentId() === student.userId ? 'CERRAR' : 'DETALLE' }}</span>
+                        <i
+                          class="ri-arrow-down-s-line text-sm transition-transform duration-300"
+                          [class.rotate-180]="expandedStudentId() === student.userId"
+                        ></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (expandedStudentId() === student.userId) {
+                    <div class="mt-4 border-t border-gray-50 pt-4">
+                      <div
+                        class="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/80 shadow-inner"
+                      >
+                        <div
+                          class="flex items-center justify-between border-b border-white/50 px-5 py-3"
+                        >
+                          <div class="flex items-center gap-2">
+                            <i class="ri-medal-line text-sm text-skillnet-sky"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                              Exámenes e Intervenciones
+                            </span>
+                          </div>
+                          <span
+                            class="rounded-full border border-gray-100 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400"
+                          >
+                            {{ student.quizzes.length }} ITEMS
+                          </span>
+                        </div>
+
+                        @if (student.quizzes.length === 0) {
+                          <p class="p-4 text-sm text-gray-400">
+                            No hay exámenes registrados para este curso.
+                          </p>
+                        } @else {
+                          <div class="grid grid-cols-1 gap-2 p-3 md:grid-cols-2 lg:grid-cols-3">
+                            @for (quiz of student.quizzes; track $index) {
+                              <button
+                                type="button"
+                                class="flex items-center justify-between rounded-xl border border-gray-50 bg-white p-3 text-left shadow-sm transition-all hover:border-skillnet-sky/40"
+                                [class.opacity-70]="!quiz.submissionId"
+                                [disabled]="!quiz.submissionId"
+                                (click)="openQuizFromStudent(student, quiz.submissionId)"
+                              >
+                                <div class="flex items-center gap-3">
+                                  <div
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-skillnet-sky/10"
+                                  >
+                                    <i class="ri-question-answer-line text-skillnet-dark"></i>
+                                  </div>
+                                  <div>
+                                    <p
+                                      class="line-clamp-1 text-[11px] font-semibold leading-tight text-gray-700"
+                                    >
+                                      {{ quiz.title }}
+                                    </p>
+                                    <div class="mt-0.5 flex items-center gap-2">
+                                      <p
+                                        class="text-[9px] font-medium uppercase tracking-tight"
+                                        [style.color]="quiz.color"
+                                      >
+                                        {{ quizStatusLabel(quiz.status) }}
+                                      </p>
+                                      @if (quiz.score != null) {
+                                        <span class="h-1 w-1 rounded-full bg-gray-200"></span>
+                                        <span class="text-[10px] font-bold text-gray-900">
+                                          {{ quiz.score }}
+                                        </span>
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Quiz review section (embedded) -->
+      <section
+        class="w-full rounded-[24px] border border-gray-200 bg-white shadow-sm transition-all"
+        [class.p-4]="!quizReviewSectionOpen()"
+        [class.p-6]="quizReviewSectionOpen()"
+        [class.lg:p-10]="quizReviewSectionOpen()"
+      >
+        <button
+          type="button"
+          (click)="toggleQuizReviewSection()"
+          class="flex w-full items-center justify-between gap-4 text-left"
+          [attr.aria-expanded]="quizReviewSectionOpen()"
+        >
+          <div class="flex min-w-0 items-center gap-4">
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-skillnet-accent/20"
+            >
+              <i class="ri-question-answer-line text-2xl text-skillnet-dark"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-black tracking-tight text-gray-900">Revisión de exámenes</h2>
+              <p class="text-xs font-medium text-gray-400">
+                {{ filteredQuizRows().length }} entregas para este curso
+              </p>
+            </div>
+          </div>
+          <i
+            class="ri-arrow-down-s-line shrink-0 text-2xl text-gray-400 transition-transform duration-300"
+            [class.rotate-180]="quizReviewSectionOpen()"
+          ></i>
+        </button>
+
+        @if (quizReviewSectionOpen()) {
+          @if (quizLoading()) {
+            <p class="state mt-8">Cargando entregas…</p>
+          } @else if (filteredQuizRows().length === 0) {
+            <p class="state mt-8">No hay entregas pendientes para este curso.</p>
+          } @else {
+            <div class="mt-8 overflow-x-auto rounded-xl border border-gray-100">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] font-bold uppercase tracking-wide text-gray-400">
+                  <tr>
+                    <th class="px-4 py-3">Estudiante</th>
+                    <th class="px-4 py-3">Quiz</th>
+                    <th class="px-4 py-3">Puntaje</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3">Fecha</th>
+                    <th class="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of filteredQuizRows(); track row.id) {
+                    <tr class="border-t border-gray-100 hover:bg-skillnet-sky/5">
+                      <td class="px-4 py-3 font-medium text-gray-900">{{ row.studentName }}</td>
+                      <td class="px-4 py-3 text-gray-600">{{ row.quizTitle }}</td>
+                      <td class="px-4 py-3 font-semibold text-skillnet-dark">{{ row.score }}%</td>
+                      <td class="px-4 py-3 text-xs uppercase text-gray-500">{{ row.reviewStatus }}</td>
+                      <td class="px-4 py-3 text-gray-500">
+                        {{ row.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+                      </td>
+                      <td class="px-4 py-3">
+                        <button
+                          type="button"
+                          (click)="openQuizDetail(row.id)"
+                          class="text-xs font-bold text-skillnet-dark hover:text-skillnet-sky"
+                        >
+                          Revisar
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </section>
+    }
+  }
+</div>
+
+@if (quizModalOpen() && quizDetail(); as current) {
+  <div
+    class="fixed inset-0 z-[2000] flex items-center justify-center bg-skillnet-dark/50 p-4"
+    (click)="closeQuizModal()"
+  >
+    <div
+      class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-black text-skillnet-dark">{{ current.quizTitle }}</h2>
+          <p class="text-sm text-gray-500">{{ current.studentName }} · {{ current.courseTitle }}</p>
+        </div>
+        <button type="button" (click)="closeQuizModal()" class="text-gray-400 hover:text-gray-700">
+          <i class="ri-close-line text-2xl"></i>
+        </button>
+      </div>
+
+      <div class="mb-6 flex items-end justify-between rounded-xl border border-gray-100 bg-gray-50 p-4">
+        <div>
+          <span class="text-xs uppercase text-gray-400">Puntaje</span>
+          <strong class="block text-3xl text-skillnet-dark">{{ current.score }}%</strong>
+        </div>
+        <div class="text-right text-xs uppercase text-gray-400">
+          <div>Mínimo: {{ current.passingScore ?? 70 }}%</div>
+          <div>{{ current.reviewStatus }}</div>
+        </div>
+      </div>
+
+      <section class="mb-6">
+        <h3 class="mb-3 text-sm font-bold uppercase tracking-wide text-gray-400">Respuestas</h3>
+        @if ((current.answers?.length ?? 0) === 0) {
+          <p class="text-sm text-gray-500">Esta entrega no tiene respuestas detalladas.</p>
+        } @else {
+          @for (answer of current.answers; track answer.id) {
+            <article
+              class="mb-3 rounded-xl border p-4"
+              [class.border-amber-200]="isGrantable(answer)"
+              [class.bg-amber-50/40]="isGrantable(answer)"
+              [class.border-gray-100]="!isGrantable(answer)"
+            >
+              <div class="mb-2 flex justify-between gap-3">
+                <strong class="text-sm text-gray-900">{{ answer.questionText }}</strong>
+                <span class="text-[10px] uppercase text-gray-400">{{ answer.questionType }}</span>
+              </div>
+              <p class="mb-3 whitespace-pre-wrap text-sm text-gray-700">
+                {{ answer.textAnswer || 'Sin respuesta' }}
+              </p>
+
+              @if (isGrantable(answer)) {
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[10px] font-bold uppercase text-gray-400">Otorgar puntos:</span>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700"
+                    [disabled]="gradingAnswerId() === answer.id"
+                    (click)="gradeAnswer(answer, true)"
+                  >
+                    Correcta
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-red-100 px-3 py-1 text-[11px] font-bold text-red-700"
+                    [disabled]="gradingAnswerId() === answer.id"
+                    (click)="gradeAnswer(answer, false)"
+                  >
+                    Incorrecta
+                  </button>
+                </div>
+              }
+            </article>
+          }
+        }
+      </section>
+
+      <section>
+        <label class="mb-3 block text-[11px] font-bold uppercase text-gray-400">
+          Comentario del tutor
+          <textarea
+            class="mt-2 w-full rounded-lg border border-gray-200 p-3 text-sm normal-case text-gray-800"
+            rows="4"
+            [ngModel]="quizFeedback()"
+            (ngModelChange)="quizFeedback.set($event)"
+          ></textarea>
+        </label>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-lg bg-red-100 px-4 py-2 text-sm font-bold text-red-700"
+            [disabled]="quizReviewing()"
+            (click)="submitQuizReview(false)"
+          >
+            Rechazar
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white"
+            [disabled]="quizReviewing()"
+            (click)="submitQuizReview(true)"
+          >
+            Aprobar
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+}

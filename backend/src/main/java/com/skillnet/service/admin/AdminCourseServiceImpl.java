@@ -1,9 +1,11 @@
 package com.skillnet.service.admin;
 
+import com.skillnet.domain.AuditAction;
 import com.skillnet.domain.CourseStatus;
 import com.skillnet.mapper.CourseMapper;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.repository.CourseRepository;
+import com.skillnet.service.AuditService;
 import com.skillnet.web.dto.response.CourseResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
@@ -19,6 +21,7 @@ public class AdminCourseServiceImpl implements AdminCourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
+    private final AuditService auditService;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,7 +57,24 @@ public class AdminCourseServiceImpl implements AdminCourseService {
         }
 
         course.setStatus(status.getDbValue());
-        return courseMapper.toResponseDTO(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        logAdminCourseAction(saved, status);
+        return courseMapper.toResponseDTO(saved);
+    }
+
+    private void logAdminCourseAction(Course course, CourseStatus status) {
+        String action =
+                switch (status) {
+                    case PUBLISHED -> AuditAction.PUBLISH_COURSE;
+                    case DRAFT -> AuditAction.SET_DRAFT_COURSE;
+                    case DELETED -> AuditAction.TAKEDOWN_COURSE;
+                };
+        auditService.logAction(
+                action,
+                AuditAction.ENTITY_COURSE,
+                course.getId(),
+                null,
+                "Admin cambió estado a " + status.getDbValue() + ": " + course.getTitle());
     }
 
     private boolean isBlank(String value) {

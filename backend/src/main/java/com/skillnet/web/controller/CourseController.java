@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -41,6 +42,20 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<List<CourseResponseDTO>> findAll() {
         return ResponseEntity.ok(courseService.findAll());
+    }
+
+    @GetMapping(value = "/by-slug", params = "slug")
+    public ResponseEntity<CourseResponseDTO> findBySlugQuery(@RequestParam("slug") String slug) {
+        return ResponseEntity.ok(courseService.findBySlugVariants(slug)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with slug: " + slug)));
+    }
+
+    @GetMapping("/by-slug/{format}/{slugStem}")
+    public ResponseEntity<CourseResponseDTO> findBySlugWithFormat(
+            @PathVariable String format, @PathVariable String slugStem) {
+        String joined = com.skillnet.util.CourseSlugUtils.joinRouteSlug(format, slugStem);
+        return ResponseEntity.ok(courseService.findBySlugVariants(joined)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with slug: " + joined)));
     }
 
     @GetMapping("/by-slug/{slug}")

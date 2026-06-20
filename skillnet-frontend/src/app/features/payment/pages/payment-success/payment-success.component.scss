@@ -1,0 +1,77 @@
+.success-card {
+  max-width: 520px;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #eef2ff;
+  border-radius: 16px;
+
+  h1 {
+    margin: 12px 0 8px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #032b60;
+  }
+
+  p {
+    margin: 0;
+    color: #4a6fa5;
+    font-size: 14px;
+
+    &.error {
+      color: #c03030;
+    }
+  }
+}
+
+.icon {
+  font-size: 48px;
+
+  &.ok {
+    color: #00a87e;
+  }
+
+  &.warn {
+    color: #e6a700;
+  }
+
+  &.spin {
+    color: #145bff;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #145bff;
+  color: #fff;
+}
+
+.btn-secondary {
+  border: 1px solid #eef2ff;
+  color: #145bff;
+  background: #fff;
+}

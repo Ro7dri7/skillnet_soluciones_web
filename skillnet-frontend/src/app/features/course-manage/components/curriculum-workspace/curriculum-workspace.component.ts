@@ -8,18 +8,24 @@ import {
   OnInit,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { CourseService } from '../../../../core/services/course.service';
 import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
 import { ManageCurriculumService } from '../../../../core/services/manage-curriculum.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
 import { MediaService, type LessonResourceType } from '../../../../core/services/media.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { resolveMediaUrl } from '../../../../shared/utils/media-url.util';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { QuizBuilderComponent } from '../quiz-builder/quiz-builder.component';
+import { AiContentPanelComponent } from '../ai-content-panel/ai-content-panel.component';
+import { LessonEbookPanelComponent } from '../lesson-ebook-panel/lesson-ebook-panel.component';
+import { LessonPodcastPanelComponent } from '../lesson-podcast-panel/lesson-podcast-panel.component';
 import type { ContentBlockDTO, ContentType, LessonDTO, QuizData } from '../../../../shared/models/curriculum.model';
 import { normalizeQuizData } from '../../utils/quiz.util';
 import { firstValueFrom } from 'rxjs';
@@ -41,7 +47,7 @@ interface BlockTypeOption {
 @Component({
   selector: 'app-curriculum-workspace',
   standalone: true,
-  imports: [FormsModule, ConfirmDialogComponent, QuizBuilderComponent],
+  imports: [FormsModule, ConfirmDialogComponent, QuizBuilderComponent, AiContentPanelComponent, LessonEbookPanelComponent, LessonPodcastPanelComponent],
   templateUrl: './curriculum-workspace.component.html',
   styleUrl: './curriculum-workspace.component.scss',
 })
@@ -57,8 +63,49 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   private readonly manageSave = inject(ManageLayoutSaveService);
   readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly courseService = inject(CourseService);
 
   readonly resolvedCourseId = signal<number | null>(null);
+  readonly courseFormat = signal<string>('course');
+  readonly showPodcastPanel = computed(() => this.courseFormat().toLowerCase() === 'podcast');
+  readonly activeLessonNumericId = computed(() => {
+    const lesson = this.activeLesson();
+    if (!lesson) {
+      return null;
+    }
+    const parsed = Number(lesson.id);
+    return Number.isFinite(parsed) ? parsed : null;
+  });
+  readonly activeLessonAttachedPdfUrl = computed(() => {
+    const lesson = this.activeLesson();
+    if (!lesson) {
+      return null;
+    }
+    const pdfBlock = lesson.blocks.find(
+      (block) => block.contentType === 'pdf' && block.resourceUrl?.trim(),
+    );
+    return pdfBlock?.resourceUrl?.trim() ?? null;
+  });
+  readonly activeLessonAttachedAudioUrl = computed(() => {
+    const lesson = this.activeLesson();
+    if (!lesson) {
+      return null;
+    }
+    const audioBlock = lesson.blocks.find(
+      (block) => block.contentType === 'audio' && block.resourceUrl?.trim(),
+    );
+    return audioBlock?.resourceUrl?.trim() ?? null;
+  });
+  readonly visibleBlockTypes = computed(() => {
+    const fmt = this.courseFormat().toLowerCase();
+    if (fmt === 'ebook') {
+      return this.blockTypes.filter((block) => block.id !== 'pdf');
+    }
+    if (fmt === 'podcast') {
+      return this.blockTypes.filter((block) => block.id !== 'audio');
+    }
+    return this.blockTypes;
+  });
   readonly showLoginBanner = computed(() => !this.auth.isLoggedIn());
   readonly isSaving = computed(() => this.curriculum.saving() || this.curriculum.loading());
 
@@ -73,6 +120,9 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   readonly draftResourceUrl = signal('');
   readonly blockUploadingId = signal<string | null>(null);
   readonly blockUploadProgress = signal(0);
+  readonly blockUploadFileName = signal<string | null>(null);
+
+  private readonly ebookPanelRef = viewChild(LessonEbookPanelComponent);
   readonly quizQuestions = signal<QuizData['questions']>([]);
   readonly quizPassingScore = signal(80);
   readonly quizTimeLimit = signal(30);
@@ -105,6 +155,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   ];
 
   private saveDebounce: ReturnType<typeof setTimeout> | null = null;
+  private pendingSaveTarget: { moduleId: string; lessonId: string } | null = null;
 
   constructor() {
     effect(() => {
@@ -170,18 +221,42 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
 
   private async bootstrapCourse(): Promise<void> {
     const initial = this.initialCourseId();
-    if (initial) {
-      this.resolvedCourseId.set(initial);
-      await this.curriculum.loadCurriculumAsync(initial);
-      if (this.curriculum.modules().length === 0 && this.curriculum.errorMessage()) {
-        await this.retryWithOwnedCourse();
-      }
+    if (initial != null) {
+      await this.bootWithCourseId(initial);
       return;
     }
+
+    // Flujo del builder (sin layout de gestión): resuelve borrador local.
     const id = await this.resolveCourseId();
     if (id) {
+      this.loadCourseFormat(id);
       await this.curriculum.loadCurriculumAsync(id, true);
     }
+  }
+
+  private async bootWithCourseId(courseId: number): Promise<void> {
+    this.resolvedCourseId.set(courseId);
+    this.loadCourseFormat(courseId);
+    await this.curriculum.loadCurriculumAsync(courseId);
+    if (this.curriculum.modules().length === 0 && this.curriculum.errorMessage()) {
+      await this.retryWithOwnedCourse();
+    }
+  }
+
+  private loadCourseFormat(courseId: number): void {
+    const fromContext = this.manageContext.courseFormat();
+    if (fromContext) {
+      const format = fromContext.toLowerCase();
+      this.courseFormat.set(format === 'videocourse' || format === 'video' ? 'course' : format);
+      return;
+    }
+    this.courseService.getCourse(courseId).subscribe({
+      next: (course) => {
+        const format = (course.courseFormat ?? 'course').toLowerCase();
+        this.courseFormat.set(format === 'videocourse' || format === 'video' ? 'course' : format);
+      },
+      error: () => this.courseFormat.set('course'),
+    });
   }
 
   private async retryWithOwnedCourse(): Promise<void> {
@@ -203,6 +278,23 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       clearTimeout(this.saveDebounce);
       this.saveDebounce = null;
     }
+    this.pendingSaveTarget = null;
+  }
+
+  private async flushPendingLessonSave(): Promise<void> {
+    if (this.saveDebounce) {
+      clearTimeout(this.saveDebounce);
+      this.saveDebounce = null;
+    }
+    if (this.pendingSaveTarget) {
+      await this.persistLessonById(
+        this.pendingSaveTarget.moduleId,
+        this.pendingSaveTarget.lessonId,
+      );
+      this.pendingSaveTarget = null;
+      return;
+    }
+    await this.persistActiveLesson();
   }
 
   activeLesson(): LessonDTO | null {
@@ -267,7 +359,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       const id = await this.builder.ensureCourseId();
       this.resolvedCourseId.set(id);
       this.courseReady.emit(id);
-      this.curriculum.loadCurriculum(id, true);
+      await this.curriculum.loadCurriculumAsync(id, true);
       this.curriculum.clearError();
       return id;
     } catch (error) {
@@ -284,6 +376,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     if (!(await this.requireCourseId())) {
       return;
     }
+    await this.flushPendingLessonSave();
     const lessonId = await this.curriculum.addQuickLesson(moduleId);
     this.curriculum.selectLesson(moduleId, lessonId);
   }
@@ -292,6 +385,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     if (!(await this.requireCourseId())) {
       return;
     }
+    await this.flushPendingLessonSave();
     const lessonId = await this.curriculum.addQuizLesson(moduleId);
     this.curriculum.selectLesson(moduleId, lessonId);
     this.activeTab.set('evaluation');
@@ -322,10 +416,103 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     }
   }
 
+  async applyGammaEbook(pdfUrl: string): Promise<void> {
+    const lesson = this.activeLesson();
+    const moduleId = this.curriculum.activeModuleId();
+    if (!lesson || !moduleId) {
+      this.toast.error('Selecciona una lección antes de adjuntar el ebook.');
+      return;
+    }
+    if (!(await this.requireCourseId())) {
+      return;
+    }
+
+    const resolvedUrl = resolveMediaUrl(pdfUrl);
+    if (!resolvedUrl) {
+      this.toast.error('URL del PDF no válida.');
+      return;
+    }
+
+    this.clearSaveDebounce();
+    const existingPdf = lesson.blocks.find((block) => block.contentType === 'pdf');
+    if (existingPdf) {
+      this.updateBlockField(existingPdf.id, 'resourceUrl', resolvedUrl, {
+        skipSchedule: true,
+      });
+    } else {
+      const blockId = await this.curriculum.addContentBlock(moduleId, lesson.id, 'pdf');
+      this.updateBlockField(blockId, 'resourceUrl', resolvedUrl, { skipSchedule: true });
+    }
+    await this.persistLessonById(moduleId, lesson.id);
+    this.toast.success('Ebook adjuntado a la lección');
+    this.activeTab.set('content');
+  }
+
+  async removeAttachedEbook(): Promise<void> {
+    const lesson = this.activeLesson();
+    const moduleId = this.curriculum.activeModuleId();
+    if (!lesson || !moduleId) {
+      return;
+    }
+    const pdfBlock = lesson.blocks.find((block) => block.contentType === 'pdf');
+    if (!pdfBlock) {
+      return;
+    }
+    this.clearSaveDebounce();
+    await this.curriculum.removeContentBlock(moduleId, lesson.id, pdfBlock.id);
+    this.toast.success('Ebook quitado de la lección');
+  }
+
+  async applyPodcastAudio(audioUrl: string): Promise<void> {
+    const lesson = this.activeLesson();
+    const moduleId = this.curriculum.activeModuleId();
+    if (!lesson || !moduleId) {
+      this.toast.error('Selecciona una lección antes de adjuntar el audio.');
+      return;
+    }
+    if (!(await this.requireCourseId())) {
+      return;
+    }
+
+    const resolvedUrl = resolveMediaUrl(audioUrl);
+    if (!resolvedUrl) {
+      this.toast.error('URL del audio no válida.');
+      return;
+    }
+
+    this.clearSaveDebounce();
+    const existingAudio = lesson.blocks.find((block) => block.contentType === 'audio');
+    if (existingAudio) {
+      this.updateBlockField(existingAudio.id, 'resourceUrl', resolvedUrl, { skipSchedule: true });
+    } else {
+      const blockId = await this.curriculum.addContentBlock(moduleId, lesson.id, 'audio');
+      this.updateBlockField(blockId, 'resourceUrl', resolvedUrl, { skipSchedule: true });
+    }
+    await this.persistLessonById(moduleId, lesson.id);
+    this.toast.success('Podcast adjuntado a la lección');
+    this.activeTab.set('content');
+  }
+
+  async removeAttachedPodcast(): Promise<void> {
+    const lesson = this.activeLesson();
+    const moduleId = this.curriculum.activeModuleId();
+    if (!lesson || !moduleId) {
+      return;
+    }
+    const audioBlock = lesson.blocks.find((block) => block.contentType === 'audio');
+    if (!audioBlock) {
+      return;
+    }
+    this.clearSaveDebounce();
+    await this.curriculum.removeContentBlock(moduleId, lesson.id, audioBlock.id);
+    this.toast.success('Audio quitado de la lección');
+  }
+
   updateBlockField(
     blockId: string,
     field: 'resourceUrl' | 'textContent',
     value: string,
+    opts?: { skipSchedule?: boolean },
   ): void {
     const lesson = this.activeLesson();
     const moduleId = this.curriculum.activeModuleId();
@@ -336,7 +523,9 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       block.id === blockId ? { ...block, [field]: value } : block,
     );
     this.curriculum.updateLesson(moduleId, lesson.id, { blocks });
-    this.scheduleSave();
+    if (!opts?.skipSchedule) {
+      this.scheduleSave(moduleId, lesson.id);
+    }
   }
 
   isUploadableBlock(contentType: ContentType): boolean {
@@ -392,25 +581,74 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
 
     this.blockUploadingId.set(blockId);
     this.blockUploadProgress.set(0);
+    this.blockUploadFileName.set(file.name);
     try {
       await this.builder.ensureInfoproductorSession();
-      const result = await firstValueFrom(
-        this.mediaService.uploadLessonResource(courseId, file, contentType as LessonResourceType),
-      );
-      if (result.url) {
-        const resolvedUrl = result.url.includes('/api/v1/media/files/')
-          ? result.url.slice(result.url.indexOf('/api/v1/media/files/'))
-          : result.url;
-        this.updateBlockField(blockId, 'resourceUrl', resolvedUrl);
-        await this.persistActiveLesson();
-        this.toast.success('Archivo subido correctamente');
-      }
+      await new Promise<void>((resolve, reject) => {
+        this.mediaService
+          .uploadLessonResourceWithProgress(courseId, file, contentType as LessonResourceType)
+          .subscribe({
+            next: ({ progress, response }) => {
+              this.blockUploadProgress.set(progress);
+              if (response?.url) {
+                const resolvedUrl = resolveMediaUrl(response.url);
+                this.updateBlockField(blockId, 'resourceUrl', resolvedUrl, { skipSchedule: true });
+                void this.persistActiveLesson().then(() => {
+                  this.toast.success('Archivo subido correctamente');
+                  resolve();
+                });
+              }
+            },
+            error: (err) => reject(err),
+          });
+      });
     } catch (err) {
       this.toast.error(messageFromHttpError(err, 'No se pudo subir el archivo.'));
     } finally {
       this.blockUploadingId.set(null);
       this.blockUploadProgress.set(0);
+      this.blockUploadFileName.set(null);
     }
+  }
+
+  blockFileDisplayName(resourceUrl: string | null | undefined): string {
+    if (!resourceUrl?.trim()) {
+      return 'Archivo';
+    }
+    try {
+      const segment = resourceUrl.split('?')[0].split('/').pop() || 'Archivo';
+      return decodeURIComponent(segment);
+    } catch {
+      return resourceUrl.split('/').pop() || 'Archivo';
+    }
+  }
+
+  onBlockFileDrop(blockId: string, contentType: ContentType, event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (contentType === 'pdf') {
+      const ok =
+        file.type === 'application/pdf' ||
+        file.type === '' ||
+        file.name.toLowerCase().endsWith('.pdf');
+      if (!ok) {
+        this.toast.error('Este bloque solo acepta archivos PDF.');
+        return;
+      }
+    }
+    void this.uploadBlockResource(blockId, contentType, file);
+  }
+
+  async quickAddPdfBlock(): Promise<void> {
+    await this.addContentBlock('pdf');
+  }
+
+  openEbookUploadPanel(): void {
+    this.ebookPanelRef()?.setMode('upload');
   }
 
   updateBlockQuizData(): void {
@@ -433,14 +671,38 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   selectLesson(moduleId: string, lessonId: string): void {
+    void this.switchLesson(moduleId, lessonId);
+  }
+
+  private async switchLesson(moduleId: string, lessonId: string): Promise<void> {
+    const currentModuleId = this.curriculum.activeModuleId();
+    const currentLessonId = this.curriculum.activeLessonId();
+    if (
+      currentModuleId &&
+      currentLessonId &&
+      (currentModuleId !== moduleId || currentLessonId !== lessonId)
+    ) {
+      await this.flushPendingLessonSave();
+    }
     this.curriculum.selectLesson(moduleId, lessonId);
   }
 
-  scheduleSave(): void {
+  scheduleSave(moduleId?: string, lessonId?: string): void {
+    const lesson = lessonId
+      ? this.curriculum.getLesson(moduleId ?? this.curriculum.activeModuleId() ?? '', lessonId)
+      : this.activeLesson();
+    const resolvedModuleId = moduleId ?? this.curriculum.activeModuleId();
+    if (!lesson || !resolvedModuleId) {
+      return;
+    }
+    this.pendingSaveTarget = { moduleId: resolvedModuleId, lessonId: lesson.id };
     if (this.saveDebounce) {
       clearTimeout(this.saveDebounce);
     }
-    this.saveDebounce = setTimeout(() => void this.persistActiveLesson(), 600);
+    this.saveDebounce = setTimeout(
+      () => void this.persistLessonById(resolvedModuleId, lesson.id),
+      600,
+    );
   }
 
   async persistActiveLesson(): Promise<void> {
@@ -449,14 +711,25 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     if (!lesson || !moduleId) {
       return;
     }
+    await this.persistLessonById(moduleId, lesson.id);
+  }
 
-    const quizData = this.isLessonQuiz()
-      ? {
-          passingScore: this.quizPassingScore(),
-          timeLimitMinutes: this.quizTimeLimit(),
-          maxAttempts: this.quizMaxAttempts(),
-          questions: this.quizQuestions(),
-        }
+  private async persistLessonById(moduleId: string, lessonId: string): Promise<void> {
+    const lesson = this.curriculum.getLesson(moduleId, lessonId);
+    if (!lesson) {
+      return;
+    }
+
+    const isActive = this.curriculum.activeLessonId() === lessonId;
+    const quizData = lesson.blocks.some((b) => b.contentType === 'quiz')
+      ? isActive
+        ? {
+            passingScore: this.quizPassingScore(),
+            timeLimitMinutes: this.quizTimeLimit(),
+            maxAttempts: this.quizMaxAttempts(),
+            questions: this.quizQuestions(),
+          }
+        : lesson.quizData
       : undefined;
 
     const blocks = lesson.blocks.map((block) =>
@@ -464,37 +737,31 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
     );
 
     const payload = {
-      title: this.draftTitle().trim() || lesson.title,
+      title: isActive ? this.draftTitle().trim() || lesson.title : lesson.title,
       blocks,
       quizData,
     };
 
-    this.curriculum.updateLesson(moduleId, lesson.id, {
+    this.curriculum.updateLesson(moduleId, lessonId, {
       title: payload.title,
       blocks,
       quizData,
     });
 
     try {
-      await this.curriculum.persistLesson(moduleId, lesson.id, payload);
+      await this.curriculum.persistLesson(moduleId, lessonId, payload);
     } catch {
       // error surfaced via service + toast
     }
   }
 
-  /** Guardado del botón superior del layout de gestión del curso. */
   private async flushCurriculumSave(): Promise<void> {
-    this.clearSaveDebounce();
+    await this.flushPendingLessonSave();
     await this.curriculum.flushPendingModuleTitles();
 
-    const lesson = this.activeLesson();
-    const moduleId = this.curriculum.activeModuleId();
-    if (lesson && moduleId) {
-      await this.persistActiveLesson();
-      const err = this.curriculum.errorMessage();
-      if (err) {
-        throw new Error(err);
-      }
+    const err = this.curriculum.errorMessage();
+    if (err) {
+      throw new Error(err);
     }
   }
 
@@ -638,7 +905,7 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   lessonBlockCount(lesson: LessonDTO): string {
-    const count = lesson.blocks.length;
+    const count = this.curriculum.countMeaningfulBlocks(lesson);
     if (count === 0) {
       return 'Sin contenido';
     }
@@ -646,5 +913,9 @@ export class CurriculumWorkspaceComponent implements OnInit, OnDestroy {
       return '1 bloque';
     }
     return `${count} bloques`;
+  }
+
+  lessonHasContent(lesson: LessonDTO): boolean {
+    return this.curriculum.countMeaningfulBlocks(lesson) > 0;
   }
 }

@@ -33,5 +33,8 @@ function translateApiMessage(message: string): string {
   if (lower.includes('you do not own this course')) {
     return 'Este curso no pertenece a tu cuenta. Se creará un borrador nuevo al guardar.';
   }
+  if (lower.includes('an unexpected error occurred')) {
+    return 'Se ha producido un error inesperado. Inténtalo de nuevo más tarde.';
+  }
   return message;
 }

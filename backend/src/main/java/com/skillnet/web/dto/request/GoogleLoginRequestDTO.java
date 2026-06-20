@@ -12,4 +12,7 @@ public class GoogleLoginRequestDTO {
 
     @NotBlank(message = "token is required")
     private String token;
+
+    /** Vista activa tras registro/login (student | infoproductor). */
+    private String activeRole;
 }

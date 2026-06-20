@@ -40,8 +40,8 @@ export class AuthService {
       .pipe(tap((response) => this.handleAuthSuccess(response)));
   }
 
-  loginWithGoogle(token: string): Observable<AuthResponse> {
-    const body: GoogleLoginRequest = { token };
+  loginWithGoogle(token: string, activeRole?: 'student' | 'infoproductor'): Observable<AuthResponse> {
+    const body: GoogleLoginRequest = { token, ...(activeRole ? { activeRole } : {}) };
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/auth/google`, body)
       .pipe(tap((response) => this.handleAuthSuccess(response)));
@@ -74,6 +74,28 @@ export class AuthService {
 
   getCurrentUser(): User | null {
     return this.currentUserSignal();
+  }
+
+  /** Actualiza nombre y foto en sesión tras guardar el perfil. */
+  mergeProfile(profile: {
+    firstName?: string;
+    lastName?: string;
+    profilePicture?: string;
+    bio?: string;
+    professionalTitle?: string;
+  }): void {
+    const current = this.currentUserSignal();
+    if (!current) {
+      return;
+    }
+    const merged: User = {
+      ...current,
+      firstName: profile.firstName ?? current.firstName,
+      lastName: profile.lastName ?? current.lastName,
+      profilePicture: profile.profilePicture ?? current.profilePicture,
+    };
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(merged));
+    this.currentUserSignal.set(this.normalizeUser(merged));
   }
 
   /**

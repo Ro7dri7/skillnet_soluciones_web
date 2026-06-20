@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -14,14 +14,19 @@ import { courseToMarketplace } from '../../../../shared/utils/marketplace-course
   imports: [RouterLink, MarketplaceCarouselComponent],
   templateUrl: './marketplace.component.html',
 })
-export class MarketplaceComponent implements OnInit {
+export class MarketplaceComponent implements OnInit, OnDestroy {
   private readonly courseService = inject(CourseService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
+  private heroAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly heroVideoSlideMs = 18_000;
+  private readonly heroContentSlideMs = 6_000;
+
   readonly isLoading = signal(true);
   readonly currentHeroSlide = signal(0);
   readonly courses = signal<MarketplaceCourse[]>([]);
+  readonly loadError = signal<string | null>(null);
   readonly categorized = signal<Record<string, MarketplaceCourse[]>>({});
 
   readonly offerFormats = OFFER_FORMATS;
@@ -29,27 +34,29 @@ export class MarketplaceComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCourses();
-    setInterval(() => {
-      this.currentHeroSlide.update((v) => (v === 0 ? 1 : 0));
-    }, 6000);
+    this.scheduleHeroAdvance();
+  }
+
+  ngOnDestroy(): void {
+    this.clearHeroAdvanceTimer();
   }
 
   loadCourses(): void {
     this.isLoading.set(true);
+    this.loadError.set(null);
     this.courseService.getCourses().subscribe({
       next: (items) => {
-        const published = items
+        const list = items
           .filter((c) => c.status === 'published')
           .map((c) => courseToMarketplace(c));
-        const list = published.length > 0 ? published : this.mockCourses();
         this.courses.set(list);
         this.buildCategories(list);
         this.isLoading.set(false);
       },
-      error: () => {
-        const list = this.mockCourses();
-        this.courses.set(list);
-        this.buildCategories(list);
+      error: (err) => {
+        this.courses.set([]);
+        this.buildCategories([]);
+        this.loadError.set('No se pudieron cargar los cursos del marketplace.');
         this.isLoading.set(false);
       },
     });
@@ -69,6 +76,24 @@ export class MarketplaceComponent implements OnInit {
 
   setHeroSlide(index: number): void {
     this.currentHeroSlide.set(index);
+    this.scheduleHeroAdvance();
+  }
+
+  private scheduleHeroAdvance(): void {
+    this.clearHeroAdvanceTimer();
+    const delay =
+      this.currentHeroSlide() === 0 ? this.heroVideoSlideMs : this.heroContentSlideMs;
+    this.heroAdvanceTimer = setTimeout(() => {
+      this.currentHeroSlide.update((v) => (v === 0 ? 1 : 0));
+      this.scheduleHeroAdvance();
+    }, delay);
+  }
+
+  private clearHeroAdvanceTimer(): void {
+    if (this.heroAdvanceTimer !== null) {
+      clearTimeout(this.heroAdvanceTimer);
+      this.heroAdvanceTimer = null;
+    }
   }
 
   scrollOffers(direction: 'left' | 'right'): void {
@@ -100,26 +125,5 @@ export class MarketplaceComponent implements OnInit {
       map['Otros'] = uncategorized.slice(0, 10);
     }
     this.categorized.set(map);
-  }
-
-  private mockCourses(): MarketplaceCourse[] {
-    return Array.from({ length: 12 }).map((_, i) => ({
-      id: i + 1,
-      title: `Curso profesional ${i + 1}: habilidades para el mercado digital`,
-      slug: `curso-${i + 1}`,
-      description: 'Descripción del curso',
-      level: 'intermediate',
-      status: 'published',
-      price: 49 + i * 10,
-      originalPrice: 79 + i * 10,
-      category: MARKETPLACE_CATEGORIES[i % MARKETPLACE_CATEGORIES.length],
-      format: 'Curso',
-      rating: 4.5,
-      enrollmentCount: 200 + i * 10,
-      lessonsCount: 24,
-      moduleCount: 3,
-      professorName: 'Prof. Skillnet',
-      imageUrl: null,
-    }));
   }
 }

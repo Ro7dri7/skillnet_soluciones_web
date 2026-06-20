@@ -1,7 +1,8 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { QuizData, QuizQuestionDraft } from '../../../../shared/models/curriculum.model';
 import { normalizeQuizData, questionTypeLabel } from '../../../course-manage/utils/quiz.util';
+import { QuizSubmissionService } from '../../../../core/services/quiz-submission.service';
 
 type QuizPhase = 'intro' | 'taking' | 'results';
 
@@ -13,7 +14,10 @@ type QuizPhase = 'intro' | 'taking' | 'results';
   styleUrl: './learn-quiz-player.component.scss',
 })
 export class LearnQuizPlayerComponent {
+  private readonly quizSubmissionService = inject(QuizSubmissionService);
+
   readonly quizData = input.required<QuizData>();
+  readonly lessonId = input<number | null>(null);
 
   readonly passed = output<void>();
 
@@ -123,6 +127,51 @@ export class LearnQuizPlayerComponent {
   finishQuiz(): void {
     this.submitted.set(true);
     this.phase.set('results');
+
+    const lessonId = this.lessonId();
+    const needsManualReview = this.questions().some((q) => (q.type ?? 'multiple') === 'free_response');
+    const answers = this.questions().map((q) => {
+      const type = q.type ?? 'multiple';
+      if (type === 'free_response') {
+        return {
+          questionId: q.id,
+          textAnswer: this.freeResponseValue(q.id),
+        };
+      }
+      if (type === 'matching') {
+        return {
+          questionId: q.id,
+          matchingAnswers: [...(this.matchingAnswers()[q.id] ?? [])],
+        };
+      }
+      const selected = this.selectedAnswers()[q.id];
+      return {
+        questionId: q.id,
+        optionIndex: typeof selected === 'number' ? selected : undefined,
+      };
+    });
+    const payload = {
+      score: this.scorePercent(),
+      needsManualReview,
+      answers,
+    };
+
+    if (lessonId != null) {
+      this.quizSubmissionService.submit(lessonId, payload).subscribe({
+        next: () => {
+          if (this.hasPassed()) {
+            this.passed.emit();
+          }
+        },
+        error: () => {
+          if (this.hasPassed()) {
+            this.passed.emit();
+          }
+        },
+      });
+      return;
+    }
+
     if (this.hasPassed()) {
       this.passed.emit();
     }

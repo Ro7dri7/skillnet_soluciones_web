@@ -1,0 +1,449 @@
+.lesson-ebook-panel {
+  margin-bottom: 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+  padding: 1rem 1.1rem;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #032b60;
+  }
+
+  .lesson-name {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+}
+
+.attached-block {
+  .attached-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #047857;
+
+    i {
+      font-size: 1rem;
+    }
+  }
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 0.35rem;
+  background: #e2e8f0;
+  padding: 0.2rem;
+  border-radius: 8px;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+
+    &.active {
+      background: #fff;
+      color: #145bff;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+    }
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &.full {
+    grid-column: 1 / -1;
+  }
+
+  span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  input,
+  select,
+  textarea {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 4rem;
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.reference-field .reference-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: #334155;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: #145bff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 0.35rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+
+  &.primary {
+    background: #145bff;
+    color: #fff;
+  }
+
+  &.secondary {
+    background: #032b60;
+    color: #fff;
+  }
+
+  &.ghost {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.uses {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.upload-zone {
+  padding: 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.upload-btn {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  background: #145bff;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  input {
+    display: none;
+  }
+
+  &.inline {
+    margin-top: 0.35rem;
+  }
+}
+
+.generating-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 0.5rem;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid #dbeafe;
+  border-top-color: #145bff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.phase-track {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  width: 100%;
+}
+
+.phase-step {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+
+  .phase-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cbd5e1;
+  }
+
+  &.active {
+    color: #145bff;
+    font-weight: 700;
+
+    .phase-dot {
+      background: #145bff;
+      box-shadow: 0 0 0 3px rgb(20 91 255 / 20%);
+    }
+  }
+
+  &.done {
+    color: #059669;
+
+    .phase-dot {
+      background: #059669;
+    }
+  }
+}
+
+.generating-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.preview-box {
+  position: relative;
+  height: 340px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  margin: 0.75rem 0;
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding-top: 28px;
+    box-sizing: border-box;
+  }
+}
+
+.preview-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-top: 28px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.dev-notice {
+  margin: 0 0 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  font-size: 0.78rem;
+  color: #92400e;
+}
+
+.locked {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.8rem;
+
+  a {
+    color: #145bff;
+    font-weight: 700;
+  }
+}
+
+.upload-zone {
+  padding: 0.5rem 0;
+}
+
+.upload-progress {
+  position: relative;
+  height: 22px;
+  width: 100%;
+  margin-top: 0.75rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+
+  &--compact {
+    margin-top: 0.5rem;
+  }
+}
+
+.upload-progress__fill {
+  height: 100%;
+  background: #89ceff;
+  transition: width 0.2s ease;
+
+  &--indeterminate {
+    width: 40% !important;
+    animation: upload-indeterminate 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes upload-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.upload-progress__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+
+.upload-dropzone {
+  margin-top: 0.75rem;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  background: rgba(137, 206, 255, 0.12);
+  position: relative;
+}
+
+.upload-dropzone__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.upload-dropzone__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #032b60;
+}
+
+.reference-meta--success {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #047857;
+  font-weight: 600;
+
+  i {
+    color: #059669;
+  }
+}
+
+.error {
+  margin-top: 0.5rem;
+  color: #dc2626;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

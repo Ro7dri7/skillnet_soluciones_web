@@ -16,6 +16,7 @@ import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.SectionRepository;
 import com.skillnet.service.CurriculumService;
 import com.skillnet.service.media.MediaStorageService;
+import com.skillnet.util.LessonContentNormalizer;
 import com.skillnet.web.dto.request.CreateCurriculumLessonRequestDTO;
 import com.skillnet.web.dto.request.CreateSectionRequestDTO;
 import com.skillnet.web.dto.request.LessonUpdateRequestDTO;
@@ -146,8 +147,9 @@ public class CurriculumServiceImpl implements CurriculumService {
         lesson.setSection(section);
         lesson.setTitle(request.getTitle().trim());
         if (request.getBlocks() != null && request.getBlocks().isArray()) {
-            String primaryType = primaryTypeFromBlocks(request.getBlocks());
-            lesson.setContent(buildLessonContentFromBlocks(request.getBlocks(), primaryType));
+            JsonNode normalizedBlocks = LessonContentNormalizer.normalizeBlocks(request.getBlocks());
+            String primaryType = primaryTypeFromBlocks(normalizedBlocks);
+            lesson.setContent(buildLessonContentFromBlocks(normalizedBlocks, primaryType));
             lesson.setContentType("quiz".equals(primaryType) ? "quiz" : "lesson");
         } else {
             lesson.setContent(buildLessonContent(uiContentType, request.getTextContent(), request.getQuizData()));
@@ -208,8 +210,9 @@ public class CurriculumServiceImpl implements CurriculumService {
         }
 
         if (request.getBlocks() != null && request.getBlocks().isArray()) {
-            String primaryType = primaryTypeFromBlocks(request.getBlocks());
-            lesson.setContent(buildLessonContentFromBlocks(request.getBlocks(), primaryType));
+            JsonNode normalizedBlocks = LessonContentNormalizer.normalizeBlocks(request.getBlocks());
+            String primaryType = primaryTypeFromBlocks(normalizedBlocks);
+            lesson.setContent(buildLessonContentFromBlocks(normalizedBlocks, primaryType));
             lesson.setContentType("quiz".equals(primaryType) ? "quiz" : "lesson");
         } else {
             String uiContentType = request.getContentType() != null && !request.getContentType().isBlank()
@@ -219,6 +222,9 @@ public class CurriculumServiceImpl implements CurriculumService {
                     request.getTextContent() != null ? request.getTextContent() : current.textContent();
             JsonNode quizData = request.getQuizData() != null ? request.getQuizData() : current.quizData();
 
+            if (textContent != null && textContent.isBlank()) {
+                textContent = "";
+            }
             lesson.setContent(buildLessonContent(uiContentType, textContent, quizData));
             lesson.setContentType("quiz".equals(uiContentType) ? "quiz" : "lesson");
         }
@@ -403,7 +409,7 @@ public class CurriculumServiceImpl implements CurriculumService {
         dto.setContentType(payload.uiContentType());
         dto.setTextContent(payload.textContent());
         dto.setQuizData(payload.quizData());
-        dto.setBlocks(rewriteBlockMediaUrls(payload.blocks()));
+        dto.setBlocks(rewriteBlockMediaUrls(LessonContentNormalizer.normalizeBlocks(payload.blocks())));
         return dto;
     }
 
@@ -432,9 +438,10 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     private String buildLessonContentFromBlocks(JsonNode blocks, String primaryType) {
+        JsonNode normalizedBlocks = LessonContentNormalizer.normalizeBlocks(blocks);
         ObjectNode node = objectMapper.createObjectNode();
         node.put("uiContentType", primaryType);
-        node.set("blocks", blocks);
+        node.set("blocks", normalizedBlocks);
         try {
             return objectMapper.writeValueAsString(node);
         } catch (JsonProcessingException e) {

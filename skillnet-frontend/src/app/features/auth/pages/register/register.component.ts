@@ -1,7 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import {
+  GoogleSigninButtonDirective,
+  SocialAuthService,
+  SocialUser,
+} from '@abacritt/angularx-social-login';
+import { Subscription, filter } from 'rxjs';
 import { AuthNavbarComponent } from '../../../../core/layout/auth-navbar/auth-navbar.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
@@ -9,6 +15,7 @@ import {
   passwordMeetsRequirements,
 } from '../../../../shared/utils/password-requirements';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
+import { environment } from '../../../../../environments/environment';
 
 export type RegisterStep = 'select' | 'student' | 'infoproductor';
 
@@ -20,13 +27,18 @@ export type RegisterStep = 'select' | 'student' | 'infoproductor';
     RouterLink,
     NgTemplateOutlet,
     AuthNavbarComponent,
+    GoogleSigninButtonDirective,
   ],
   templateUrl: './register.component.html',
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly socialAuthService = inject(SocialAuthService);
   private readonly router = inject(Router);
+
+  private authStateSub?: Subscription;
+  private googleRegisterInProgress = false;
 
   readonly formRef = viewChild<ElementRef<HTMLElement>>('formSection');
 
@@ -37,6 +49,8 @@ export class RegisterComponent {
   readonly showConfirmPassword = signal(false);
   readonly acceptTerms = signal(false);
   readonly isMobile = signal(typeof window !== 'undefined' && window.innerWidth <= 1024);
+  readonly googleSignInEnabled =
+    environment.googleSignInEnabled && !!environment.googleClientId;
 
   readonly form = this.fb.nonNullable.group({
     firstName: ['', Validators.required],
@@ -46,10 +60,21 @@ export class RegisterComponent {
     confirmPassword: ['', Validators.required],
   });
 
-  constructor() {
+  ngOnInit(): void {
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', () => this.isMobile.set(window.innerWidth <= 1024));
     }
+
+    if (this.googleSignInEnabled) {
+      void this.socialAuthService.signOut(true).catch(() => undefined);
+      this.authStateSub = this.socialAuthService.authState
+        .pipe(filter((user): user is SocialUser => !!user?.idToken))
+        .subscribe((user) => this.handleGoogleAuth(user));
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.authStateSub?.unsubscribe();
   }
 
   selectRole(type: 'student' | 'infoproductor'): void {
@@ -80,6 +105,10 @@ export class RegisterComponent {
 
   scrollToForm(): void {
     this.formRef()?.nativeElement.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  googleActiveRole(): 'student' | 'infoproductor' {
+    return this.step() === 'infoproductor' ? 'infoproductor' : 'student';
   }
 
   onSubmit(): void {
@@ -132,6 +161,37 @@ export class RegisterComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  private handleGoogleAuth(user: SocialUser): void {
+    if (this.googleRegisterInProgress || !user.idToken || this.authService.isLoggedIn()) {
+      return;
+    }
+
+    const currentStep = this.step();
+    if (currentStep !== 'select' && !this.acceptTerms()) {
+      this.error.set('Debes aceptar los términos y condiciones para registrarte con Google.');
+      return;
+    }
+
+    this.googleRegisterInProgress = true;
+    this.isLoading.set(true);
+    this.error.set('');
+
+    this.authService.loginWithGoogle(user.idToken, this.googleActiveRole()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.googleRegisterInProgress = false;
+        void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser());
+      },
+      error: (err) => {
+        this.error.set(
+          messageFromHttpError(err, 'Error al registrarse con Google. Intenta nuevamente.'),
+        );
+        this.isLoading.set(false);
+        this.googleRegisterInProgress = false;
+      },
+    });
   }
 
   private generateUsername(email: string): string {

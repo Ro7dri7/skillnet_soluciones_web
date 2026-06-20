@@ -1,0 +1,32 @@
+<section class="success-card">
+  @if (genericSuccess() && !paymentId()) {
+    <i class="ri-checkbox-circle-fill icon ok"></i>
+    <h1>¡Pago recibido!</h1>
+    <p>Tu compra se está procesando. Recibirás acceso al curso en breve.</p>
+  } @else if (error()) {
+    <i class="ri-error-warning-fill icon warn"></i>
+    <h1>Verificación de pago</h1>
+    <p class="error">{{ error() }}</p>
+  } @else if (polling()) {
+    <i class="ri-loader-4-line icon spin"></i>
+    <h1>Confirmando pago…</h1>
+    <p>Estamos verificando el estado de tu transacción.</p>
+  } @else if (isSuccessStatus()) {
+    <i class="ri-checkbox-circle-fill icon ok"></i>
+    <h1>¡Pago confirmado!</h1>
+    @if (courseTitle()) {
+      <p>Ya tienes acceso a <strong>{{ courseTitle() }}</strong>.</p>
+    } @else {
+      <p>Tu pago fue procesado correctamente.</p>
+    }
+  } @else {
+    <i class="ri-time-fill icon warn"></i>
+    <h1>Pago en proceso</h1>
+    <p>Estado: {{ status() ?? 'pendiente' }}</p>
+  }
+
+  <div class="actions">
+    <a routerLink="/mis-cursos" class="btn-primary">Ir a mis cursos</a>
+    <a routerLink="/marketplace" class="btn-secondary">Seguir explorando</a>
+  </div>
+</section>

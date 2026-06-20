@@ -60,6 +60,10 @@ export class ManageMessagesComponent implements OnInit, OnDestroy {
       const course = await firstValueFrom(this.courseService.getCourse(id));
       this.welcomeMessage.set(course.welcomeMessage ?? '');
       this.congratulationsMessage.set(course.congratulationsMessage ?? '');
+      this.manageContext.setSectionStatus(
+        'messages',
+        Boolean(course.welcomeMessage?.trim()) || Boolean(course.congratulationsMessage?.trim()),
+      );
     } catch {
       this.toast.error('No se pudieron cargar los mensajes.');
     } finally {
@@ -78,5 +82,9 @@ export class ManageMessagesComponent implements OnInit, OnDestroy {
         congratulationsMessage: this.congratulationsMessage(),
       }),
     );
+    this.manageContext.patchLoadedCourse({
+      welcomeMessage: this.welcomeMessage(),
+      congratulationsMessage: this.congratulationsMessage(),
+    });
   }
 }

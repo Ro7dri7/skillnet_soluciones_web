@@ -65,13 +65,17 @@ public class GoogleAuthService {
         User user = userRepository
                 .findByEmailIgnoreCase(email)
                 .map(existing -> updateExistingUser(existing, pictureUrl))
-                .orElseGet(() -> createGoogleUser(email, firstName, lastName, pictureUrl));
+                .orElseGet(() -> createGoogleUser(email, firstName, lastName, pictureUrl, dto.getActiveRole()));
 
         if (!user.isActive()) {
             throw new DisabledException("User account is disabled");
         }
 
-        String activeRole = RoleAuthorityResolver.defaultActiveRole(user);
+        String activeRole = resolveSessionActiveRole(dto.getActiveRole(), user);
+        if (!activeRole.equals(user.getActiveRole())) {
+            user.setActiveRole(activeRole);
+            user = userRepository.save(user);
+        }
         CustomUserDetails userDetails = new CustomUserDetails(user, activeRole);
         String jwt = jwtService.generateToken(userDetails, activeRole);
         UserSummaryDTO summary = userMapper.toSummaryDTO(user, activeRole);
@@ -95,7 +99,8 @@ public class GoogleAuthService {
         }
     }
 
-    private User createGoogleUser(String email, String firstName, String lastName, String pictureUrl) {
+    private User createGoogleUser(
+            String email, String firstName, String lastName, String pictureUrl, String requestedRole) {
         User user = new User();
         user.setEmail(email);
         user.setUsername(generateUniqueUsername(email));
@@ -105,7 +110,8 @@ public class GoogleAuthService {
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setIdentityProvider("google");
         user.setEmailVerified(true);
-        UserRoleNormalizer.applyDualRoleCapabilities(user, "student");
+        UserRoleNormalizer.applyDualRoleCapabilities(
+                user, normalizeRequestedRole(requestedRole, "student"));
         user.setActive(true);
         user.setDateJoined(Instant.now());
         user.setSpecialties(JsonNodeFactory.instance.objectNode());
@@ -156,5 +162,25 @@ public class GoogleAuthService {
             return null;
         }
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private String resolveSessionActiveRole(String requestedRole, User user) {
+        String normalized = normalizeRequestedRole(requestedRole, null);
+        if (normalized != null) {
+            UserRoleNormalizer.ensureDualCapabilities(user);
+            return normalized;
+        }
+        return RoleAuthorityResolver.defaultActiveRole(user);
+    }
+
+    private String normalizeRequestedRole(String requestedRole, String fallback) {
+        if (requestedRole == null || requestedRole.isBlank()) {
+            return fallback;
+        }
+        String role = requestedRole.trim().toLowerCase(java.util.Locale.ROOT);
+        if ("infoproductor".equals(role) || "student".equals(role)) {
+            return role;
+        }
+        return fallback;
     }
 }

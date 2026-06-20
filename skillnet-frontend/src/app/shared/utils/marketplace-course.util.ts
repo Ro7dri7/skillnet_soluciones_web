@@ -2,6 +2,20 @@ import { CourseResponse } from '../models/course.model';
 import { mediaBackendUrl } from './media-url.util';
 import { MarketplaceCourse } from '../../features/marketplace/models/marketplace-course.model';
 
+export function professorDisplayName(course: CourseResponse): string {
+  const professor = course.professor;
+  if (professor) {
+    const full = [professor.firstName, professor.lastName].filter(Boolean).join(' ').trim();
+    if (full) {
+      return full;
+    }
+    if (professor.username?.trim()) {
+      return professor.username;
+    }
+  }
+  return 'SkillNet Academy';
+}
+
 function formatCourseFormat(course: CourseResponse): string {
   const raw = course.courseFormat?.trim().toLowerCase();
   if (!raw) {
@@ -36,7 +50,7 @@ export function courseToMarketplace(course: CourseResponse): MarketplaceCourse {
     enrollmentCount: course.enrollmentCount ?? 0,
     lessonsCount: course.lessonsCount ?? 0,
     moduleCount: course.moduleCount ?? 0,
-    professorName: 'Skillnet Academy',
+    professorName: professorDisplayName(course),
     imageUrl: mediaBackendUrl(course.imageUrl) || null,
   };
 }

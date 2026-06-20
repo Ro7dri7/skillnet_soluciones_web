@@ -33,15 +33,10 @@ type PaymentMethod = 'card' | 'yape';
 
 interface AppliedCoupon {
   code: string;
-  percent: number;
+  percent: number | null;
+  amountOff: number | null;
   label: string;
 }
-
-const MOCK_COUPONS: Record<string, { percent: number; label: string }> = {
-  SKILL10: { percent: 10, label: '10% de descuento' },
-  SKILLNET20: { percent: 20, label: '20% de descuento' },
-  WELCOME15: { percent: 15, label: '15% de bienvenida' },
-};
 
 const STRIPE_ELEMENT_STYLE = {
   base: {
@@ -78,6 +73,7 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   readonly couponMessage = signal<string | null>(null);
   readonly couponError = signal(false);
   readonly appliedCoupon = signal<AppliedCoupon | null>(null);
+  readonly couponApplying = signal(false);
   readonly expandedItemId = signal<number | null>(null);
   readonly isLoading = signal(false);
   readonly paymentSuccess = signal(false);
@@ -101,6 +97,7 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     fullName: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
     documentId: ['', [Validators.required, Validators.minLength(6)]],
+    yapePhone: [''],
   });
 
   readonly subtotal = computed(() => this.cartService.cartTotal());
@@ -110,7 +107,13 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     if (!coupon) {
       return 0;
     }
-    return Math.round(this.subtotal() * (coupon.percent / 100) * 100) / 100;
+    if (coupon.percent != null && coupon.percent > 0) {
+      return Math.round(this.subtotal() * (coupon.percent / 100) * 100) / 100;
+    }
+    if (coupon.amountOff != null && coupon.amountOff > 0) {
+      return Math.min(coupon.amountOff, this.subtotal());
+    }
+    return 0;
   });
 
   readonly totalToPay = computed(() =>
@@ -139,11 +142,20 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     if (!this.personalFormValid()) {
       return false;
     }
+    if (this.totalToPay() <= 0) {
+      return true;
+    }
     if (this.paymentMethod() === 'card') {
       return this.stripeReady() && this.stripeCardComplete();
     }
+    if (this.paymentMethod() === 'yape') {
+      const phone = this.personalForm.controls.yapePhone.value.trim();
+      return /^9\d{8}$/.test(phone);
+    }
     return true;
   });
+
+  readonly stripeDevMockEnabled = environment.stripeDevMock;
 
   constructor() {
     this.prefillFromUser();
@@ -168,6 +180,10 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   setPaymentMethod(method: PaymentMethod): void {
     this.paymentMethod.set(method);
     this.errorMessage.set(null);
+    if (method === 'card' && this.totalToPay() > 0) {
+      this.stripeInitStarted = false;
+      setTimeout(() => void this.initStripeElementsWithRetry(), 0);
+    }
   }
 
   toggleItemExpand(itemId: number): void {
@@ -186,17 +202,38 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const coupon = MOCK_COUPONS[code];
-    if (!coupon) {
-      this.appliedCoupon.set(null);
-      this.couponMessage.set('Cupón inválido o expirado');
-      this.couponError.set(true);
+    const courseIds = this.cartService.cartItems().map((item) => item.id);
+    if (courseIds.length === 0) {
       return;
     }
 
-    this.appliedCoupon.set({ code, ...coupon });
-    this.couponMessage.set(`Cupón "${code}" aplicado correctamente`);
-    this.couponError.set(false);
+    this.couponApplying.set(true);
+    this.checkoutService.quote({ courseIds, couponCode: code }).subscribe({
+      next: (quote) => {
+        this.couponApplying.set(false);
+        if (!quote.couponValid) {
+          this.appliedCoupon.set(null);
+          this.couponMessage.set(quote.message ?? 'Cupón inválido o expirado');
+          this.couponError.set(true);
+          return;
+        }
+
+        this.appliedCoupon.set({
+          code: quote.couponCode ?? code,
+          percent: quote.couponPercentOff ?? null,
+          amountOff: quote.couponAmountOff != null ? Number(quote.couponAmountOff) : null,
+          label: quote.couponLabel ?? 'Descuento aplicado',
+        });
+        this.couponMessage.set(quote.message ?? `Cupón "${code}" aplicado correctamente`);
+        this.couponError.set(false);
+      },
+      error: (err) => {
+        this.couponApplying.set(false);
+        this.appliedCoupon.set(null);
+        this.couponMessage.set(messageFromHttpError(err, 'No se pudo validar el cupón'));
+        this.couponError.set(true);
+      },
+    });
   }
 
   removeCoupon(): void {
@@ -216,7 +253,7 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     }
 
     if (this.paymentMethod() === 'yape') {
-      this.processYapeMock();
+      await this.processYapeCheckout();
       return;
     }
 
@@ -224,11 +261,13 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   }
 
   itemLineTotal(item: CartItem): number {
+    const subtotal = this.subtotal();
     const coupon = this.appliedCoupon();
-    if (!coupon) {
+    if (!coupon || subtotal <= 0) {
       return item.price;
     }
-    return Math.round(item.price * (1 - coupon.percent / 100) * 100) / 100;
+    const share = item.price / subtotal;
+    return Math.round((item.price - this.discountAmount() * share) * 100) / 100;
   }
 
   private async initStripeElementsWithRetry(attempt = 0): Promise<void> {
@@ -316,11 +355,6 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   }
 
   private async processStripePayment(): Promise<void> {
-    if (!this.stripe || !this.cardNumberElement) {
-      this.errorMessage.set('La pasarela aún no está lista. Espera un momento e intenta de nuevo.');
-      return;
-    }
-
     if (!this.authService.getCurrentUser()) {
       this.errorMessage.set('Debes iniciar sesión para completar la compra.');
       return;
@@ -331,29 +365,49 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    if (this.totalToPay() > 0 && !environment.stripeDevMock && (!this.stripe || !this.cardNumberElement)) {
+      this.errorMessage.set('La pasarela aún no está lista. Espera un momento e intenta de nuevo.');
+      return;
+    }
+
     this.isLoading.set(true);
 
     try {
-      const { token, error } = await this.stripe.createToken(this.cardNumberElement);
-      if (error || !token) {
-        this.errorMessage.set(error?.message ?? 'No se pudo tokenizar la tarjeta.');
-        return;
+      let paymentToken = 'free_checkout';
+      if (this.totalToPay() > 0) {
+        if (environment.stripeDevMock) {
+          paymentToken = 'dev_mock_checkout';
+        } else {
+          if (!this.stripe || !this.cardNumberElement) {
+            this.errorMessage.set('La pasarela aún no está lista. Espera un momento e intenta de nuevo.');
+            return;
+          }
+          const { token, error } = await this.stripe.createToken(this.cardNumberElement);
+          if (error || !token) {
+            this.errorMessage.set(error?.message ?? 'No se pudo tokenizar la tarjeta.');
+            return;
+          }
+          paymentToken = token.id;
+        }
       }
 
-      await firstValueFrom(
+      const response = await firstValueFrom(
         this.checkoutService.processPayment({
           courseId: items[0].id,
           courseIds: items.map((item) => item.id),
           amount: this.totalToPay(),
-          paymentToken: token.id,
+          paymentToken,
+          couponCode: this.appliedCoupon()?.code,
         }),
       );
 
       this.paymentSuccess.set(true);
       this.cartService.clearCart();
+      const paymentId = response.paymentId;
+      const query = paymentId != null ? { paymentId: String(paymentId) } : undefined;
       setTimeout(() => {
-        void this.router.navigate(['/marketplace']);
-      }, 2200);
+        void this.router.navigate(['/payment/success'], { queryParams: query });
+      }, 800);
     } catch (err) {
       this.errorMessage.set(messageFromHttpError(err, 'No se pudo procesar el pago con Stripe.'));
     } finally {
@@ -361,16 +415,48 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private processYapeMock(): void {
+  private async processYapeCheckout(): Promise<void> {
+    if (!this.authService.getCurrentUser()) {
+      this.errorMessage.set('Debes iniciar sesión para completar la compra.');
+      return;
+    }
+    const items = this.cartService.cartItems();
+    if (items.length === 0) {
+      return;
+    }
+
     this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
+    try {
+      const paymentToken =
+        this.totalToPay() <= 0 ? 'free_checkout' : environment.stripeDevMock ? 'dev_mock_yape' : null;
+      if (!paymentToken && this.totalToPay() > 0) {
+        this.errorMessage.set('Yape solo está disponible en modo simulación local. Usa tarjeta o contacta soporte.');
+        return;
+      }
+
+      const response = await firstValueFrom(
+        this.checkoutService.processPayment({
+          courseId: items[0].id,
+          courseIds: items.map((item) => item.id),
+          amount: this.totalToPay(),
+          paymentToken: paymentToken ?? 'dev_mock_yape',
+          couponCode: this.appliedCoupon()?.code,
+        }),
+      );
+
       this.paymentSuccess.set(true);
       this.cartService.clearCart();
+      const paymentId = response.paymentId;
       setTimeout(() => {
-        void this.router.navigate(['/marketplace']);
-      }, 2200);
-    }, 1400);
+        void this.router.navigate(['/payment/success'], {
+          queryParams: paymentId != null ? { paymentId: String(paymentId) } : undefined,
+        });
+      }, 800);
+    } catch (err) {
+      this.errorMessage.set(messageFromHttpError(err, 'No se pudo procesar el pago.'));
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   private prefillFromUser(): void {

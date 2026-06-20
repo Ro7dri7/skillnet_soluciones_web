@@ -3,6 +3,7 @@ package com.skillnet.service.student;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.Enrollment;
 import com.skillnet.persistence.entity.core.User;
+import com.skillnet.persistence.repository.CourseCertificateRepository;
 import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.LessonRepository;
 import com.skillnet.persistence.repository.projection.CategoryProgressProjection;
@@ -32,6 +33,7 @@ public class StudentAnalyticsServiceImpl implements StudentAnalyticsService {
 
     private final EnrollmentRepository enrollmentRepository;
     private final LessonRepository lessonRepository;
+    private final CourseCertificateRepository courseCertificateRepository;
     private final MediaStorageService mediaStorageService;
     private final StudentProgressService studentProgressService;
 
@@ -57,7 +59,7 @@ public class StudentAnalyticsServiceImpl implements StudentAnalyticsService {
                 enrollmentRepository.countByUser_IdAndEnrolledAtBetween(userId, periodStart, periodEnd));
         long completed = enrollmentRepository.countCompletedAllTimeByUser_Id(userId);
         kpis.setCompletedCourses(completed);
-        kpis.setCertificates(completed);
+        kpis.setCertificates(courseCertificateRepository.countByStudent_IdAndActiveTrue(userId));
         kpis.setActiveCourses(enrollmentRepository.countActiveByUser_Id(userId));
         return kpis;
     }

@@ -1,0 +1,45 @@
+<section class="page-head">
+  <h1>Certificados</h1>
+  <p>Tus certificados obtenidos al completar cursos.</p>
+</section>
+
+@if (loading()) {
+  <p class="state">Cargando certificados…</p>
+} @else if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (certificates().length === 0) {
+  <div class="empty">
+    <p>Aún no tienes certificados.</p>
+    <a routerLink="/mis-cursos">Ir a mis cursos</a>
+  </div>
+} @else {
+  <p class="summary">{{ total() }} certificado(s)</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Curso</th>
+          <th>Fecha</th>
+          <th>Archivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (cert of certificates(); track cert.id) {
+          <tr>
+            <td>{{ cert.courseTitle }}</td>
+            <td>{{ cert.uploadedAt | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              @if (cert.certificateFile?.startsWith('auto:')) {
+                <span class="badge-auto">Emitido · {{ cert.certificateFile!.slice(5) }}</span>
+              } @else if (cert.certificateFile) {
+                <a [href]="cert.certificateFile" target="_blank" rel="noopener">Descargar</a>
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

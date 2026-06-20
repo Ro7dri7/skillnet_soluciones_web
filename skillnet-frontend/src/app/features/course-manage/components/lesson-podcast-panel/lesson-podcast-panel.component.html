@@ -1,0 +1,314 @@
+<section class="lesson-podcast-panel">
+
+  <header class="panel-header">
+
+    <div>
+
+      <h3>Podcast de esta lección</h3>
+
+      @if (lessonTitle()) {
+
+        <p class="lesson-name">{{ lessonTitle() }}</p>
+
+      }
+
+    </div>
+
+    @if (!showAttachedView()) {
+
+      <div class="mode-tabs">
+
+        <button type="button" [class.active]="panelMode() === 'generate'" (click)="setMode('generate')">
+
+          Crear con IA
+
+        </button>
+
+        <button type="button" [class.active]="panelMode() === 'upload'" (click)="setMode('upload')">
+
+          Subir mi audio
+
+        </button>
+
+      </div>
+
+    }
+
+  </header>
+
+
+
+  @if (showAttachedView()) {
+
+    <div class="result-block attached-block">
+
+      <p class="attached-label">
+
+        <i class="ri-checkbox-circle-fill"></i>
+
+        Audio asignado a esta lección
+
+      </p>
+
+      <audio class="audio-player" controls [src]="attachedPlaybackUrl()"></audio>
+
+      <div class="actions">
+
+        <button type="button" class="btn primary" (click)="requestReplace()">Reemplazar episodio</button>
+
+        <button type="button" class="btn ghost" (click)="detachFromLesson()">Quitar de la lección</button>
+
+      </div>
+
+    </div>
+
+  } @else if (panelMode() === 'upload') {
+
+    <div class="upload-zone">
+
+      <p>Sube un archivo MP3 o WAV para esta lección.</p>
+
+      @if (uploadingAudio()) {
+        <div class="upload-progress" role="status" aria-live="polite">
+          <div class="upload-progress__fill" [style.width.%]="uploadProgress()"></div>
+          <span class="upload-progress__label">
+            Subiendo {{ uploadingFileName() || 'audio' }}… {{ uploadProgress() }}%
+          </span>
+        </div>
+      } @else {
+        <div class="upload-dropzone">
+          <input
+            type="file"
+            id="podcast-own-audio"
+            class="upload-dropzone__input"
+            accept="audio/*,.mp3,.wav,.m4a"
+            (change)="onUploadOwnAudio($event)"
+          />
+          <label class="upload-dropzone__label" for="podcast-own-audio">
+            <i class="ri-upload-cloud-2-line text-3xl"></i>
+            <span>Arrastra un audio o haz clic para subir</span>
+          </label>
+        </div>
+      }
+
+    </div>
+
+  } @else if (!hasPodcastAccess()) {
+
+    <p class="locked">
+
+      Necesitas usos disponibles para podcasts con IA.
+
+      <a routerLink="/infoproductor/plans">Ver planes</a>
+
+    </p>
+
+  } @else if (phase() === 'completed' && platformAudioUrl()) {
+
+    <div class="result-block">
+
+      <p class="attached-label">Episodio generado</p>
+
+      <audio class="audio-player" controls [src]="playbackUrl()"></audio>
+
+      <div class="actions">
+
+        <button type="button" class="btn primary" (click)="assignToLesson()">Asignar a esta lección</button>
+
+        <button type="button" class="btn ghost" (click)="requestReplace()">Generar otro</button>
+
+      </div>
+
+    </div>
+
+  } @else if (phase() === 'script_ready') {
+
+    <div class="script-block">
+
+      <p class="episode-meta">
+
+        <i class="ri-global-line"></i>
+
+        {{ languageLabel(language) }} · {{ durationMinutes }} min
+
+      </p>
+
+      <label class="field full">
+
+        <span>Guion del episodio (edítalo y aprueba antes del audio)</span>
+
+        <textarea rows="10" [(ngModel)]="editedTranscript"></textarea>
+
+      </label>
+
+      <div class="actions">
+
+        <button type="button" class="btn secondary" (click)="phase.set('idle')">Volver</button>
+
+        <button type="button" class="btn primary" (click)="startAudioGeneration()">
+
+          Generar audio con IA
+
+        </button>
+
+        @if (podcastUsesRemaining() > 0) {
+
+          <span class="uses">{{ podcastUsesRemaining() }} usos restantes</span>
+
+        }
+
+      </div>
+
+    </div>
+
+  } @else {
+
+    @if (isGenerating()) {
+
+      <div class="generating-block">
+
+        <div class="spinner" aria-hidden="true"></div>
+
+        <p>
+
+          {{
+
+            phase() === 'script_generating'
+
+              ? 'Generando guion del episodio…'
+
+              : 'Generando audio con IA…'
+
+          }}
+
+        </p>
+
+      </div>
+
+    } @else {
+
+      <div class="form-grid">
+
+        <div class="options-row">
+
+          <label class="field">
+
+            <span>Idioma del episodio</span>
+
+            <select [(ngModel)]="language" [disabled]="isGenerating()">
+
+              @for (lang of languages; track lang.value) {
+
+                <option [value]="lang.value">{{ lang.label }}</option>
+
+              }
+
+            </select>
+
+          </label>
+
+          <label class="field">
+
+            <span>Duración (minutos)</span>
+
+            <input
+
+              type="number"
+
+              min="1"
+
+              max="10"
+
+              step="1"
+
+              [(ngModel)]="durationMinutes"
+
+              [disabled]="isGenerating()"
+
+            />
+
+          </label>
+
+        </div>
+
+        <label class="field full">
+
+          <span>Tema del episodio *</span>
+
+          <input type="text" [(ngModel)]="topic" [placeholder]="lessonTitle() || 'Tema del episodio'" />
+
+        </label>
+
+        <label class="field full">
+
+          <span>Contenido fuente (opcional)</span>
+
+          <textarea rows="4" [(ngModel)]="sourceText" placeholder="Notas, resumen o texto del módulo…"></textarea>
+
+        </label>
+
+        <div class="field full reference-field">
+
+          <span>PDF de referencia (opcional)</span>
+
+          <label class="upload-btn inline">
+
+            <input type="file" accept="application/pdf,.pdf" (change)="onReferencePdfSelected($event)" />
+
+            {{ referenceExtracting() ? 'Leyendo PDF…' : 'Subir PDF como fuente' }}
+
+          </label>
+
+          @if (referenceExtracting()) {
+            <div class="upload-progress upload-progress--compact" role="status">
+              <div class="upload-progress__fill upload-progress__fill--indeterminate"></div>
+              <span class="upload-progress__label">Extrayendo texto del PDF…</span>
+            </div>
+          }
+
+          @if (referenceFileName()) {
+
+            <p class="reference-meta reference-meta--success">
+
+              <i class="ri-checkbox-circle-fill"></i>
+
+              {{ referenceFileName() }} — PDF listo como fuente
+
+            </p>
+
+          }
+
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button type="button" class="btn primary" [disabled]="isGenerating()" (click)="startScriptGeneration()">
+
+          Generar guion con IA
+
+        </button>
+
+        @if (podcastUsesRemaining() > 0) {
+
+          <span class="uses">{{ podcastUsesRemaining() }} usos restantes (audio)</span>
+
+        }
+
+      </div>
+
+    }
+
+  }
+
+
+
+  @if (error()) {
+
+    <p class="error">{{ error() }}</p>
+
+  }
+
+</section>
+

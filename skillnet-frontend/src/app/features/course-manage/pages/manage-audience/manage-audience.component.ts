@@ -152,6 +152,7 @@ export class ManageAudienceComponent implements OnInit, OnDestroy {
           targetAudience,
         }),
       );
+      this.manageContext.patchLoadedCourse({ whatYouWillLearn, targetAudience });
     } catch (err) {
       if (err instanceof HttpErrorResponse && (err.status === 403 || isCourseOwnershipError(err))) {
         this.error.set(

@@ -59,4 +59,21 @@ export class MediaService {
   ): Observable<MediaUploadResponse> {
     return this.uploadAndWait(courseId, file, 'resource');
   }
+
+  /** Igual que uploadLessonResource pero emite progreso 0–100 y la respuesta al finalizar. */
+  uploadLessonResourceWithProgress(
+    courseId: number,
+    file: File,
+    _contentType: LessonResourceType,
+  ): Observable<{ progress: number; response?: MediaUploadResponse }> {
+    return this.uploadFile(courseId, file, 'resource').pipe(
+      map(({ event, progress }) => {
+        if (event.type === HttpEventType.Response) {
+          const body = (event as HttpResponse<MediaUploadResponse>).body;
+          return { progress: 100, response: body ?? undefined };
+        }
+        return { progress };
+      }),
+    );
+  }
 }

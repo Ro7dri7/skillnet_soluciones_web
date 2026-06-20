@@ -62,7 +62,7 @@ import { Component, input, output } from '@angular/core';
         align-items: center;
         justify-content: center;
         padding: 12px 20px;
-        border-bottom: 1.5px solid #ffc847;
+        border-bottom: 1.5px solid #89ceff;
         background: linear-gradient(90deg, #121d31 0%, #1e293b 100%);
       }
 
@@ -130,7 +130,7 @@ import { Component, input, output } from '@angular/core';
 
       .confirm-dialog__btn--confirm {
         flex: 2;
-        background: #ffc847;
+        background: #89ceff;
         color: #000;
       }
 

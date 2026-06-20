@@ -24,6 +24,7 @@ public class StudentProgressServiceImpl implements StudentProgressService {
     private final LessonRepository lessonRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
+    private final CertificateIssuanceService certificateIssuanceService;
 
     @Override
     @Transactional(readOnly = true)
@@ -93,6 +94,7 @@ public class StudentProgressServiceImpl implements StudentProgressService {
             enrollment.setCompleted(true);
             enrollment.setCompletedAt(Instant.now());
             enrollmentRepository.save(enrollment);
+            certificateIssuanceService.tryIssueOnCourseCompletion(userId, courseId);
         }
         return true;
     }

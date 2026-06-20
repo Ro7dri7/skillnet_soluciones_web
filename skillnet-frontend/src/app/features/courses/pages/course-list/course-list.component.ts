@@ -41,9 +41,29 @@ export class CourseListComponent implements OnInit {
     });
   }
 
+  courseSlug(course: ProducerCourseSummary): string {
+    return course.slug ? normalizeCourseSlugForUrl(course.slug) : String(course.id);
+  }
+
   manageCourse(course: ProducerCourseSummary): void {
-    const slug = course.slug ? normalizeCourseSlugForUrl(course.slug) : String(course.id);
-    void this.router.navigate([courseManagePath(slug, 'curriculum')]);
+    void this.router.navigate([
+      courseManagePath(this.courseSlug(course), 'curriculum', course.courseFormat),
+    ]);
+  }
+
+  metricsCourse(course: ProducerCourseSummary): void {
+    void this.router.navigate(['/infoproductor/student-progress'], {
+      queryParams: { course: this.courseSlug(course) },
+    });
+  }
+
+  enrollmentLabel(course: ProducerCourseSummary): string {
+    const count = course.enrollmentCount ?? 0;
+    const noun =
+      course.courseFormat === 'course' || course.courseFormat === 'podcast'
+        ? 'estudiantes'
+        : 'ventas';
+    return `${count} ${noun}`;
   }
 
   isDraft(status: string): boolean {
@@ -57,7 +77,7 @@ export class CourseListComponent implements OnInit {
   formatLabel(format: string): string {
     const labels: Record<string, string> = {
       course: 'Curso',
-      ebook: 'E-book',
+      ebook: 'Ebook',
       audiobook: 'Audiolibro',
       podcast: 'Podcast',
     };

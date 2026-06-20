@@ -16,8 +16,15 @@ import {
   StudentService,
 } from '../../../../core/services/student.service';
 import { ContentBlockDTO, QuizData } from '../../../../shared/models/curriculum.model';
+import {
+  courseLearnRouterLink,
+  courseRouteNeedsRedirect,
+  normalizeCourseSlugForUrl,
+  slugFromRouteParams,
+} from '../../../../shared/utils/course-slug.util';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 import { absoluteMediaUrl, mediaBackendUrl } from '../../../../shared/utils/media-url.util';
+import { CertificateService } from '../../../../core/services/certificate.service';
 import { normalizeQuizData } from '../../../course-manage/utils/quiz.util';
 import { LearnQuizPlayerComponent } from '../../components/learn-quiz-player/learn-quiz-player.component';
 import { PdfBlockViewerComponent } from '../../components/pdf-block-viewer/pdf-block-viewer.component';
@@ -38,6 +45,7 @@ export class CourseLearnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly studentService = inject(StudentService);
+  private readonly certificateService = inject(CertificateService);
   private readonly sanitizer = inject(DomSanitizer);
 
   private readonly contentAreaRef = viewChild<ElementRef<HTMLElement>>('contentAreaRef');
@@ -51,8 +59,11 @@ export class CourseLearnComponent implements OnInit {
   readonly sidebarCollapsed = signal(false);
   readonly completedLessonIds = signal<Set<number>>(new Set());
   readonly savingProgress = signal(false);
+  readonly courseCompletedBanner = signal(false);
+  readonly certificateCode = signal<string | null>(null);
 
   private courseSlug = '';
+  private courseFormat: string | null = null;
 
   readonly activeLesson = computed(() => {
     const lessonId = this.activeLessonId();
@@ -109,15 +120,25 @@ export class CourseLearnComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug');
+    const formatParam = this.route.snapshot.paramMap.get('format');
+    const slugParam = this.route.snapshot.paramMap.get('slug');
+    const slug = slugFromRouteParams(formatParam, slugParam);
     if (!slug) {
       this.error.set('Curso no encontrado.');
       this.loading.set(false);
       return;
     }
     this.courseSlug = slug;
-    this.studentService.getLearnPage(slug).subscribe({
+    this.courseFormat = formatParam;
+    this.studentService.getLearnPage(slug, formatParam).subscribe({
       next: (data) => {
+        const canonical = normalizeCourseSlugForUrl(data.slug ?? slug);
+        if (courseRouteNeedsRedirect(formatParam, slugParam, canonical, formatParam)) {
+          void this.router.navigate(courseLearnRouterLink(canonical, formatParam), {
+            replaceUrl: true,
+          });
+          return;
+        }
         this.page.set(data);
         this.completedLessonIds.set(new Set(data.completedLessonIds ?? []));
         this.loading.set(false);
@@ -187,9 +208,9 @@ export class CourseLearnComponent implements OnInit {
     }
 
     this.savingProgress.set(true);
-    this.studentService.markLessonComplete(this.courseSlug, currentId).subscribe({
+    this.studentService.markLessonComplete(this.courseSlug, currentId, this.courseFormat).subscribe({
       next: (result) => {
-        this.completedLessonIds.update((set) => new Set(set).add(result.lessonId));
+        this.handleLessonProgressResult(result);
         this.savingProgress.set(false);
         advance();
       },
@@ -296,9 +317,39 @@ export class CourseLearnComponent implements OnInit {
     if (this.completedLessonIds().has(lessonId)) {
       return;
     }
-    this.studentService.markLessonComplete(this.courseSlug, lessonId).subscribe({
+    this.studentService.markLessonComplete(this.courseSlug, lessonId, this.courseFormat).subscribe({
       next: (result) => {
-        this.completedLessonIds.update((set) => new Set(set).add(result.lessonId));
+        this.handleLessonProgressResult(result);
+      },
+    });
+  }
+
+  dismissCourseCompletedBanner(): void {
+    this.courseCompletedBanner.set(false);
+  }
+
+  private handleLessonProgressResult(result: {
+    lessonId: number;
+    courseCompleted: boolean;
+  }): void {
+    this.completedLessonIds.update((set) => new Set(set).add(result.lessonId));
+    if (result.courseCompleted) {
+      this.showCourseCompletionBanner();
+    }
+  }
+
+  private showCourseCompletionBanner(): void {
+    const courseId = this.page()?.courseId;
+    this.courseCompletedBanner.set(true);
+    if (courseId == null) {
+      return;
+    }
+    this.certificateService.check(courseId).subscribe({
+      next: (check) => {
+        const file = check.certificate?.certificateFile;
+        if (file?.startsWith('auto:')) {
+          this.certificateCode.set(file.slice(5));
+        }
       },
     });
   }

@@ -1,146 +1,353 @@
 <div class="flex h-screen w-full flex-col overflow-hidden bg-white font-sans">
+
   <!-- Top header -->
+
   <header class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-skillnet-dark px-4 text-white sm:px-6">
+
     <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+
       <button
+
         type="button"
+
         (click)="goBack()"
+
         class="flex shrink-0 items-center gap-1 text-sm font-medium text-white/80 transition hover:text-white"
+
       >
+
         <i class="ri-arrow-left-s-line text-xl"></i>
+
         <span class="hidden sm:inline">Volver a los cursos</span>
+
       </button>
+
+
 
       <span class="hidden h-6 w-px bg-white/20 sm:block"></span>
 
-      <h1 class="truncate text-sm font-bold sm:text-base">
+
+
+      <h1 class="truncate text-sm font-bold sm:text-base" [title]="courseName()">
+
         {{ courseName() }}
+
       </h1>
 
+
+
       <span
-        class="shrink-0 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
+
+        class="shrink-0 rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-sm"
+
         [class.bg-green-500]="isPublished()"
+
         [class.text-white]="isPublished()"
-        [class.bg-[#ffc847]]="!isPublished()"
+
+        [class.bg-[#89ceff]]="!isPublished()"
+
         [class.text-black]="!isPublished()"
+
       >
-        {{ courseStatus() }}
+
+        {{ statusBadgeLabel() }}
+
       </span>
+
     </div>
+
+
 
     <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+
+      @if (previewLandingUrl(); as previewUrl) {
+        <a
+          [href]="previewUrl"
+          target="_blank"
+          rel="noopener"
+          class="hidden rounded border border-white/20 px-6 py-2 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white/10 active:scale-95 sm:inline-flex"
+        >
+          Vista previa
+        </a>
+      } @else {
+        <button
+          type="button"
+          disabled
+          class="hidden rounded border border-white/20 px-6 py-2 text-[10px] font-black uppercase tracking-widest text-white/40 sm:inline-flex"
+        >
+          Vista previa
+        </button>
+      }
+
+      @if (manageSave.showSaveButton()) {
+
+        <app-action-feedback-button
+
+          label="Guardar"
+
+          savingLabel="Guardando…"
+
+          successLabel="Guardado"
+
+          [phase]="manageSave.savePhase()"
+
+          [extraClass]="
+
+            'inline-flex shrink-0 whitespace-nowrap rounded bg-white px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[#121d31] shadow-lg transition-all hover:bg-white/90 active:scale-95 disabled:opacity-50 sm:px-6 sm:text-[10px]'
+
+          "
+
+          (pressed)="onSave()"
+
+        />
+
+      }
+
       <button
+
         type="button"
-        class="hidden rounded border border-white/25 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white/10 sm:inline-flex"
-      >
-        Vista previa
-      </button>
-      <app-action-feedback-button
-        label="Guardar"
-        savingLabel="Guardando…"
-        successLabel="Guardado"
-        [phase]="manageSave.savePhase()"
-        [extraClass]="
-          'inline-flex shrink-0 whitespace-nowrap rounded bg-white px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[#121d31] shadow-lg transition-all hover:bg-white/90 active:scale-95 disabled:opacity-50 sm:px-6 sm:text-[10px]'
-        "
-        (pressed)="onSave()"
-      />      <button
-        type="button"
-        class="flex h-9 w-9 items-center justify-center rounded border border-white/25 text-white/80 transition hover:bg-white/10 hover:text-white"
+
+        class="flex h-9 w-9 items-center justify-center rounded border border-white/20 text-white/80 transition hover:bg-white/5 hover:text-white"
+
         title="Ayuda"
+
       >
+
         <i class="ri-question-line text-lg"></i>
+
       </button>
-      <button
-        type="button"
-        class="flex h-9 w-9 items-center justify-center rounded border border-white/25 text-white/80 transition hover:bg-white/10 hover:text-white"
-        title="Configuración"
+
+      <a
+        [routerLink]="manageNavLink('setup')"
+        class="flex h-9 w-9 items-center justify-center rounded border border-white/20 text-white/80 transition hover:bg-white/5 hover:text-white"
+        title="Configuración del producto"
       >
         <i class="ri-settings-3-line text-lg"></i>
-      </button>
+      </a>
+
     </div>
+
   </header>
 
+
+
   <!-- Main body -->
+
   <div class="flex min-h-0 flex-1">
+
     <!-- Left sidebar -->
+
     <aside class="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+
       <nav class="flex-1 space-y-5 overflow-y-auto p-4">
+
         @for (section of navSections; track section.title) {
+
           <div>
+
             <p class="mb-2 pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+
               {{ section.title }}
+
             </p>
+
             <ul class="space-y-1">
+
               @for (item of section.items; track item.path) {
+
                 <li>
+
                   <a
-                    [routerLink]="[manageBasePath(), item.path]"
+
+                    [routerLink]="manageNavLink(item.path)"
+
                     routerLinkActive="bg-skillnet-surface text-skillnet-accent"
+
                     class="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-bold uppercase tracking-tight text-skillnet-dark transition hover:bg-gray-50"
+
                   >
+
                     <span
+
                       class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-skillnet-dark"
+
                       [class.border-transparent]="isSectionComplete(item.sectionKey)"
+
                     >
+
                       @if (isSectionComplete(item.sectionKey)) {
-                        <i class="ri-checkbox-circle-fill text-lg text-[#ffc847]"></i>
+
+                        <i class="ri-checkbox-circle-fill text-lg text-[#89ceff]"></i>
+
                       }
+
                     </span>
+
                     <span class="min-w-0 flex-1 leading-tight">{{ item.label }}</span>
+
                   </a>
+
                 </li>
+
               }
+
             </ul>
+
           </div>
+
         }
+
       </nav>
 
+
+
       <!-- Draft / Published toggle -->
+
       <div class="shrink-0 border-t border-gray-200 p-4">
-        <div
-          class="flex rounded-xl border-2 border-skillnet-dark bg-slate-100 p-1"
-        >
+
+        <div class="flex rounded-xl border-2 border-skillnet-dark bg-slate-100 p-1">
+
           <button
+
             type="button"
-            (click)="setStatus('BORRADOR')"
+
+            (click)="setStatus('draft')"
+
             [disabled]="statusUpdating()"
+
             class="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[10px] font-bold uppercase transition disabled:opacity-50"
+
             [class.bg-white]="!isPublished()"
+
             [class.shadow-sm]="!isPublished()"
+
             [class.text-skillnet-dark]="!isPublished()"
+
             [class.text-gray-500]="isPublished()"
+
           >
-            @if (statusButtonPhase('BORRADOR') === 'saving') {
+
+            @if (statusButtonPhase('draft') === 'saving') {
+
               <span class="publish-btn-spinner" aria-hidden="true"></span>
-            } @else if (statusButtonPhase('BORRADOR') === 'success') {
+
+            } @else if (statusButtonPhase('draft') === 'success') {
+
               <i class="ri-check-line text-sm" aria-hidden="true"></i>
+
             }
-            {{ statusButtonLabel('BORRADOR', 'Borrador') }}
+
+            {{ statusButtonLabel('draft', 'Borrador') }}
+
           </button>
+
           <button
+
             type="button"
-            (click)="setStatus('PUBLICADO')"
+
+            (click)="setStatus('published')"
+
             [disabled]="statusUpdating()"
+
             class="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[10px] font-bold uppercase transition disabled:opacity-50"
+
             [class.bg-white]="isPublished()"
+
             [class.shadow-sm]="isPublished()"
+
             [class.text-skillnet-dark]="isPublished()"
+
             [class.text-gray-500]="!isPublished()"
+
           >
-            @if (statusButtonPhase('PUBLICADO') === 'saving') {
+
+            @if (statusButtonPhase('published') === 'saving') {
+
               <span class="publish-btn-spinner" aria-hidden="true"></span>
-            } @else if (statusButtonPhase('PUBLICADO') === 'success') {
+
+            } @else if (statusButtonPhase('published') === 'success') {
+
               <i class="ri-check-line text-sm" aria-hidden="true"></i>
+
             }
-            {{ statusButtonLabel('PUBLICADO', 'Publicado') }}
-          </button>        </div>
+
+            {{ statusButtonLabel('published', 'Publicado') }}
+
+          </button>
+
+        </div>
+
       </div>
+
     </aside>
 
+
+
     <!-- Center workspace -->
+
     <main class="min-w-0 flex-1 overflow-y-auto bg-[#f8fafc]">
-      <router-outlet />
+
+      @if (loadError()) {
+
+        <div class="flex min-h-[50vh] items-center justify-center p-8">
+
+          <div class="max-w-md space-y-4 rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-red-50">
+
+              <i class="ri-error-warning-fill text-2xl text-red-500"></i>
+
+            </div>
+
+            <h2 class="text-lg font-bold text-gray-900">
+
+              {{ loadError() === 'not_found' ? 'Producto no encontrado' : 'No se pudo cargar el producto' }}
+
+            </h2>
+
+            <p class="text-sm leading-relaxed text-gray-500">
+
+              {{
+
+                loadError() === 'not_found'
+
+                  ? 'No existe un producto con esta URL. Puede haber sido renombrado o eliminado.'
+
+                  : 'Revisa que el backend esté en marcha y vuelve a intentar.'
+
+              }}
+
+            </p>
+
+            <button
+
+              type="button"
+
+              (click)="goBack()"
+
+              class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#89ceff] px-5 py-2.5 font-bold text-black transition-colors hover:bg-[#7ec4ff]"
+
+            >
+
+              <i class="ri-arrow-left-line"></i>
+
+              Volver al inventario
+
+            </button>
+
+          </div>
+
+        </div>
+
+      } @else {
+
+        <router-outlet />
+
+      }
+
     </main>
+
   </div>
+
 </div>
+

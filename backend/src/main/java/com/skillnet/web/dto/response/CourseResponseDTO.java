@@ -3,6 +3,8 @@ package com.skillnet.web.dto.response;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -54,4 +56,5 @@ public class CourseResponseDTO {
     private int moduleCount;
     private int lessonsCount;
     private long enrollmentCount;
+    private List<PublicCurriculumModuleDTO> sections = new ArrayList<>();
 }

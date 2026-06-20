@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -40,7 +41,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
-                                "/api/v1/auth/google")
+                                "/api/v1/auth/google",
+                                "/api/v1/auth/password-reset/request",
+                                "/api/v1/auth/password-reset/confirm")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**")
                         .permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -56,6 +63,7 @@ public class SecurityConfig {
                         .authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

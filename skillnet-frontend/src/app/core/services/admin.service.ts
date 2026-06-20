@@ -92,4 +92,81 @@ export class AdminService {
   takedownCourse(courseId: number): Observable<CourseResponse> {
     return this.http.put<CourseResponse>(`${this.baseUrl}/courses/${courseId}/takedown`, null);
   }
+
+  updateUserRole(userId: number, role: string): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/users/${userId}/role`, { role });
+  }
+
+  getEnrollments(): Observable<AdminEnrollment[]> {
+    return this.http.get<AdminEnrollment[]>(`${this.baseUrl}/enrollments`);
+  }
+
+  createEnrollment(payload: AdminEnrollmentCreatePayload): Observable<AdminEnrollment> {
+    return this.http.post<AdminEnrollment>(`${this.baseUrl}/enrollments`, payload);
+  }
+
+  getServiceOfferings(): Observable<ServiceOffering[]> {
+    return this.http.get<ServiceOffering[]>(`${environment.apiUrl}/admin/service-offerings`);
+  }
+
+  getServiceOffering(id: number): Observable<ServiceOffering> {
+    return this.http.get<ServiceOffering>(`${environment.apiUrl}/admin/service-offerings/${id}`);
+  }
+
+  createServiceOffering(payload: ServiceOfferingPayload): Observable<ServiceOffering> {
+    return this.http.post<ServiceOffering>(
+      `${environment.apiUrl}/admin/service-offerings`,
+      payload,
+    );
+  }
+
+  updateServiceOffering(id: number, payload: ServiceOfferingPayload): Observable<ServiceOffering> {
+    return this.http.put<ServiceOffering>(
+      `${environment.apiUrl}/admin/service-offerings/${id}`,
+      payload,
+    );
+  }
+
+  deleteServiceOffering(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/admin/service-offerings/${id}`);
+  }
+}
+
+export interface AdminEnrollment {
+  id: number;
+  userId: number;
+  courseId: number;
+  enrollmentType?: string;
+  enrolledAt?: string;
+  user?: { id: number; username: string; email?: string };
+  course?: { id: number; title: string; slug?: string };
+}
+
+export interface AdminEnrollmentCreatePayload {
+  userId: number;
+  courseId: number;
+  enrollmentType?: string;
+}
+
+export interface ServiceOffering {
+  id: number;
+  section: string;
+  title: string;
+  description?: string;
+  priceUsd: number;
+  iconClass?: string;
+  sortOrder?: number;
+  active?: boolean;
+  featured?: boolean;
+}
+
+export interface ServiceOfferingPayload {
+  section: string;
+  title: string;
+  description?: string;
+  priceUsd: number;
+  iconClass?: string;
+  sortOrder?: number;
+  active?: boolean;
+  featured?: boolean;
 }

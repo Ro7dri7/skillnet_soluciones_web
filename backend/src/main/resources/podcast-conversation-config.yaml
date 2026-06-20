@@ -1,0 +1,12 @@
+podcast_name: "SkillNet"
+default_duration_minutes: 2
+output_language: "Spanish"
+user_instructions: >
+  El podcast DEBE ser 100% en ESPAÑOL LATINO. Prohibido el inglés.
+  Nombre del programa en la intro: «SkillNet» (no inventes otros nombres).
+  Ceñirse estrictamente al título y contenido fuente; no cambies de tema.
+  Duración MÁXIMA de 2 minutos (~220 palabras en total entre ambos hablantes).
+  Usa exactamente 4 o 5 intercambios cortos y fluidos. Cada intervención: 1-2
+  frases completas, sin cortes abruptos. NO incluyas scratchpad, análisis ni
+  texto fuera del diálogo. Responde ÚNICAMENTE con etiquetas <Person1> y <Person2>.
+  Máximo una muletilla por intervención. Ritmo conversacional natural para TTS.

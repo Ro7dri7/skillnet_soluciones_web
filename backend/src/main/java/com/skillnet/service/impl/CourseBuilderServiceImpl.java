@@ -62,7 +62,7 @@ public class CourseBuilderServiceImpl implements CourseBuilderService {
         course.setSoftware(JsonNodeFactory.instance.arrayNode());
         course.setOriginalPrice(BigDecimal.ZERO);
         course.setPrice(BigDecimal.ZERO);
-        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, request.getTitle(), null));
+        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, request.getTitle(), course.getFormat(), null));
 
         Course saved = courseRepository.save(course);
         persistCurriculum(saved, request.getCurriculum());

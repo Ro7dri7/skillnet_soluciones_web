@@ -15,6 +15,7 @@ export interface ProducerCourseSummary {
   status: string;
   createdAt: string;
   imageUrl?: string | null;
+  enrollmentCount?: number;
 }
 
 export interface UpdateCourseBasicsRequest {

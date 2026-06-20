@@ -7,11 +7,16 @@ import com.skillnet.security.CustomUserDetails;
 import com.skillnet.security.JwtService;
 import com.skillnet.security.RoleAuthorityResolver;
 import com.skillnet.service.AuthRoleService;
+import com.skillnet.service.AuditService;
 import com.skillnet.service.GoogleAuthService;
+import com.skillnet.domain.AuditAction;
 import com.skillnet.service.UserRoleNormalizer;
 import com.skillnet.service.UserService;
+import com.skillnet.service.auth.PasswordResetService;
 import com.skillnet.web.dto.request.GoogleLoginRequestDTO;
 import com.skillnet.web.dto.request.LoginRequestDTO;
+import com.skillnet.web.dto.request.PasswordResetConfirmDTO;
+import com.skillnet.web.dto.request.PasswordResetRequestDTO;
 import com.skillnet.web.dto.request.SwitchRoleRequestDTO;
 import com.skillnet.web.dto.request.UserRequestDTO;
 import com.skillnet.web.dto.response.AuthResponseDTO;
@@ -48,6 +53,8 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthService googleAuthService;
     private final AuthRoleService authRoleService;
+    private final PasswordResetService passwordResetService;
+    private final AuditService auditService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -57,7 +64,9 @@ public class AuthController {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             GoogleAuthService googleAuthService,
-            AuthRoleService authRoleService) {
+            AuthRoleService authRoleService,
+            PasswordResetService passwordResetService,
+            AuditService auditService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
@@ -66,6 +75,8 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
         this.googleAuthService = googleAuthService;
         this.authRoleService = authRoleService;
+        this.passwordResetService = passwordResetService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/login")
@@ -101,6 +112,13 @@ public class AuthController {
         }
         userRepository.save(user);
 
+        auditService.logAction(
+                AuditAction.SWITCH_ROLE,
+                AuditAction.ENTITY_USER,
+                user.getId(),
+                user.getEmail(),
+                "Rol activo cambiado a: " + requestedRole);
+
         return ResponseEntity.ok(buildAuthResponse(user, user.getActiveRole()));
     }
 
@@ -134,6 +152,18 @@ public class AuthController {
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDTO dto) {
+        passwordResetService.requestReset(dto);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDTO dto) {
+        passwordResetService.confirmReset(dto);
+        return ResponseEntity.noContent().build();
     }
 
     private AuthResponseDTO buildAuthResponse(User user, String activeRole) {

@@ -22,6 +22,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByActive(boolean active);
 
+    List<User> findByInfoproductorTrue();
+
     long countByDateJoinedGreaterThanEqualAndDateJoinedLessThan(Instant start, Instant end);
 
     long countByActiveFalse();

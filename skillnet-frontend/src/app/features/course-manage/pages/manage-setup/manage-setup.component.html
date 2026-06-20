@@ -1,0 +1,130 @@
+<section class="setup-page">
+
+  <header class="page-head">
+
+    <h1>Configuración del producto</h1>
+
+    <p>Completa cada sección antes de publicar tu {{ productNoun() }}.</p>
+
+  </header>
+
+
+
+  <div class="progress-card">
+
+    <div class="progress-bar">
+
+      <div class="fill" [style.width.%]="progressPercent()"></div>
+
+    </div>
+
+    <p>{{ completedCount() }} de {{ totalCount() }} pasos completados ({{ progressPercent() }}%)</p>
+
+    @if (readyToPublish()) {
+
+      <span class="badge ok">Listo para publicar</span>
+
+    } @else {
+
+      <span class="badge pending">Aún faltan pasos</span>
+
+    }
+
+  </div>
+
+
+
+  @if (blockers().length > 0) {
+
+    <div class="blockers-card">
+
+      <h2>Requisitos pendientes</h2>
+
+      <ul>
+
+        @for (item of blockers(); track item.text) {
+
+          <li>
+
+            <a [href]="item.link">{{ item.text }}</a>
+
+          </li>
+
+        }
+
+      </ul>
+
+    </div>
+
+  }
+
+
+
+  <ul class="checklist">
+
+    @for (item of checklist(); track item.sectionKey) {
+
+      <li [class.done]="item.complete">
+
+        <div class="check">
+
+          @if (item.complete) {
+
+            <i class="ri-checkbox-circle-fill"></i>
+
+          } @else {
+
+            <i class="ri-checkbox-blank-circle-line"></i>
+
+          }
+
+        </div>
+
+        <div class="content">
+
+          <strong>{{ item.label }}</strong>
+
+          <a [routerLink]="manageNavLink(item.path)">
+
+            {{ item.complete ? 'Revisar' : 'Completar' }}
+
+          </a>
+
+        </div>
+
+      </li>
+
+    }
+
+  </ul>
+
+
+
+  <div class="setup-actions">
+
+    <button
+
+      type="button"
+
+      class="btn-publish"
+
+      [disabled]="statusUpdating()"
+
+      (click)="togglePublish()"
+
+    >
+
+      {{ isPublished() ? 'Pasar a borrador' : 'Publicar ' + productNoun() }}
+
+    </button>
+
+    <button type="button" class="btn-delete" [disabled]="deleting()" (click)="deleteProduct()">
+
+      Eliminar {{ productNoun() }}
+
+    </button>
+
+  </div>
+
+</section>
+

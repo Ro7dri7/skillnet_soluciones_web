@@ -1,0 +1,251 @@
+.plans-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.plans-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #032b60;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+}
+
+.back-link {
+  color: #145bff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.capability-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+
+  article {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    padding: 0.85rem 1rem;
+
+    &.active {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    h3 {
+      margin: 0 0 0.25rem;
+      font-size: 0.9rem;
+      color: #032b60;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+  }
+}
+
+.offerings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.plan-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+
+  &.featured {
+    border-color: #bfdbfe;
+    box-shadow: 0 8px 24px rgb(20 91 255 / 8%);
+  }
+
+  h2 {
+    margin: 0.5rem 0;
+    font-size: 1.05rem;
+    color: #032b60;
+  }
+
+  .desc {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .price {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #145bff;
+  }
+
+  .uses {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+}
+
+.plan-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #145bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.badge {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+}
+
+.buy-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #145bff;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+}
+
+.buy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.entitlements {
+  margin-bottom: 1.25rem;
+
+  h2 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+    color: #032b60;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #475569;
+    font-size: 0.85rem;
+  }
+}
+
+.alert {
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+
+  &.success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
+  }
+
+  &.error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+  }
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.checkout-modal {
+  width: min(480px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.checkout-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #145bff;
+}
+
+.stripe-fields label {
+  display: block;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.stripe-mount {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+}
+
+.stripe-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.checkout-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+
+  .secondary {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    padding: 0.55rem;
+    cursor: pointer;
+  }
+
+  .buy-btn {
+    flex: 1;
+  }
+}

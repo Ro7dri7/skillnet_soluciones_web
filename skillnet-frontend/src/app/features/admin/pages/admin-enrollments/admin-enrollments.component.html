@@ -1,0 +1,61 @@
+<section class="page-head">
+  <h1>Inscripciones</h1>
+  <p>Inscripción manual de estudiantes a cursos.</p>
+</section>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="state success">{{ success() }}</p>
+}
+
+<form class="form-card" [formGroup]="form" (ngSubmit)="createEnrollment()">
+  <h2>Nueva inscripción</h2>
+  <div class="field-row">
+    <label>
+      ID usuario
+      <input type="number" formControlName="userId" />
+    </label>
+    <label>
+      ID curso
+      <input type="number" formControlName="courseId" />
+    </label>
+  </div>
+  <label>
+    Tipo
+    <input type="text" formControlName="enrollmentType" />
+  </label>
+  <button type="submit" class="btn-primary" [disabled]="saving()">
+    {{ saving() ? 'Guardando…' : 'Crear inscripción' }}
+  </button>
+</form>
+
+@if (loading()) {
+  <p class="state">Cargando inscripciones…</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Curso</th>
+          <th>Tipo</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of enrollments(); track row.id) {
+          <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.user?.username ?? row.userId }}</td>
+            <td>{{ row.course?.title ?? row.courseId }}</td>
+            <td>{{ row.enrollmentType ?? '—' }}</td>
+            <td>{{ row.enrolledAt | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

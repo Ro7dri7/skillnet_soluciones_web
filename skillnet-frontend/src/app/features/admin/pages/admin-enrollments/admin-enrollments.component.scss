@@ -1,0 +1,66 @@
+@import '../admin-users/admin-users.component.scss';
+
+.state.success {
+  color: #00a87e;
+}
+
+.form-card {
+  background: #fff;
+  border: 1px solid #eef2ff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    color: #032b60;
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8099bc;
+
+  input {
+    padding: 8px 10px;
+    border: 1px solid #eef2ff;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1a3a6b;
+    text-transform: none;
+    font-weight: 400;
+  }
+}
+
+.btn-primary {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #145bff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}

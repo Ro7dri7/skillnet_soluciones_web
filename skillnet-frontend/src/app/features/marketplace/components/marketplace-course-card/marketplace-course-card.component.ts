@@ -2,6 +2,7 @@ import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../../../core/services/cart.service';
+import { courseLandingRouterLink } from '../../../../shared/utils/course-slug.util';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
 
 @Component({
@@ -17,6 +18,11 @@ export class MarketplaceCourseCardComponent {
   readonly course = input.required<MarketplaceCourse>();
 
   readonly inCart = computed(() => this.cartService.isInCart(this.course().id));
+
+  landingLink(): (string | number)[] {
+    const item = this.course();
+    return courseLandingRouterLink(item.slug, item.format);
+  }
 
   levelLabel(level: string): string {
     const map: Record<string, string> = {

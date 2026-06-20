@@ -15,6 +15,7 @@
           <th>Usuario</th>
           <th>Email</th>
           <th>Rol</th>
+          <th>Cambiar rol</th>
           <th>Estado</th>
           <th>Registro</th>
         </tr>
@@ -25,6 +26,26 @@
             <td>{{ displayName(user) }}</td>
             <td>{{ user.email }}</td>
             <td><span class="role-badge">{{ roleLabel(user) }}</span></td>
+            <td>
+              <div class="role-edit">
+                <select
+                  [ngModel]="roleDraft(user.id)"
+                  (ngModelChange)="setRoleDraft(user.id, $event)"
+                >
+                  @for (role of roleOptions; track role) {
+                    <option [value]="role">{{ role }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="save-btn"
+                  [disabled]="savingUserId() === user.id"
+                  (click)="saveRole(user)"
+                >
+                  {{ savingUserId() === user.id ? '…' : 'Guardar' }}
+                </button>
+              </div>
+            </td>
             <td>
               <span [class]="user.active !== false ? 'status ok' : 'status off'">
                 {{ user.active !== false ? 'Activo' : 'Inactivo' }}

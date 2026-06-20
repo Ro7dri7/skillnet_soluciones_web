@@ -139,14 +139,15 @@
               </button>
             </div>
             <div class="max-h-[300px] overflow-y-auto">
-              @if (notifications.length === 0) {
+              @if (notifications().length === 0) {
                 <p class="px-5 py-8 text-center text-sm text-[#666]">No hay notificaciones</p>
               } @else {
-                @for (n of notifications; track n.id) {
+                @for (n of notifications(); track n.id) {
                   <button
                     type="button"
                     class="block w-full border-b border-[#1e1e1e] px-3 py-2.5 text-left transition-colors hover:bg-white/5"
-                    [class.bg-skillnet-sky/5]="!n.isRead"
+                    [class.bg-skillnet-sky/5]="!n.read"
+                    (click)="markNotificationRead(n)"
                   >
                     <p class="text-xs font-bold text-white">{{ n.title }}</p>
                     <p class="text-[11px] text-[#aaa]">{{ n.message }}</p>
@@ -298,7 +299,7 @@
             Hola, <b class="text-white">{{ displayName() }}</b>
           </div>
           <a
-            href="#"
+            routerLink="/profile"
             class="flex items-center px-5 py-2.5 text-sm text-white no-underline transition-colors hover:bg-white/5"
           >
             <i class="ri-user-line mr-2 text-skillnet-sky"></i>

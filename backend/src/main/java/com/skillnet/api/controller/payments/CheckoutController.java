@@ -1,9 +1,12 @@
 package com.skillnet.api.controller.payments;
 
+import com.skillnet.api.dto.payments.CheckoutPaymentResponseDTO;
+import com.skillnet.api.dto.payments.CheckoutQuoteRequestDTO;
+import com.skillnet.api.dto.payments.CheckoutQuoteResponseDTO;
 import com.skillnet.api.dto.payments.CheckoutRequestDTO;
 import com.skillnet.security.CustomUserDetails;
+import com.skillnet.service.payments.CheckoutQuoteService;
 import com.skillnet.service.payments.StripePaymentService;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +25,25 @@ import org.springframework.web.server.ResponseStatusException;
 public class CheckoutController {
 
     private final StripePaymentService stripePaymentService;
+    private final CheckoutQuoteService checkoutQuoteService;
+
+    @PostMapping("/quote")
+    public ResponseEntity<CheckoutQuoteResponseDTO> quote(
+            @RequestBody CheckoutQuoteRequestDTO request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return ResponseEntity.ok(checkoutQuoteService.quote(request.getCourseIds(), request.getCouponCode()));
+    }
 
     @PostMapping("/stripe")
-    public ResponseEntity<Map<String, String>> processStripePayment(
+    public ResponseEntity<CheckoutPaymentResponseDTO> processStripePayment(
             @RequestBody CheckoutRequestDTO request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         }
-        String responseMessage = stripePaymentService.processRealPayment(request, userDetails.getId());
-        return ResponseEntity.ok(Map.of("message", responseMessage, "status", "success"));
+        return ResponseEntity.ok(stripePaymentService.processRealPayment(request, userDetails.getId()));
     }
 }

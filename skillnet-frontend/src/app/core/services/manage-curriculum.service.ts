@@ -90,11 +90,29 @@ export class ManageCurriculumService {
     void this.loadCurriculumAsync(courseId, force);
   }
 
+  private inflightLoad: { courseId: number; promise: Promise<void> } | null = null;
+
   async loadCurriculumAsync(courseId: number, force = false): Promise<void> {
     if (!force && this._loadedCourseId() === courseId && this._modules().length > 0) {
       return;
     }
 
+    if (!force && this.inflightLoad?.courseId === courseId) {
+      return this.inflightLoad.promise;
+    }
+
+    const promise = this.fetchCurriculum(courseId);
+    this.inflightLoad = { courseId, promise };
+    try {
+      await promise;
+    } finally {
+      if (this.inflightLoad?.promise === promise) {
+        this.inflightLoad = null;
+      }
+    }
+  }
+
+  private async fetchCurriculum(courseId: number): Promise<void> {
     this._loading.set(true);
     this._errorMessage.set(null);
     this._loadedCourseId.set(courseId);
@@ -118,6 +136,7 @@ export class ManageCurriculumService {
   }
 
   reset(): void {
+    this.inflightLoad = null;
     this._modules.set([]);
     this._loadedCourseId.set(null);
     this.activeLessonId.set(null);
@@ -395,9 +414,13 @@ export class ManageCurriculumService {
       );
 
       const lesson = this.mapLessonFromApi(updated);
+      const mergedBlocks = this.mergeBlocksAfterPersist(previous.blocks, lesson.blocks);
+      const mergedLesson =
+        mergedBlocks === lesson.blocks ? lesson : { ...lesson, blocks: mergedBlocks };
+
       this.patchModule(moduleId, (m) => ({
         ...m,
-        lessons: m.lessons.map((l) => (l.id === lessonId ? lesson : l)),
+        lessons: m.lessons.map((l) => (l.id === lessonId ? mergedLesson : l)),
       }));
     } catch (err) {
       console.error('Error updating lesson', err);
@@ -441,23 +464,29 @@ export class ManageCurriculumService {
     const block = this.createDefaultBlock(contentType, lesson.blocks.length);
     const blocks = [...lesson.blocks, block];
 
+    // Solo estado local: el backend descarta bloques vacíos (PDF/audio sin URL).
+    // La persistencia ocurre al adjuntar el archivo o vía autoguardado.
     this.updateLesson(moduleId, lessonId, { blocks, contentType: blocks[0]?.contentType ?? 'text' });
+    return block.id;
+  }
 
-    this._saving.set(true);
-    this._errorMessage.set(null);
-    try {
-      await this.ensureApiSession();
-      await this.persistLesson(moduleId, lessonId, {
-        title: lesson.title,
-        blocks,
-      });
-      return block.id;
-    } catch (err) {
-      this.updateLesson(moduleId, lessonId, { blocks: lesson.blocks });
-      throw err;
-    } finally {
-      this._saving.set(false);
+  /** Bloques con contenido real (alineado con LessonContentNormalizer del backend). */
+  countMeaningfulBlocks(lesson: LessonDTO): number {
+    return lesson.blocks.filter((block) => this.blockHasMeaningfulContent(block)).length;
+  }
+
+  blockHasMeaningfulContent(block: ContentBlockDTO): boolean {
+    if (block.resourceUrl?.trim()) {
+      return true;
     }
+    if (block.textContent?.trim()) {
+      return true;
+    }
+    if (block.contentType === 'quiz') {
+      const questions = block.quizData?.questions;
+      return Array.isArray(questions) && questions.length > 0;
+    }
+    return false;
   }
 
   async removeContentBlock(moduleId: string, lessonId: string, blockId: string): Promise<void> {
@@ -609,6 +638,37 @@ export class ManageCurriculumService {
         quizData: api.quizData,
       },
     ];
+  }
+
+  private mergeBlocksAfterPersist(
+    localBlocks: ContentBlockDTO[],
+    apiBlocks: ContentBlockDTO[],
+  ): ContentBlockDTO[] {
+    if (apiBlocks.length >= localBlocks.length) {
+      return apiBlocks;
+    }
+
+    const apiById = new Map(apiBlocks.map((block) => [block.id, block]));
+    const merged: ContentBlockDTO[] = [];
+
+    for (const local of localBlocks) {
+      const fromApi = apiById.get(local.id);
+      if (fromApi) {
+        merged.push(fromApi);
+        continue;
+      }
+      if (this.blockHasMeaningfulContent(local)) {
+        merged.push(local);
+      }
+    }
+
+    for (const api of apiBlocks) {
+      if (!merged.some((block) => block.id === api.id)) {
+        merged.push(api);
+      }
+    }
+
+    return merged.sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
   private normalizeContentType(raw: string): ContentType {

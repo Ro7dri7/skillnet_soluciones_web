@@ -7,7 +7,7 @@ import { Component, input } from '@angular/core';
     <div class="mx-auto max-w-3xl p-8">
       <article class="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
         <div
-          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#ffc847]/30 text-skillnet-dark"
+          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#89ceff]/30 text-skillnet-dark"
         >
           <i class="ri-tools-line text-2xl"></i>
         </div>

@@ -41,8 +41,8 @@ public class ServiceEntitlement {
     @JoinColumn(name = "offering_id", nullable = false)
     private InfoproductorServiceOffering offering;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "payment_id", nullable = false, unique = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "payment_id", nullable = true, unique = true)
     private Payment payment;
 
     @Column(name = "status", length = 12, nullable = false)

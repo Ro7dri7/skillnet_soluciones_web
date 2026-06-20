@@ -1,12 +1,13 @@
 import json
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 conn = psycopg2.connect(
-    host="localhost",
-    dbname="skillnet_db",
-    user="postgres",
-    password="postgres123",
+    host=os.environ.get("PGHOST", "localhost"),
+    dbname=os.environ.get("PGDATABASE", "skillnet_db"),
+    user=os.environ.get("PGUSER", "postgres"),
+    password=os.environ.get("PGPASSWORD", ""),
 )
 cur = conn.cursor(cursor_factory=RealDictCursor)
 

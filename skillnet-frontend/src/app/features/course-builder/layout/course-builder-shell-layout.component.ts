@@ -100,7 +100,7 @@ export class CourseBuilderShellLayoutComponent {
     }
     const slug =
       this.builder.state().courseSlug ?? slugifyCourseTitle(this.builder.title() || 'curso');
-    return courseManagePath(normalizeCourseSlugForUrl(slug), 'basics');
+    return courseManagePath(normalizeCourseSlugForUrl(slug), 'basics', this.builder.state().productType);
   });
 
   readonly sectionsComplete = computed(() => {
@@ -196,7 +196,13 @@ export class CourseBuilderShellLayoutComponent {
       const slug =
         this.builder.state().courseSlug ??
         slugifyCourseTitle(this.builder.title() || 'curso');
-      return [courseManagePath(normalizeCourseSlugForUrl(slug), item.managePath)];
+      return [
+        courseManagePath(
+          normalizeCourseSlugForUrl(slug),
+          item.managePath,
+          this.builder.state().productType,
+        ),
+      ];
     }
     return [`${COURSE_NEW_BASE}/${item.wizardPath}`];
   }

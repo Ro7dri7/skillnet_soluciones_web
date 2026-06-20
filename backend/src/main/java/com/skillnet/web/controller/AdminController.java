@@ -2,8 +2,10 @@ package com.skillnet.web.controller;
 
 import com.skillnet.service.admin.AdminDashboardService;
 import com.skillnet.service.admin.AdminCourseService;
+import com.skillnet.service.admin.DbSchemaHealthService;
 import com.skillnet.web.dto.response.AdminDashboardResponseDTO;
 import com.skillnet.web.dto.response.CourseResponseDTO;
+import com.skillnet.web.dto.response.DbSchemaHealthResponseDTO;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,12 @@ public class AdminController {
 
     private final AdminDashboardService adminDashboardService;
     private final AdminCourseService adminCourseService;
+    private final DbSchemaHealthService dbSchemaHealthService;
+
+    @GetMapping("/db-schema")
+    public ResponseEntity<DbSchemaHealthResponseDTO> dbSchema() {
+        return ResponseEntity.ok(dbSchemaHealthService.inspect());
+    }
 
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardResponseDTO> dashboard(

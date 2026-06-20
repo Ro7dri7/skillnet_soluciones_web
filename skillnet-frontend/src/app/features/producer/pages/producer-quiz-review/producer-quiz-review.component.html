@@ -1,0 +1,245 @@
+<section class="page-head">
+
+  <h1>Revisión de quizzes</h1>
+
+  <p>Califica respuestas abiertas y aprueba o rechaza entregas.</p>
+
+</section>
+
+
+
+@if (loading()) {
+
+  <p class="state">Cargando…</p>
+
+} @else if (error()) {
+
+  <p class="state error">{{ error() }}</p>
+
+} @else if (detail(); as current) {
+
+  <div class="detail-view">
+
+    <button type="button" class="btn-back" (click)="backToList()">← Volver al listado</button>
+
+
+
+    <header class="detail-head">
+
+      <div>
+
+        <h2>{{ current.quizTitle }}</h2>
+
+        <p>{{ current.studentName }} · {{ current.courseTitle }}</p>
+
+      </div>
+
+      <div class="score-box">
+
+        <strong>{{ current.score }}%</strong>
+
+        <span>Mínimo: {{ current.passingScore ?? 70 }}%</span>
+
+        <em>{{ current.reviewStatus }}</em>
+
+      </div>
+
+    </header>
+
+
+
+    <section class="answers-panel">
+
+      <h3>Respuestas</h3>
+
+      @if ((current.answers?.length ?? 0) === 0) {
+
+        <p class="state">Esta entrega no tiene respuestas detalladas guardadas.</p>
+
+      } @else {
+
+        @for (answer of current.answers; track answer.id) {
+
+          <article class="answer-card" [class.grantable]="isGrantable(answer)">
+
+            <div class="answer-head">
+
+              <strong>{{ answer.questionText }}</strong>
+
+              <span>{{ answer.questionType }}</span>
+
+            </div>
+
+            <p class="answer-text">{{ answer.textAnswer || 'Sin respuesta' }}</p>
+
+
+
+            @if (isGrantable(answer)) {
+
+              <div class="grade-actions">
+
+                <span>Otorgar puntos:</span>
+
+                <button
+
+                  type="button"
+
+                  class="btn-correct"
+
+                  [disabled]="gradingAnswerId() === answer.id"
+
+                  (click)="gradeAnswer(answer, true)"
+
+                >
+
+                  Correcta
+
+                </button>
+
+                <button
+
+                  type="button"
+
+                  class="btn-wrong"
+
+                  [disabled]="gradingAnswerId() === answer.id"
+
+                  (click)="gradeAnswer(answer, false)"
+
+                >
+
+                  Incorrecta
+
+                </button>
+
+                @if (answer.correct === true) {
+
+                  <em class="tag ok">Correcta</em>
+
+                } @else if (answer.correct === false) {
+
+                  <em class="tag bad">Incorrecta</em>
+
+                } @else {
+
+                  <em class="tag pending">Pendiente</em>
+
+                }
+
+              </div>
+
+            } @else {
+
+              <em class="tag" [class.ok]="answer.correct === true" [class.bad]="answer.correct === false">
+
+                {{ answer.correct === true ? 'Correcta' : answer.correct === false ? 'Incorrecta' : 'Pendiente' }}
+
+              </em>
+
+            }
+
+          </article>
+
+        }
+
+      }
+
+    </section>
+
+
+
+    <section class="review-panel">
+
+      <label>
+
+        Comentario del tutor
+
+        <textarea [ngModel]="feedback()" (ngModelChange)="feedback.set($event)" rows="4"></textarea>
+
+      </label>
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn-reject" [disabled]="reviewing()" (click)="submitReview(false)">
+
+          Rechazar
+
+        </button>
+
+        <button type="button" class="btn-approve" [disabled]="reviewing()" (click)="submitReview(true)">
+
+          Aprobar
+
+        </button>
+
+      </div>
+
+    </section>
+
+  </div>
+
+} @else if (rows().length === 0) {
+
+  <p class="state">No hay entregas pendientes.</p>
+
+} @else {
+
+  <div class="table-wrap">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>Estudiante</th>
+
+          <th>Curso</th>
+
+          <th>Quiz</th>
+
+          <th>Puntaje</th>
+
+          <th>Fecha</th>
+
+          <th></th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        @for (row of rows(); track row.id) {
+
+          <tr>
+
+            <td>{{ row.studentName }}</td>
+
+            <td>{{ row.courseTitle }}</td>
+
+            <td>{{ row.quizTitle }}</td>
+
+            <td>{{ row.score }}%</td>
+
+            <td>{{ row.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+
+              <button type="button" class="btn-link" (click)="openDetail(row)">Revisar</button>
+
+            </td>
+
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+}
+
+

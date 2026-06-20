@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   input,
+  OnInit,
   output,
   signal,
   viewChild,
@@ -14,14 +15,9 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { CartService } from '../../services/cart.service';
+import { NotificationService, AppNotification } from '../../services/notification.service';
+import { AuthService } from '../../services/auth.service';
 import { OFFICIAL_CATEGORIES } from '../../../features/marketplace/data/categories.data';
-
-interface NavNotification {
-  id: number;
-  title: string;
-  message: string;
-  isRead: boolean;
-}
 
 @Component({
   selector: 'app-dashboard-navbar',
@@ -29,8 +25,10 @@ interface NavNotification {
   imports: [RouterLink, CurrencyPipe],
   templateUrl: './dashboard-navbar.component.html',
 })
-export class DashboardNavbarComponent {
+export class DashboardNavbarComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly notificationService = inject(NotificationService);
+  private readonly authService = inject(AuthService);
 
   readonly cartService = inject(CartService);
 
@@ -65,36 +63,22 @@ export class DashboardNavbarComponent {
   readonly showCart = signal(false);
 
   readonly wishlistCount = signal(1);
-  readonly unreadCount = signal(2);
+  readonly unreadCount = signal(0);
+  readonly notifications = signal<AppNotification[]>([]);
 
   readonly categories = [...OFFICIAL_CATEGORIES];
+
+  ngOnInit(): void {
+    if (this.authService.isLoggedIn()) {
+      this.loadNotifications();
+    }
+  }
 
   goToCategory(category: string, event: Event): void {
     event.preventDefault();
     this.showCategories.set(false);
     void this.router.navigate(['/catalog'], { queryParams: { category } });
   }
-
-  readonly notifications: NavNotification[] = [
-    {
-      id: 1,
-      title: 'Nuevo módulo disponible',
-      message: 'Maestría en Ciencia de Datos — Módulo 3',
-      isRead: false,
-    },
-    {
-      id: 2,
-      title: 'Certificado listo',
-      message: 'Descarga tu certificado de Python',
-      isRead: false,
-    },
-    {
-      id: 3,
-      title: 'Recordatorio',
-      message: 'Continúa tu racha de aprendizaje hoy',
-      isRead: true,
-    },
-  ];
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -111,6 +95,9 @@ export class DashboardNavbarComponent {
     this.showProfile.set(false);
     this.showCategories.set(false);
     this.showCart.set(false);
+    if (next) {
+      this.loadNotifications();
+    }
   }
 
   toggleProfile(event: MouseEvent): void {
@@ -155,8 +142,26 @@ export class DashboardNavbarComponent {
   }
 
   markAllNotificationsRead(): void {
-    this.notifications.forEach((n) => (n.isRead = true));
-    this.unreadCount.set(0);
+    this.notificationService.markAllRead().subscribe({
+      next: () => {
+        this.notifications.update((list) => list.map((n) => ({ ...n, read: true })));
+        this.unreadCount.set(0);
+      },
+    });
+  }
+
+  markNotificationRead(notification: AppNotification): void {
+    if (notification.read) {
+      return;
+    }
+    this.notificationService.markRead(notification.id).subscribe({
+      next: (updated) => {
+        this.notifications.update((list) =>
+          list.map((n) => (n.id === updated.id ? updated : n)),
+        );
+        this.unreadCount.update((c) => Math.max(0, c - 1));
+      },
+    });
   }
 
   onLogout(): void {
@@ -170,6 +175,15 @@ export class DashboardNavbarComponent {
 
   badgeClass(): string {
     return 'absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-skillnet-sky px-1 text-[10px] font-bold text-skillnet-dark';
+  }
+
+  private loadNotifications(): void {
+    this.notificationService.list().subscribe({
+      next: (rows) => this.notifications.set(rows),
+    });
+    this.notificationService.count().subscribe({
+      next: (data) => this.unreadCount.set(data.unreadCount ?? 0),
+    });
   }
 
   private closeAllPanels(): void {

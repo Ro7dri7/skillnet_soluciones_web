@@ -47,7 +47,9 @@ export class BuilderSubcategoryStepComponent {
         this.builder.state().courseSlug ??
           (await firstValueFrom(this.courseService.getCourse(courseId))).slug,
       );
-      await this.router.navigateByUrl(courseManagePath(slug, 'audience'));
+      await this.router.navigateByUrl(
+        courseManagePath(slug, 'audience', this.builder.state().productType),
+      );
     } catch {
       await this.router.navigateByUrl(builderStepRoute('audience'));
     }

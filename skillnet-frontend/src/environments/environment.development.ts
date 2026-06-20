@@ -9,4 +9,6 @@ export const environment = {
   googleSignInEnabled: true,
   stripePublicKey:
     'pk_test_51TSsnbCnpuQpOjHLcGfpme3tI5iLN6vZk5vioX3FwJtfQJVT05mNKcLUuv036NpSQEWJ9Ndg7uTiGGGpI5uhqB7S001xpLylpM',
+  /** Sin STRIPE_SECRET_KEY en backend: checkout envía token simulado y el API crea matrícula igual. */
+  stripeDevMock: true,
 };

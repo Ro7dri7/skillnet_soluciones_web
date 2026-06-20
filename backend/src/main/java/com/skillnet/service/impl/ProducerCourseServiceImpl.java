@@ -1,6 +1,7 @@
 package com.skillnet.service.impl;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.skillnet.domain.AuditAction;
 import com.skillnet.domain.CourseFormat;
 import com.skillnet.domain.CourseStatus;
 import com.skillnet.persistence.entity.core.Course;
@@ -8,10 +9,13 @@ import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.entity.core.Coupon;
 import com.skillnet.persistence.repository.CouponRepository;
 import com.skillnet.persistence.repository.CourseRepository;
+import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.UserRepository;
+import com.skillnet.service.AuditService;
 import com.skillnet.service.ProducerCourseService;
 import com.skillnet.service.media.MediaStorageService;
 import com.skillnet.service.media.StoredMedia;
+import com.skillnet.service.notification.NotificationPublisher;
 import com.skillnet.web.dto.request.CreateCourseCouponRequestDTO;
 import com.skillnet.web.dto.request.CreateCourseRequestDTO;
 import com.skillnet.util.CourseSlugUtils;
@@ -31,6 +35,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -43,17 +48,29 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final CouponRepository couponRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final MediaStorageService mediaStorageService;
+    private final AuditService auditService;
+    private final NotificationPublisher notificationPublisher;
+
+    @Value("${skillnet.frontend.base-url:http://localhost:4200}")
+    private String frontendBaseUrl;
 
     public ProducerCourseServiceImpl(
             CourseRepository courseRepository,
             UserRepository userRepository,
             CouponRepository couponRepository,
-            MediaStorageService mediaStorageService) {
+            EnrollmentRepository enrollmentRepository,
+            MediaStorageService mediaStorageService,
+            AuditService auditService,
+            NotificationPublisher notificationPublisher) {
         this.courseRepository = courseRepository;
         this.userRepository = userRepository;
         this.couponRepository = couponRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.mediaStorageService = mediaStorageService;
+        this.auditService = auditService;
+        this.notificationPublisher = notificationPublisher;
     }
 
     @Override
@@ -77,10 +94,16 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         course.setTargetAudience(dto.getTargetAudience());
         course.setStatus(CourseStatus.DRAFT.getDbValue());
         course.setCreatedAt(Instant.now());
-        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, title, null));
+        course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, title, course.getFormat(), null));
         applyDefaults(course);
 
         Course saved = courseRepository.save(course);
+        auditService.logAction(
+                AuditAction.CREATE_COURSE,
+                AuditAction.ENTITY_COURSE,
+                saved.getId(),
+                professor.getEmail(),
+                "Borrador creado: " + saved.getTitle());
         return toSummary(saved);
     }
 
@@ -97,7 +120,20 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
     public ProducerCourseSummaryDTO publishCourse(Long courseId, Long professorId) {
         Course course = requireCourseOwned(courseId, professorId);
         course.setStatus(CourseStatus.PUBLISHED.getDbValue());
-        return toSummary(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        auditService.logAction(
+                AuditAction.PUBLISH_COURSE,
+                AuditAction.ENTITY_COURSE,
+                saved.getId(),
+                saved.getProfessor().getEmail(),
+                "Curso publicado: " + saved.getTitle());
+        notificationPublisher.publish(
+                saved.getProfessor(),
+                "course_published",
+                "Curso publicado",
+                "\"" + saved.getTitle() + "\" ya está visible en el marketplace.",
+                frontendBaseUrl + "/courses");
+        return toSummary(saved);
     }
 
     @Override
@@ -105,7 +141,14 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
     public ProducerCourseSummaryDTO unpublishCourse(Long courseId, Long professorId) {
         Course course = requireCourseOwned(courseId, professorId);
         course.setStatus(CourseStatus.DRAFT.getDbValue());
-        return toSummary(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        auditService.logAction(
+                AuditAction.SET_DRAFT_COURSE,
+                AuditAction.ENTITY_COURSE,
+                saved.getId(),
+                saved.getProfessor().getEmail(),
+                "Curso pasado a borrador: " + saved.getTitle());
+        return toSummary(saved);
     }
 
     @Override
@@ -115,7 +158,9 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         Course course = requireCourseOwned(courseId, professorId);
         if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
             course.setTitle(dto.getTitle().trim());
-            course.setSlug(CourseSlugUtils.uniqueSlug(courseRepository, dto.getTitle().trim(), course.getId()));
+            course.setSlug(
+                    CourseSlugUtils.uniqueSlug(
+                            courseRepository, dto.getTitle().trim(), course.getFormat(), course.getId()));
         }
         if (dto.getDescription() != null) {
             course.setDescription(dto.getDescription());
@@ -149,6 +194,12 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
             course.setTargetAudience(dto.getTargetAudience());
         }
         Course saved = courseRepository.save(course);
+        auditService.logAction(
+                AuditAction.UPDATE_COURSE,
+                AuditAction.ENTITY_COURSE,
+                saved.getId(),
+                saved.getProfessor().getEmail(),
+                "Datos básicos actualizados: " + saved.getTitle());
         return toBasicsResponse(saved);
     }
 
@@ -388,10 +439,11 @@ public class ProducerCourseServiceImpl implements ProducerCourseService {
         dto.setCreatedAt(course.getCreatedAt());
         dto.setImageUrl(
                 mediaStorageService.resolveCourseImageUrl(course.getImageUrl(), course.getImageFile()));
+        dto.setEnrollmentCount(enrollmentRepository.countByCourse_Id(course.getId()));
         return dto;
     }
 
-    private String generateUniqueSlug(String title) {
-        return CourseSlugUtils.uniqueSlug(courseRepository, title, null);
+    private String generateUniqueSlug(String title, String courseFormat) {
+        return CourseSlugUtils.uniqueSlug(courseRepository, title, courseFormat, null);
     }
 }

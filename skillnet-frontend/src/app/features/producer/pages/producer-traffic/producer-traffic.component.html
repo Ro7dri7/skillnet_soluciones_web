@@ -1,0 +1,47 @@
+<section class="page-head">
+  <h1>Tráfico</h1>
+  <p>Visitas a tus páginas de curso y perfil.</p>
+</section>
+
+@if (loading()) {
+  <p class="state">Cargando analíticas…</p>
+} @else if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (!configured() && pageViews().length === 0) {
+  <div class="empty">
+    <p>Aún no hay datos de tráfico disponibles.</p>
+    <p class="hint">Publica cursos y comparte tus enlaces para empezar a ver estadísticas.</p>
+  </div>
+} @else {
+  <div class="kpi-row">
+    <div class="kpi">
+      <span class="label">Vistas de página</span>
+      <strong>{{ totalPageViews() | number }}</strong>
+    </div>
+    <div class="kpi">
+      <span class="label">Visitantes únicos</span>
+      <strong>{{ totalVisitors() | number }}</strong>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Vistas</th>
+          <th>Visitantes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (point of pageViews(); track point.date) {
+          <tr>
+            <td>{{ point.date }}</td>
+            <td>{{ point.value | number }}</td>
+            <td>{{ (uniqueVisitors()[$index]?.value ?? 0) | number }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

@@ -23,7 +23,7 @@ export const PRODUCT_TYPES: ProductTypeOption[] = [
   },
   {
     id: 'ebook',
-    label: 'E-book',
+    label: 'Ebook',
     image:
       'https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=2670&auto=format&fit=crop',
   },

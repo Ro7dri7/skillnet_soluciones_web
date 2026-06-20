@@ -1,0 +1,341 @@
+<div class="mx-auto max-w-6xl px-4 py-8 lg:px-10">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold uppercase tracking-tight text-black">Mi perfil</h1>
+    <p class="mt-1 text-xs font-medium text-gray-500">
+      Administra tu información personal, perfil público y seguridad.
+    </p>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-gray-500">Cargando perfil…</p>
+  } @else {
+    <div class="mb-5 flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide transition"
+        [class.bg-[#89CEFF]]="activeTab() === 'info'"
+        [class.text-black]="activeTab() === 'info'"
+        [class.bg-gray-100]="activeTab() !== 'info'"
+        [class.text-gray-600]="activeTab() !== 'info'"
+        (click)="setTab('info')"
+      >
+        Información personal
+      </button>
+      <button
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide transition"
+        [class.bg-[#89CEFF]]="activeTab() === 'security'"
+        [class.text-black]="activeTab() === 'security'"
+        [class.bg-gray-100]="activeTab() !== 'security'"
+        [class.text-gray-600]="activeTab() !== 'security'"
+        (click)="setTab('security')"
+      >
+        Seguridad
+      </button>
+      <button
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide transition"
+        [class.bg-[#89CEFF]]="activeTab() === 'purchases'"
+        [class.text-black]="activeTab() === 'purchases'"
+        [class.bg-gray-100]="activeTab() !== 'purchases'"
+        [class.text-gray-600]="activeTab() !== 'purchases'"
+        (click)="setTab('purchases')"
+      >
+        Compras
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ error() }}
+      </div>
+    }
+    @if (success()) {
+      <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        {{ success() }}
+      </div>
+    }
+
+    @switch (activeTab()) {
+      @case ('info') {
+        <form [formGroup]="infoForm" (ngSubmit)="saveInfo()" class="space-y-6">
+          <section class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-5 sm:p-6">
+            <h2 class="mb-1 text-xl font-bold uppercase tracking-tight text-black">Información personal</h2>
+            <p class="mb-4 text-xs font-medium text-gray-500">Detalles de tu cuenta y perfil profesional.</p>
+            <hr class="mb-5 border-gray-200" />
+
+            <div class="grid grid-cols-1 items-start gap-8 md:grid-cols-2">
+              <div class="flex items-center gap-6">
+                <div
+                  class="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#355EC9] text-4xl font-bold text-white shadow-lg"
+                  [class.border-red-200]="isInfoproductor() && !profile()?.profilePicture"
+                  [class.bg-red-50]="isInfoproductor() && !profile()?.profilePicture"
+                  [class.text-red-300]="isInfoproductor() && !profile()?.profilePicture"
+                >
+                  @if (profile()?.profilePicture) {
+                    <img [src]="profile()!.profilePicture!" alt="Avatar" class="h-full w-full object-cover" />
+                  } @else {
+                    {{ avatarInitials() }}
+                  }
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-gray-900">Imagen de perfil</p>
+                  <p class="mt-1 text-xs text-gray-500">Recomendamos una foto de rostro en alta calidad.</p>
+                  @if (isInfoproductor() && !profile()?.profilePicture) {
+                    <p class="mt-2 text-[10px] font-bold text-red-500">La foto es obligatoria para publicar cursos.</p>
+                  }
+                </div>
+              </div>
+
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">
+                  ¿Quién soy?
+                  @if (isInfoproductor()) {
+                    <span class="text-red-500">*</span>
+                  }
+                </span>
+                <input
+                  type="text"
+                  formControlName="professionalTitle"
+                  placeholder="Ej: Ing. de Software, Diseñador UX"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">
+                  Nombre <span class="text-red-500">*</span>
+                </span>
+                <input
+                  type="text"
+                  formControlName="firstName"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">
+                  Apellido <span class="text-red-500">*</span>
+                </span>
+                <input
+                  type="text"
+                  formControlName="lastName"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+            </div>
+
+            <div class="mt-6">
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Email</span>
+                <div class="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-500">
+                  <span>{{ profile()?.email }}</span>
+                  @if (profile()?.emailVerified) {
+                    <i class="ri-checkbox-circle-fill text-lg text-green-500"></i>
+                  }
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <section class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-5 sm:p-6">
+            <h2 class="mb-4 text-xl font-bold uppercase tracking-tight text-black">Perfil público</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Sitio web</span>
+                <input
+                  type="text"
+                  formControlName="website"
+                  placeholder="tusitio.com"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">LinkedIn</span>
+                <input
+                  type="text"
+                  formControlName="linkedinUrl"
+                  placeholder="linkedin.com/in/tuperfil"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Instagram</span>
+                <input
+                  type="text"
+                  formControlName="instagramUrl"
+                  placeholder="instagram.com/tuusuario"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">YouTube</span>
+                <input
+                  type="text"
+                  formControlName="youtubeUrl"
+                  placeholder="youtube.com/@tucanal"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+            </div>
+
+            <label class="mt-6 block">
+              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">
+                Descripción / Bio
+                @if (isInfoproductor()) {
+                  <span class="text-red-500">*</span>
+                }
+              </span>
+              <textarea
+                formControlName="bio"
+                rows="5"
+                placeholder="Cuéntanos sobre tu experiencia…"
+                class="w-full rounded-lg border bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-[#89CEFF]"
+                [class.border-red-300]="bioTouched() && isInfoproductor() && !infoForm.controls.bio.value.trim()"
+                [class.border-gray-200]="!(bioTouched() && isInfoproductor() && !infoForm.controls.bio.value.trim())"
+                (blur)="bioTouched.set(true)"
+              ></textarea>
+              @if (bioTouched() && isInfoproductor() && !infoForm.controls.bio.value.trim()) {
+                <p class="mt-1 text-[10px] font-bold text-red-500">La biografía es obligatoria.</p>
+              }
+            </label>
+          </section>
+
+          <section class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-5 sm:p-6">
+            <h2 class="mb-4 text-xl font-bold uppercase tracking-tight text-black">Contacto y dirección</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Teléfono</span>
+                <input
+                  type="text"
+                  formControlName="phone"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Empresa</span>
+                <input
+                  type="text"
+                  formControlName="company"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Ubicación</span>
+                <input
+                  type="text"
+                  formControlName="location"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Código postal</span>
+                <input
+                  type="text"
+                  formControlName="postalCode"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block md:col-span-2">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Dirección</span>
+                <input
+                  type="text"
+                  formControlName="address"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-black outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+            </div>
+          </section>
+
+          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-6">
+            <button
+              type="submit"
+              class="rounded-xl px-8 py-3 text-[13px] font-medium uppercase tracking-wider shadow-md transition"
+              [class.bg-[#89CEFF]]="hasInfoChanges() && !saving()"
+              [class.text-black]="hasInfoChanges() && !saving()"
+              [class.hover:bg-[#7ec4ff]]="hasInfoChanges() && !saving()"
+              [class.bg-gray-100]="!hasInfoChanges() || saving()"
+              [class.text-gray-400]="!hasInfoChanges() || saving()"
+              [disabled]="!hasInfoChanges() || saving()"
+            >
+              {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+            <p class="text-[11px] font-medium text-gray-400">
+              <span class="text-red-500">*</span> Campos obligatorios
+            </p>
+          </div>
+        </form>
+      }
+
+      @case ('security') {
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-6 sm:p-8">
+          <h2 class="mb-2 text-xl font-bold uppercase tracking-tight text-black">Cambiar contraseña</h2>
+          <p class="mb-6 text-xs font-medium text-gray-600">
+            Confirma tu contraseña actual e introduce una nueva.
+          </p>
+          <div class="max-w-md space-y-4">
+            <label class="block">
+              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Contraseña actual</span>
+              <input
+                type="password"
+                formControlName="currentPassword"
+                autocomplete="current-password"
+                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+              />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Nueva contraseña</span>
+              <input
+                type="password"
+                formControlName="newPassword"
+                autocomplete="new-password"
+                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+              />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Confirmar contraseña</span>
+              <input
+                type="password"
+                formControlName="confirmPassword"
+                autocomplete="new-password"
+                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+              />
+            </label>
+            <button
+              type="submit"
+              class="rounded-xl bg-[#89CEFF] px-8 py-3 text-[13px] font-medium uppercase tracking-wider text-black shadow-md transition hover:bg-[#7ec4ff] disabled:opacity-50"
+              [disabled]="saving()"
+            >
+              {{ saving() ? 'Actualizando…' : 'Cambiar contraseña' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @case ('purchases') {
+        <div class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-5 sm:p-6">
+          @if (paymentsLoading()) {
+            <p class="text-sm text-gray-500">Cargando compras…</p>
+          } @else if (payments().length === 0) {
+            <p class="text-sm text-gray-500">Aún no tienes compras registradas.</p>
+          } @else {
+            <ul class="divide-y divide-gray-200">
+              @for (payment of payments(); track payment.id) {
+                <li class="py-3">
+                  <p class="font-bold text-gray-900">{{ payment.courseTitle ?? 'Curso #' + payment.courseId }}</p>
+                  <p class="text-sm text-gray-600">
+                    {{ payment.amount | currency: 'USD' }} — {{ payment.status }}
+                  </p>
+                  @if (payment.createdAt) {
+                    <p class="text-xs text-gray-400">{{ payment.createdAt | date: 'dd/MM/yyyy' }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    }
+  }
+</div>

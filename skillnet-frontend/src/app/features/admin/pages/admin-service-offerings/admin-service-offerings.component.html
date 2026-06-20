@@ -1,0 +1,84 @@
+<section class="page-head">
+  <h1>Servicios</h1>
+  <p>Ofertas de servicios adicionales del marketplace.</p>
+</section>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+}
+
+<form class="form-card" [formGroup]="form" (ngSubmit)="save()">
+  <h2>{{ editingId() ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+  <div class="field-row">
+    <label>
+      Sección
+      <input type="text" formControlName="section" />
+    </label>
+    <label>
+      Título
+      <input type="text" formControlName="title" />
+    </label>
+  </div>
+  <label>
+    Descripción
+    <textarea formControlName="description" rows="2"></textarea>
+  </label>
+  <div class="field-row">
+    <label>
+      Precio USD
+      <input type="number" formControlName="priceUsd" step="0.01" />
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="active" />
+      Activo
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="featured" />
+      Destacado
+    </label>
+  </div>
+  <div class="actions">
+    <button type="submit" class="btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : (editingId() ? 'Actualizar' : 'Crear') }}
+    </button>
+    @if (editingId()) {
+      <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancelar</button>
+    }
+  </div>
+</form>
+
+@if (loading()) {
+  <p class="state">Cargando servicios…</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sección</th>
+          <th>Título</th>
+          <th>Precio</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of offerings(); track row.id) {
+          <tr>
+            <td>{{ row.section }}</td>
+            <td>{{ row.title }}</td>
+            <td>{{ row.priceUsd | currency: 'USD' }}</td>
+            <td>
+              <span [class]="row.active !== false ? 'status ok' : 'status off'">
+                {{ row.active !== false ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="row-actions">
+              <button type="button" class="btn-link" (click)="startEdit(row)">Editar</button>
+              <button type="button" class="btn-link danger" (click)="delete(row.id)">Eliminar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

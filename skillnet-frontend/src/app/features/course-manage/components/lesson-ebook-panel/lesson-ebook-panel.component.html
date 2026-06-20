@@ -1,0 +1,434 @@
+<section class="lesson-ebook-panel">
+
+  <header class="panel-header">
+
+    <div>
+
+      <h3>Ebook de esta lección</h3>
+
+      @if (lessonTitle()) {
+
+        <p class="lesson-name">{{ lessonTitle() }}</p>
+
+      }
+
+    </div>
+
+    @if (!showAttachedView()) {
+
+      <div class="mode-tabs">
+
+        <button type="button" [class.active]="panelMode() === 'generate'" (click)="setMode('generate')">
+
+          Generar con IA
+
+        </button>
+
+        <button type="button" [class.active]="panelMode() === 'upload'" (click)="setMode('upload')">
+
+          Subir mi PDF
+
+        </button>
+
+      </div>
+
+    }
+
+  </header>
+
+
+
+  @if (showAttachedView()) {
+
+    <div class="result-block attached-block">
+
+      <p class="attached-label">
+
+        <i class="ri-checkbox-circle-fill"></i>
+
+        Ebook asignado a esta lección
+
+      </p>
+
+      <div class="preview-box">
+
+        <div class="preview-bar">Vista previa (PDF)</div>
+
+        @if (previewLoading()) {
+
+          <p class="preview-loading">Cargando vista previa…</p>
+
+        } @else if (previewBlobUrl(); as src) {
+
+          <iframe title="Vista previa del PDF" [src]="src"></iframe>
+
+        }
+
+      </div>
+
+      <div class="actions">
+
+        <a [href]="gammaDownloadUrl()" target="_blank" rel="noopener" class="btn secondary">Descargar PDF</a>
+
+        <button type="button" class="btn primary" (click)="requestReplace()">Reemplazar ebook</button>
+
+        <button type="button" class="btn ghost" (click)="detachFromLesson()">Quitar de la lección</button>
+
+      </div>
+
+    </div>
+
+  } @else if (!hasGammaAccess()) {
+
+    <p class="locked">
+
+      Necesitas un plan activo para ebooks con IA.
+
+      <a routerLink="/infoproductor/plans">Ver planes</a>
+
+    </p>
+
+  } @else if (panelMode() === 'upload') {
+
+    <div class="upload-zone">
+
+      <p>Sube un PDF propio para esta lección (sin usar Gamma).</p>
+
+      @if (uploadingOwnPdf()) {
+        <div class="upload-progress" role="status" aria-live="polite">
+          <div class="upload-progress__fill" [style.width.%]="uploadProgress()"></div>
+          <span class="upload-progress__label">
+            Subiendo {{ uploadingFileName() || 'PDF' }}… {{ uploadProgress() }}%
+          </span>
+        </div>
+      } @else {
+        <div class="upload-dropzone">
+          <input
+            type="file"
+            id="ebook-own-pdf"
+            class="upload-dropzone__input"
+            accept="application/pdf,.pdf"
+            (change)="onUploadOwnPdf($event)"
+          />
+          <label class="upload-dropzone__label" for="ebook-own-pdf">
+            <i class="ri-upload-cloud-2-line text-3xl"></i>
+            <span>Arrastra un PDF o haz clic para subir</span>
+          </label>
+        </div>
+      }
+
+    </div>
+
+  } @else if (phase() === 'completed' && platformPdfUrl()) {
+
+    <div class="result-block">
+
+      @if (gammaDevMock()) {
+
+        <p class="dev-notice">
+
+          <strong>Modo desarrollo.</strong> No hay <code>GAMMA_API_KEY</code> en el backend: solo se genera un PDF
+          mínimo de prueba (título del tema). Añade la clave en <code>backend/.env</code> y reinicia Spring para
+          ebooks reales con Gamma.
+
+        </p>
+
+      }
+
+      <div class="phase-track phase-track--done">
+
+        @for (step of phases; track step.id) {
+
+          <div class="phase-step" [class.done]="isPhaseDone(step.id) || isPhaseActive(step.id)">
+
+            <span class="phase-dot"></span>
+
+            <span>{{ step.label }}</span>
+
+          </div>
+
+        }
+
+      </div>
+
+      <div class="preview-box">
+
+        <div class="preview-bar">Vista previa (PDF)</div>
+
+        @if (previewLoading()) {
+
+          <p class="preview-loading">Cargando vista previa…</p>
+
+        } @else if (previewBlobUrl(); as src) {
+
+          <iframe title="Vista previa del PDF" [src]="src"></iframe>
+
+        }
+
+      </div>
+
+      <div class="actions">
+
+        <a [href]="gammaDownloadUrl()" target="_blank" rel="noopener" class="btn secondary">Descargar PDF</a>
+
+        <button type="button" class="btn primary" (click)="assignToLesson()">Asignar a esta lección</button>
+
+        <button type="button" class="btn ghost" (click)="resetPanel()">Generar otro</button>
+
+      </div>
+
+    </div>
+
+  } @else {
+
+    @if (isGenerating()) {
+
+      <div class="generating-block">
+
+        <div class="spinner" aria-hidden="true"></div>
+
+        <div class="phase-track">
+
+          @for (step of phases; track step.id) {
+
+            <div
+
+              class="phase-step"
+
+              [class.done]="isPhaseDone(step.id)"
+
+              [class.active]="isPhaseActive(step.id)"
+
+            >
+
+              <span class="phase-dot"></span>
+
+              <span>{{ step.label }}</span>
+
+            </div>
+
+          }
+
+        </div>
+
+        <p class="generating-hint">Gamma está creando el contenido. Puede tardar varios minutos.</p>
+
+      </div>
+
+    } @else {
+
+      <div class="form-grid">
+
+        <label class="field full">
+
+          <span>Tema de esta lección *</span>
+
+          <textarea rows="3" [(ngModel)]="gammaPrompt" placeholder="Ej: Introducción a ISO 9001 para pymes"></textarea>
+
+        </label>
+
+        <label class="field">
+
+          <span>Título del documento</span>
+
+          <input type="text" [(ngModel)]="gammaTitle" [placeholder]="lessonTitle() || 'Título del ebook'" />
+
+        </label>
+
+        <label class="field">
+
+          <span>Idioma</span>
+
+          <select [(ngModel)]="gammaLanguage">
+
+            <option value="es">Español</option>
+
+            <option value="en">English</option>
+
+            <option value="pt">Português</option>
+
+            <option value="fr">Français</option>
+
+            <option value="de">Deutsch</option>
+
+          </select>
+
+        </label>
+
+        <label class="field">
+
+          <span>Secciones (páginas)</span>
+
+          <input type="number" min="1" max="60" [(ngModel)]="gammaPages" />
+
+        </label>
+
+        <label class="field">
+
+          <span>Formato</span>
+
+          <select [(ngModel)]="gammaFormat">
+
+            <option value="document">Documento (ebook)</option>
+
+            <option value="presentation">Presentación</option>
+
+          </select>
+
+        </label>
+
+        <label class="field">
+
+          <span>Extensión del texto</span>
+
+          <select [(ngModel)]="gammaTextAmount">
+
+            <option value="brief">Breve</option>
+
+            <option value="medium">Media</option>
+
+            <option value="detailed">Detallada</option>
+
+            <option value="extensive">Extensa</option>
+
+          </select>
+
+        </label>
+
+        <label class="field">
+
+          <span>Tono</span>
+
+          <input type="text" [(ngModel)]="gammaTone" placeholder="profesional, casual, académico…" />
+
+        </label>
+
+        <label class="field">
+
+          <span>Audiencia</span>
+
+          <input type="text" [(ngModel)]="gammaAudience" placeholder="principiantes, ejecutivos…" />
+
+        </label>
+
+        <label class="field">
+
+          <span>Imágenes</span>
+
+          <select [(ngModel)]="gammaImageSource">
+
+            <option value="aiGenerated">Generadas con IA</option>
+
+            <option value="webFreeToUseCommercially">Web libre de uso</option>
+
+            <option value="noImages">Sin imágenes</option>
+
+          </select>
+
+        </label>
+
+        @if (gammaImageSource === 'aiGenerated') {
+
+          <label class="field full">
+
+            <span>Estilo visual de imágenes</span>
+
+            <input
+
+              type="text"
+
+              [(ngModel)]="gammaImageStyle"
+
+              placeholder="Ej: ilustraciones minimalistas, fotos realistas, infográficos…"
+
+            />
+
+          </label>
+
+        }
+
+        <label class="field full">
+
+          <span>Instrucciones adicionales</span>
+
+          <textarea
+
+            rows="2"
+
+            [(ngModel)]="gammaAdditionalInstructions"
+
+            placeholder="Layout, estilo visual, estructura deseada…"
+
+          ></textarea>
+
+        </label>
+
+        <div class="field full reference-field">
+
+          <span>PDF de referencia (opcional)</span>
+
+          <p class="hint">Sube material fuente para que Gamma lo use al generar el ebook.</p>
+
+          <label class="upload-btn inline">
+
+            <input type="file" accept="application/pdf,.pdf" (change)="onReferencePdfSelected($event)" />
+
+            {{ referenceExtracting() ? 'Leyendo PDF…' : 'Subir PDF de referencia' }}
+
+          </label>
+
+          @if (referenceExtracting()) {
+            <div class="upload-progress upload-progress--compact" role="status">
+              <div class="upload-progress__fill upload-progress__fill--indeterminate"></div>
+              <span class="upload-progress__label">Extrayendo texto del PDF…</span>
+            </div>
+          }
+
+          @if (referenceFileName()) {
+
+            <p class="reference-meta reference-meta--success">
+
+              <i class="ri-checkbox-circle-fill"></i>
+
+              {{ referenceFileName() }} · {{ sourceMaterial.length }} caracteres extraídos
+
+              <button type="button" class="link-btn" (click)="clearReference()">Quitar</button>
+
+            </p>
+
+          }
+
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button type="button" class="btn primary" [disabled]="isGenerating()" (click)="startGamma()">
+
+          Generar ebook para esta lección
+
+        </button>
+
+        @if (gammaUsesRemaining() > 0) {
+
+          <span class="uses">{{ gammaUsesRemaining() }} usos restantes</span>
+
+        }
+
+      </div>
+
+    }
+
+  }
+
+
+
+  @if (error()) {
+
+    <p class="error">{{ error() }}</p>
+
+  }
+
+</section>
+

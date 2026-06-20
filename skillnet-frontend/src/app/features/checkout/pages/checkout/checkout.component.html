@@ -167,8 +167,18 @@
           <h2 class="mb-1 text-lg font-bold text-skillnet-dark">Método de pago</h2>
 
           <p class="mb-6 text-sm text-skillnet-muted">
-            Pago seguro con Stripe Test Mode. Usa la tarjeta <strong>4242 4242 4242 4242</strong>.
+            @if (stripeDevMockEnabled) {
+              Modo desarrollo: el servidor simula el pago y crea tu matrícula sin cargo real.
+            } @else {
+              Pago seguro con Stripe Test Mode. Usa la tarjeta <strong>4242 4242 4242 4242</strong>.
+            }
           </p>
+
+          @if (stripeDevMockEnabled && totalToPay() > 0) {
+            <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <strong>Simulación local activa.</strong> Completa tus datos y confirma; no necesitas tarjeta de prueba.
+            </div>
+          }
 
 
 
@@ -224,6 +234,7 @@
 
           <div class="space-y-4" [class.hidden]="paymentMethod() !== 'card'">
 
+              @if (totalToPay() > 0) {
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
                 <div class="md:col-span-2">
@@ -288,22 +299,37 @@
 
               }
 
-              <div class="rounded-lg border border-skillnet-accent/20 bg-skillnet-accent/5 p-3 text-xs text-skillnet-muted">
-
-                <p class="font-semibold text-skillnet-dark">Tarjetas de prueba Stripe</p>
-
-                <p class="mt-1">Éxito: 4242 4242 4242 4242 · Exp: cualquier fecha futura · CVC: cualquier 3 dígitos</p>
-
-              </div>
+              @if (stripeDevMockEnabled) {
+                <p class="text-xs text-skillnet-muted">
+                  Modo desarrollo: puedes usar la tarjeta de prueba <strong>4242 4242 4242 4242</strong> o confirmar con
+                  simulación del servidor.
+                </p>
+              }
+              }
 
             </div>
 
-          <div [class.hidden]="paymentMethod() !== 'yape'">
+          <div [formGroup]="personalForm" [class.hidden]="paymentMethod() !== 'yape'">
 
-            <div class="rounded-lg border border-skillnet-accent/30 bg-skillnet-accent/5 p-4 text-sm text-skillnet-muted">
-
-              Al confirmar, simularemos el pago con Yape. En producción se integrará el proveedor de pagos.
-
+            <div class="space-y-4 rounded-lg border border-skillnet-accent/30 bg-skillnet-accent/5 p-4 text-sm text-skillnet-muted">
+              <p>
+                Paga con Yape desde tu celular. Ingresa el número asociado a tu cuenta Yape.
+              </p>
+              <label class="block text-xs font-semibold uppercase text-gray-500">
+                Número Yape (9 dígitos)
+                <input
+                  type="tel"
+                  formControlName="yapePhone"
+                  maxlength="9"
+                  placeholder="987654321"
+                  class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm text-skillnet-dark outline-none focus:border-skillnet-accent"
+                />
+              </label>
+              @if (stripeDevMockEnabled) {
+                <p class="text-xs text-emerald-800">
+                  En local, al confirmar se simula el cobro Yape en el servidor (igual que tarjeta de prueba).
+                </p>
+              }
             </div>
 
           </div>
@@ -338,7 +364,7 @@
 
         }
 
-        @if (personalFormValid() && paymentMethod() === 'card' && stripeReady() && !stripeCardComplete()) {
+        @if (personalFormValid() && paymentMethod() === 'card' && totalToPay() > 0 && stripeReady() && !stripeCardComplete()) {
 
           <div class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
 

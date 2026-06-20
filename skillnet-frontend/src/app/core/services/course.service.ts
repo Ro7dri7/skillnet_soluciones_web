@@ -1,12 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, first, from, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CourseApiPayload,
   CourseRequest,
   CourseResponse,
 } from '../../shared/models/course.model';
+import { courseSlugLookupCandidates, parseCourseSlug } from '../../shared/utils/course-slug.util';
 
 interface CourseApiResponse {
   id: number;
@@ -18,12 +19,22 @@ interface CourseApiResponse {
   status: string;
   price: number | string;
   professorId: number | null;
+  professor?: {
+    id: number;
+    username: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
   imageUrl?: string | null;
   videoUrl?: string | null;
   category?: string | null;
   subcategory?: string | null;
   whatYouWillLearn?: string | null;
   targetAudience?: string | null;
+  requirements?: string | null;
+  durationHours?: number;
+  durationMinutes?: number;
   currency?: string | null;
   originalPrice?: number | string | null;
   onSale?: boolean;
@@ -35,6 +46,11 @@ interface CourseApiResponse {
   moduleCount?: number;
   lessonsCount?: number;
   enrollmentCount?: number;
+  sections?: {
+    id: number;
+    title: string;
+    lessons?: { id: number; title: string }[];
+  }[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,10 +70,30 @@ export class CourseService {
       .pipe(map((item) => this.toCourseResponse(item)));
   }
 
-  getCourseBySlug(slug: string): Observable<CourseResponse> {
-    return this.http
-      .get<CourseApiResponse>(`${this.baseUrl}/by-slug/${encodeURIComponent(slug)}`)
-      .pipe(map((item) => this.toCourseResponse(item)));
+  getCourseBySlug(slug: string, courseFormat?: string | null): Observable<CourseResponse> {
+    const decoded = decodeURIComponent(slug);
+    const parsed = parseCourseSlug(decoded, courseFormat);
+    const candidates = courseSlugLookupCandidates(parsed.full || decoded);
+
+    return from(candidates).pipe(
+      concatMap((candidate) =>
+        this.fetchCourseBySlugCandidate(candidate).pipe(
+          catchError(() => EMPTY),
+          map((item) => this.toCourseResponse(item)),
+        ),
+      ),
+      first(),
+    );
+  }
+
+  private fetchCourseBySlugCandidate(candidate: string): Observable<CourseApiResponse> {
+    if (candidate.includes('/')) {
+      return this.http.get<CourseApiResponse>(`${this.baseUrl}/by-slug`, {
+        params: { slug: candidate },
+      });
+    }
+
+    return this.http.get<CourseApiResponse>(`${this.baseUrl}/by-slug/${candidate}`);
   }
 
   createCourse(course: CourseRequest, professorId?: number): Observable<CourseResponse> {
@@ -100,6 +136,21 @@ export class CourseService {
     };
   }
 
+  getCoursesByProfessor(professorId: number): Observable<CourseResponse[]> {
+    return this.getCourses().pipe(
+      map((items) => items.filter((c) => c.professorId === professorId)),
+    );
+  }
+
+  getCoursesByCategory(category: string): Observable<CourseResponse[]> {
+    const normalized = category.trim().toLowerCase();
+    return this.getCourses().pipe(
+      map((items) =>
+        items.filter((c) => (c.category ?? '').trim().toLowerCase() === normalized),
+      ),
+    );
+  }
+
   private toCourseResponse(item: CourseApiResponse): CourseResponse {
     return {
       id: item.id,
@@ -111,12 +162,16 @@ export class CourseService {
       status: item.status,
       price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
       professorId: item.professorId,
+      professor: item.professor ?? null,
       imageUrl: item.imageUrl ?? null,
       videoUrl: item.videoUrl ?? null,
       category: item.category ?? null,
       subcategory: item.subcategory ?? null,
       whatYouWillLearn: item.whatYouWillLearn ?? null,
       targetAudience: item.targetAudience ?? null,
+      requirements: item.requirements ?? null,
+      durationHours: item.durationHours ?? 0,
+      durationMinutes: item.durationMinutes ?? 0,
       currency: item.currency ?? 'USD',
       originalPrice: this.toNumber(item.originalPrice ?? item.price),
       onSale: item.onSale ?? false,
@@ -128,6 +183,14 @@ export class CourseService {
       moduleCount: item.moduleCount ?? 0,
       lessonsCount: item.lessonsCount ?? 0,
       enrollmentCount: item.enrollmentCount ?? 0,
+      sections: (item.sections ?? []).map((section) => ({
+        id: section.id,
+        title: section.title,
+        lessons: (section.lessons ?? []).map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title,
+        })),
+      })),
     };
   }
 

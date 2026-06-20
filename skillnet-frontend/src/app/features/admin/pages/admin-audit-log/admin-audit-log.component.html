@@ -1,0 +1,134 @@
+<section class="page-head">
+  <h1>Auditoría maestra</h1>
+  <p>
+    Trazabilidad completa: quién ejecutó la acción, fecha/hora (UTC), IP, navegador y detalle del evento.
+  </p>
+</section>
+
+<form
+  class="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-[#eef2ff] bg-white p-4 shadow-sm"
+  [formGroup]="filterForm"
+  (ngSubmit)="applyFilters()"
+>
+  <label class="flex min-w-[180px] flex-1 flex-col gap-1 text-xs font-semibold text-[#4a6fa5]">
+    Email
+    <input
+      type="text"
+      formControlName="email"
+      placeholder="usuario@email.com"
+      class="rounded-lg border border-[#dbe4ff] px-3 py-2 text-sm text-[#032b60] outline-none focus:border-[#145bff]"
+    />
+  </label>
+
+  <label class="flex min-w-[180px] flex-1 flex-col gap-1 text-xs font-semibold text-[#4a6fa5]">
+    Acción
+    <select
+      formControlName="action"
+      class="rounded-lg border border-[#dbe4ff] bg-white px-3 py-2 text-sm text-[#032b60] outline-none focus:border-[#145bff]"
+    >
+      @for (option of actionOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="flex min-w-[150px] flex-col gap-1 text-xs font-semibold text-[#4a6fa5]">
+    Fecha inicio
+    <input
+      type="date"
+      formControlName="startDate"
+      class="rounded-lg border border-[#dbe4ff] px-3 py-2 text-sm text-[#032b60] outline-none focus:border-[#145bff]"
+    />
+  </label>
+
+  <label class="flex min-w-[150px] flex-col gap-1 text-xs font-semibold text-[#4a6fa5]">
+    Fecha fin
+    <input
+      type="date"
+      formControlName="endDate"
+      class="rounded-lg border border-[#dbe4ff] px-3 py-2 text-sm text-[#032b60] outline-none focus:border-[#145bff]"
+    />
+  </label>
+
+  <div class="flex flex-wrap gap-2">
+    <button
+      type="submit"
+      class="rounded-lg bg-[#145bff] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#145bff]/90"
+    >
+      Filtrar
+    </button>
+    <button
+      type="button"
+      (click)="clearFilters()"
+      class="rounded-lg border border-[#dbe4ff] bg-white px-4 py-2 text-sm font-bold text-[#4a6fa5] transition-colors hover:bg-[#f8f9ff]"
+    >
+      Limpiar filtros
+    </button>
+    <button
+      type="button"
+      (click)="downloadCsv()"
+      [disabled]="exporting()"
+      class="rounded-lg bg-[#00a87e] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#00a87e]/90 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {{ exporting() ? 'Exportando…' : 'Exportar CSV' }}
+    </button>
+  </div>
+</form>
+
+@if (loading()) {
+  <p class="state">Cargando auditoría…</p>
+} @else if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha / Hora (UTC)</th>
+          <th>Usuario</th>
+          <th>Acción</th>
+          <th>Entidad afectada</th>
+          <th>IP</th>
+          <th>Navegador</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of entries(); track entry.id) {
+          <tr>
+            <td>{{ entry.timestamp | date: 'dd/MM/yyyy HH:mm:ss' : 'UTC' }}</td>
+            <td>{{ userLabel(entry) }}</td>
+            <td>
+              <span class="action-badge">{{ actionLabel(entry.action) }}</span>
+            </td>
+            <td>
+              <div class="entity-cell">
+                <strong>{{ entityLabel(entry) }}</strong>
+                @if (entry.details) {
+                  <span class="entity-detail">{{ entry.details }}</span>
+                }
+              </div>
+            </td>
+            <td>{{ entry.ipAddress || '—' }}</td>
+            <td class="ua-cell" [title]="entry.userAgent || ''">{{ entry.userAgent || '—' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">No hay registros de auditoría con los filtros aplicados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalElements() > pageSize) {
+    <div class="pager">
+      <button type="button" class="pager-btn" [disabled]="!hasPreviousPage()" (click)="previousPage()">
+        Anterior
+      </button>
+      <span>Página {{ page() + 1 }}</span>
+      <button type="button" class="pager-btn" [disabled]="!hasNextPage()" (click)="nextPage()">
+        Siguiente
+      </button>
+    </div>
+  }
+}

@@ -124,7 +124,9 @@ export class BuilderAudienceStepComponent implements OnInit, OnDestroy {
         this.builder.state().courseSlug ??
           (await firstValueFrom(this.courseService.getCourse(courseId))).slug,
       );
-      void this.router.navigateByUrl(courseManagePath(slug, 'curriculum'));
+      void this.router.navigateByUrl(
+        courseManagePath(slug, 'curriculum', this.builder.state().productType),
+      );
     } catch (error) {
       if (this.builder.isUnauthorizedError(error)) {
         this.error.set('Tu sesión expiró. Inicia sesión de nuevo para guardar el borrador.');

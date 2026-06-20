@@ -39,7 +39,7 @@ public class AuditLog {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "action", length = 20, nullable = false)
+    @Column(name = "action", length = 64, nullable = false)
     private String action;
 
     @Column(name = "model_name", length = 100, nullable = false)

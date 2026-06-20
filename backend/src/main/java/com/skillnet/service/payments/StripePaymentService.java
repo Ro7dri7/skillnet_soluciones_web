@@ -2,15 +2,22 @@ package com.skillnet.service.payments;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.skillnet.api.dto.payments.CheckoutPaymentResponseDTO;
+import com.skillnet.api.dto.payments.CheckoutQuoteResponseDTO;
 import com.skillnet.api.dto.payments.CheckoutRequestDTO;
+import com.skillnet.domain.AuditAction;
+import com.skillnet.persistence.entity.core.Coupon;
 import com.skillnet.persistence.entity.core.Course;
 import com.skillnet.persistence.entity.core.Enrollment;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.entity.payments.Payment;
+import com.skillnet.persistence.repository.CouponRepository;
 import com.skillnet.persistence.repository.CourseRepository;
 import com.skillnet.persistence.repository.EnrollmentRepository;
 import com.skillnet.persistence.repository.PaymentRepository;
 import com.skillnet.persistence.repository.UserRepository;
+import com.skillnet.service.AuditService;
+import com.skillnet.service.notification.NotificationPublisher;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
@@ -19,9 +26,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,10 +56,17 @@ public class StripePaymentService {
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final CouponRepository couponRepository;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
+    private final CheckoutQuoteService checkoutQuoteService;
+    private final NotificationPublisher notificationPublisher;
 
     @Value("${stripe.api.secretKey}")
     private String stripeSecretKey;
+
+    @Value("${skillnet.frontend.base-url:http://localhost:4200}")
+    private String frontendBaseUrl;
 
     @PostConstruct
     public void init() {
@@ -58,7 +74,7 @@ public class StripePaymentService {
     }
 
     @Transactional
-    public String processRealPayment(CheckoutRequestDTO request, Long userId) {
+    public CheckoutPaymentResponseDTO processRealPayment(CheckoutRequestDTO request, Long userId) {
         validateRequest(request);
 
         List<Long> courseIds = resolveCourseIds(request);
@@ -68,82 +84,199 @@ public class StripePaymentService {
                 .findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        Course primaryCourse = courseRepository
-                .findById(courseIds.get(0))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado"));
+        List<Course> courses = courseIds.stream()
+                .map(id -> courseRepository
+                        .findById(id)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado")))
+                .toList();
+        Course primaryCourse = courses.get(0);
 
-        if (!isStripeConfigured()) {
-            log.warn(
-                    "STRIPE_SECRET_KEY no configurada: procesando pago simulado en local para curso {}",
-                    primaryCourse.getId());
-            return processDevMockPayment(request, userId, currentUser, courseIds, primaryCourse);
+        CheckoutQuoteResponseDTO quote =
+                checkoutQuoteService.quote(courseIds, request.getCouponCode());
+        assertAmountMatchesQuote(request.getAmount(), quote.getTotal());
+
+        Optional<Coupon> couponOpt = checkoutQuoteService.resolveCoupon(request.getCouponCode(), courses);
+        Coupon appliedCoupon = couponOpt.orElse(null);
+
+        if (quote.getTotal().signum() == 0) {
+            Payment payment = processFreePayment(currentUser, courseIds, courses, primaryCourse, quote, appliedCoupon);
+            return CheckoutPaymentResponseDTO.builder()
+                    .message("Inscripción gratuita confirmada con cupón.")
+                    .status("success")
+                    .paymentId(payment.getId())
+                    .build();
         }
 
-        Charge charge;
-        try {
-            Map<String, Object> chargeParams = new HashMap<>();
-            chargeParams.put("amount", toStripeCents(request.getAmount()));
-            chargeParams.put("currency", "usd");
-            chargeParams.put("source", request.getPaymentToken());
-            chargeParams.put("description", "Skillnet - Compra de curso: " + primaryCourse.getTitle());
-            charge = Charge.create(chargeParams);
-        } catch (StripeException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Stripe rechazó el pago: " + e.getMessage());
+        if (request.getPaymentToken() == null || request.getPaymentToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paymentToken es obligatorio");
         }
 
-        if (!"succeeded".equals(charge.getStatus())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "La transacción fue rechazada por la entidad bancaria.");
+        Payment payment;
+        String message;
+
+        if (!isStripeConfigured() || isDevMockToken(request.getPaymentToken())) {
+            if (isStripeConfigured() && isDevMockToken(request.getPaymentToken())) {
+                log.warn(
+                        "Token dev_mock: procesando pago simulado aunque STRIPE_SECRET_KEY esté configurada");
+            } else {
+                log.warn(
+                        "STRIPE_SECRET_KEY no configurada: procesando pago simulado en local para curso {}",
+                        primaryCourse.getId());
+            }
+            payment = processDevMockPayment(currentUser, courseIds, courses, primaryCourse, quote, appliedCoupon);
+            message = "Pago simulado (desarrollo local). ID: " + payment.getStripeCheckoutId();
+        } else {
+            Charge charge;
+            try {
+                Map<String, Object> chargeParams = new HashMap<>();
+                chargeParams.put("amount", toStripeCents(quote.getTotal()));
+                chargeParams.put("currency", "usd");
+                chargeParams.put("source", request.getPaymentToken());
+                chargeParams.put("description", "Skillnet - Compra de curso: " + primaryCourse.getTitle());
+                charge = Charge.create(chargeParams);
+            } catch (StripeException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Stripe rechazó el pago: " + e.getMessage());
+            }
+
+            if (!"succeeded".equals(charge.getStatus())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "La transacción fue rechazada por la entidad bancaria.");
+            }
+
+            Instant now = Instant.now();
+            payment = buildPayment(
+                    currentUser,
+                    primaryCourse,
+                    quote.getTotal(),
+                    "SUCCEEDED",
+                    "stripe_real",
+                    charge.getId(),
+                    now,
+                    appliedCoupon);
+
+            try {
+                JsonNode realGatewayResponse = objectMapper.readTree(charge.toJson());
+                payment.setGatewayResponse(realGatewayResponse);
+            } catch (Exception e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo serializar la respuesta de Stripe.");
+            }
+
+            paymentRepository.save(payment);
+            redeemCoupon(appliedCoupon);
+            createEnrollments(currentUser, courseIds, now);
+            logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
+            notifyPurchase(currentUser, courses);
+            message = "Transacción aprobada de forma segura por Stripe. ID: " + charge.getId();
         }
 
-        Instant now = Instant.now();
-        Payment payment = buildPayment(
-                currentUser,
-                primaryCourse,
-                request.getAmount(),
-                "SUCCEEDED",
-                "stripe_real",
-                charge.getId(),
-                now);
-
-        try {
-            JsonNode realGatewayResponse = objectMapper.readTree(charge.toJson());
-            payment.setGatewayResponse(realGatewayResponse);
-        } catch (Exception e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo serializar la respuesta de Stripe.");
-        }
-
-        paymentRepository.save(payment);
-        createEnrollments(currentUser, courseIds, now);
-
-        return "Transacción aprobada de forma segura por Stripe. ID: " + charge.getId();
+        return CheckoutPaymentResponseDTO.builder()
+                .message(message)
+                .status("success")
+                .paymentId(payment.getId())
+                .build();
     }
 
-    private String processDevMockPayment(
-            CheckoutRequestDTO request,
-            Long userId,
+    private Payment processFreePayment(
             User currentUser,
             List<Long> courseIds,
-            Course primaryCourse) {
+            List<Course> courses,
+            Course primaryCourse,
+            CheckoutQuoteResponseDTO quote,
+            Coupon appliedCoupon) {
         Instant now = Instant.now();
-        String mockChargeId = "dev_" + UUID.randomUUID();
+        Payment payment = buildPayment(
+                currentUser,
+                primaryCourse,
+                quote.getTotal(),
+                "SUCCEEDED",
+                "coupon_free",
+                "free_" + java.util.UUID.randomUUID(),
+                now,
+                appliedCoupon);
+        payment.setGatewayResponse(objectMapper.createObjectNode().put("mode", "free_coupon"));
+        paymentRepository.save(payment);
+        redeemCoupon(appliedCoupon);
+        createEnrollments(currentUser, courseIds, now);
+        logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
+        notifyPurchase(currentUser, courses);
+        return payment;
+    }
+
+    private Payment processDevMockPayment(
+            User currentUser,
+            List<Long> courseIds,
+            List<Course> courses,
+            Course primaryCourse,
+            CheckoutQuoteResponseDTO quote,
+            Coupon appliedCoupon) {
+        Instant now = Instant.now();
+        String mockChargeId = "dev_" + java.util.UUID.randomUUID();
 
         Payment payment = buildPayment(
                 currentUser,
                 primaryCourse,
-                request.getAmount(),
+                quote.getTotal(),
                 "SUCCEEDED",
                 "stripe_dev",
                 mockChargeId,
-                now);
+                now,
+                appliedCoupon);
         payment.setGatewayResponse(objectMapper.createObjectNode().put("mode", "dev_mock"));
 
         paymentRepository.save(payment);
+        redeemCoupon(appliedCoupon);
         createEnrollments(currentUser, courseIds, now);
+        logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
+        notifyPurchase(currentUser, courses);
 
-        return "Pago simulado (desarrollo local). ID: " + mockChargeId;
+        return payment;
+    }
+
+    private void redeemCoupon(Coupon coupon) {
+        if (coupon == null) {
+            return;
+        }
+        coupon.setTimesRedeemed(coupon.getTimesRedeemed() + 1);
+        couponRepository.save(coupon);
+    }
+
+    private void notifyPurchase(User buyer, Iterable<Course> courses) {
+        notificationPublisher.publish(
+                buyer,
+                "purchase",
+                "Compra confirmada",
+                "Tu pago fue procesado correctamente. Ya puedes acceder a tus cursos.",
+                frontendBaseUrl + "/mis-cursos");
+
+        Set<Long> notifiedProfessors = new HashSet<>();
+        for (Course course : courses) {
+            User professor = course.getProfessor();
+            if (professor == null || notifiedProfessors.contains(professor.getId())) {
+                continue;
+            }
+            notifiedProfessors.add(professor.getId());
+            notificationPublisher.publish(
+                    professor,
+                    "sale",
+                    "Nueva venta",
+                    buyer.getEmail() + " compró \"" + course.getTitle() + "\".",
+                    frontendBaseUrl + "/dashboard/infoproductor");
+        }
+    }
+
+    private void assertAmountMatchesQuote(BigDecimal requestedAmount, BigDecimal expectedTotal) {
+        if (requestedAmount == null || expectedTotal == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Monto inválido");
+        }
+        BigDecimal requested = requestedAmount.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal expected = expectedTotal.setScale(2, RoundingMode.HALF_UP);
+        if (requested.compareTo(expected) != 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El monto enviado no coincide con la cotización. Recalcula el total e intenta de nuevo.");
+        }
     }
 
     private void assertNotAlreadyEnrolled(Long userId, List<Long> courseIds) {
@@ -162,7 +295,8 @@ public class StripePaymentService {
             String status,
             String paymentMethod,
             String stripeCheckoutId,
-            Instant now) {
+            Instant now,
+            Coupon coupon) {
         Payment payment = new Payment();
         payment.setUser(currentUser);
         payment.setCourse(primaryCourse);
@@ -170,6 +304,7 @@ public class StripePaymentService {
         payment.setStatus(status);
         payment.setPaymentMethod(paymentMethod);
         payment.setStripeCheckoutId(stripeCheckoutId);
+        payment.setCoupon(coupon);
         payment.setCreatedAt(now);
         payment.setUpdatedAt(now);
         applyClientBillingFromUser(payment, currentUser);
@@ -205,15 +340,16 @@ public class StripePaymentService {
         return stripeSecretKey != null && !stripeSecretKey.isBlank();
     }
 
+    private boolean isDevMockToken(String token) {
+        return "dev_mock_checkout".equals(token) || "dev_mock_yape".equals(token);
+    }
+
     private void validateRequest(CheckoutRequestDTO request) {
         if (request.getCourseId() == null && (request.getCourseIds() == null || request.getCourseIds().isEmpty())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "courseId es obligatorio");
         }
-        if (request.getAmount() == null || request.getAmount().signum() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "amount debe ser mayor a cero");
-        }
-        if (request.getPaymentToken() == null || request.getPaymentToken().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paymentToken es obligatorio");
+        if (request.getAmount() == null || request.getAmount().signum() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "amount inválido");
         }
     }
 
@@ -226,6 +362,22 @@ public class StripePaymentService {
 
     private int toStripeCents(BigDecimal amount) {
         return amount.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).intValueExact();
+    }
+
+    private void logPurchase(
+            User buyer, Course primaryCourse, Long paymentId, BigDecimal amount, List<Long> courseIds) {
+        auditService.logAction(
+                AuditAction.PURCHASE_COURSE,
+                AuditAction.ENTITY_PAYMENT,
+                paymentId,
+                buyer.getEmail(),
+                "Compra de producto(s): "
+                        + primaryCourse.getTitle()
+                        + " — USD "
+                        + amount
+                        + (courseIds.size() > 1 ? " (+" + (courseIds.size() - 1) + " productos)" : "")
+                        + " — pago #"
+                        + paymentId);
     }
 
     private void applyClientBillingFromUser(Payment payment, User user) {

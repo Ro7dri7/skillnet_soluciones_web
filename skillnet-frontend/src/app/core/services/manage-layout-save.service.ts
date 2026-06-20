@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { ToastService } from './toast.service';
 import { messageFromHttpError } from '../../shared/utils/http-error.util';
 import type { ActionFeedbackPhase } from '../../shared/components/action-feedback-button/action-feedback-button.component';
@@ -12,6 +12,11 @@ export class ManageLayoutSaveService {
 
   readonly canSave = signal(false);
   readonly savePhase = signal<ActionFeedbackPhase>('idle');
+  readonly pendingChanges = signal<Record<string, unknown>>({});
+
+  readonly showSaveButton = computed(
+    () => this.canSave() || Object.keys(this.pendingChanges()).length > 0,
+  );
 
   registerSaveHandler(handler: () => Promise<void>): void {
     this.saveHandler = handler;
@@ -24,26 +29,46 @@ export class ManageLayoutSaveService {
     this.savePhase.set('idle');
   }
 
-  async triggerSave(): Promise<void> {
-    if (!this.saveHandler || this.savePhase() === 'saving') {
-      if (!this.saveHandler) {
-        this.toast.info('No hay cambios pendientes en esta sección.');
-      }
-      return;
+  registerChange(data: Record<string, unknown>): void {
+    this.pendingChanges.update((prev) => ({ ...prev, ...data }));
+  }
+
+  clearPendingChanges(): void {
+    this.pendingChanges.set({});
+  }
+
+  async triggerSave(): Promise<boolean> {
+    if (this.savePhase() === 'saving') {
+      return false;
+    }
+
+    const hasHandler = Boolean(this.saveHandler);
+    const hasPending = Object.keys(this.pendingChanges()).length > 0;
+
+    if (!hasHandler && !hasPending) {
+      this.toast.info('No hay cambios pendientes en esta sección.');
+      return true;
     }
 
     this.savePhase.set('saving');
     try {
-      await this.saveHandler();
+      if (hasHandler && this.saveHandler) {
+        await this.saveHandler();
+      }
+      if (hasPending) {
+        this.clearPendingChanges();
+      }
       this.savePhase.set('success');
       this.toast.success('Cambios guardados');
       this.scheduleReset();
+      return true;
     } catch (err) {
       this.savePhase.set('idle');
       if (err instanceof Error && err.message === 'Formulario inválido') {
-        return;
+        return false;
       }
       this.toast.error(messageFromHttpError(err, 'No se pudieron guardar los cambios.'));
+      return false;
     }
   }
 

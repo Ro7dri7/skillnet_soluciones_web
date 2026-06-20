@@ -1,0 +1,110 @@
+<div class="plans-page">
+  <header class="plans-header">
+    <div>
+      <h1>Planes para infoproductores</h1>
+      <p>Activa herramientas de IA para crear ebooks (Gamma) y podcasts (ElevenLabs).</p>
+    </div>
+    <a routerLink="/dashboard/infoproductor" class="back-link">← Volver al panel</a>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Cargando planes…</p>
+  } @else {
+    <section class="capability-strip">
+      <article [class.active]="hasActive('gamma_ebook')">
+        <h3>Ebooks (Gamma)</h3>
+        <p>{{ hasActive('gamma_ebook') ? usesFor('gamma_ebook') + ' usos restantes' : 'Sin plan activo' }}</p>
+      </article>
+      <article [class.active]="hasActive('podcast_ai')">
+        <h3>Podcasts (ElevenLabs)</h3>
+        <p>{{ hasActive('podcast_ai') ? usesFor('podcast_ai') + ' usos restantes' : 'Sin plan activo' }}</p>
+      </article>
+    </section>
+
+    @if (successMessage(); as ok) {
+      <div class="alert success">{{ ok }}</div>
+    }
+    @if (error(); as err) {
+      <div class="alert error">{{ err }}</div>
+    }
+
+    @if (entitlements().length > 0) {
+      <section class="entitlements">
+        <h2>Tus planes activos</h2>
+        <ul>
+          @for (ent of entitlements(); track ent.id) {
+            @if (ent.status === 'ACTIVE' && ent.usesRemaining > 0) {
+              <li>
+                <strong>{{ ent.offeringTitle }}</strong>
+                · {{ capabilityLabel(ent.capabilityKey) }}
+                · {{ ent.usesRemaining }} usos
+              </li>
+            }
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="offerings-grid">
+      @for (plan of offerings(); track plan.id) {
+        <article class="plan-card" [class.featured]="plan.featured">
+          <div class="plan-icon"><i [class]="plan.iconClass || 'ri-sparkling-line'"></i></div>
+          <h2>{{ plan.title }}</h2>
+          @if (plan.description) {
+            <p class="desc">{{ plan.description }}</p>
+          }
+          <p class="price">{{ plan.priceUsd | currency: 'USD' : 'symbol' : '1.2-2' }}</p>
+          @if (plan.includedUses) {
+            <p class="uses">{{ plan.includedUses }} generaciones incluidas</p>
+          }
+          @if (plan.capabilityKey && hasActive(plan.capabilityKey)) {
+            <span class="badge">Activo · {{ usesFor(plan.capabilityKey) }} usos</span>
+          }
+          <button type="button" class="buy-btn" (click)="selectPlan(plan)">Comprar plan</button>
+        </article>
+      }
+    </section>
+
+    @if (selectedOffering(); as selected) {
+      <div class="checkout-overlay">
+        <div class="checkout-modal">
+          <h2>Comprar: {{ selected.title }}</h2>
+          <p class="checkout-price">{{ selected.priceUsd | currency: 'USD' : 'symbol' : '1.2-2' }}</p>
+
+          @if (isPaidPlan(selected) && environment.stripePublicKey) {
+            <div class="stripe-fields">
+              <label>Número de tarjeta</label>
+              <div #stripeCardNumberMount class="stripe-mount"></div>
+              <div class="stripe-row">
+                <div>
+                  <label>Vencimiento</label>
+                  <div #stripeCardExpiryMount class="stripe-mount"></div>
+                </div>
+                <div>
+                  <label>CVC</label>
+                  <div #stripeCardCvcMount class="stripe-mount"></div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <p class="muted">Sin Stripe configurado: el pago se simulará en local.</p>
+          }
+
+          <div class="checkout-actions">
+            <button type="button" class="secondary" (click)="cancelCheckout()" [disabled]="paying()">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="buy-btn"
+              (click)="purchaseSelected()"
+              [disabled]="paying() || (requiresStripeCard() && !stripeCardComplete())"
+            >
+              {{ paying() ? 'Procesando…' : 'Confirmar pago' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

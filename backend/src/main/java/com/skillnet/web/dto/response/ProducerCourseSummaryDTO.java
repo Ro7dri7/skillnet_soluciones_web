@@ -17,4 +17,5 @@ public class ProducerCourseSummaryDTO {
     private String status;
     private Instant createdAt;
     private String imageUrl;
+    private long enrollmentCount;
 }

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ContentBlockDTO, QuizData } from '../../shared/models/curriculum.model';
+import { studentCourseApiPath } from '../../shared/utils/course-slug.util';
 
 export interface MyCourse {
   courseId: number;
@@ -58,15 +59,19 @@ export class StudentService {
     return this.http.get<MyCourse[]>(`${environment.apiUrl}/student/my-learning`);
   }
 
-  getLearnPage(slug: string): Observable<CourseLearnPage> {
-    return this.http.get<CourseLearnPage>(
-      `${environment.apiUrl}/student/courses/${encodeURIComponent(slug)}/learn`,
-    );
+  getLearnPage(slug: string, courseFormat?: string | null): Observable<CourseLearnPage> {
+    const path = studentCourseApiPath(slug, courseFormat);
+    return this.http.get<CourseLearnPage>(`${environment.apiUrl}/student/courses/${path}/learn`);
   }
 
-  markLessonComplete(slug: string, lessonId: number): Observable<LessonProgressResult> {
+  markLessonComplete(
+    slug: string,
+    lessonId: number,
+    courseFormat?: string | null,
+  ): Observable<LessonProgressResult> {
+    const path = studentCourseApiPath(slug, courseFormat);
     return this.http.post<LessonProgressResult>(
-      `${environment.apiUrl}/student/courses/${encodeURIComponent(slug)}/lessons/${lessonId}/progress`,
+      `${environment.apiUrl}/student/courses/${path}/lessons/${lessonId}/progress`,
       { completed: true },
     );
   }

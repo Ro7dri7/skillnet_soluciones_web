@@ -35,6 +35,18 @@ public class StudentLearningController {
         return ResponseEntity.ok(studentLearningService.getMyCourses(userDetails.getId()));
     }
 
+    @GetMapping("/courses/{format}/{slugStem}/learn")
+    public ResponseEntity<CourseLearnResponseDTO> getLearnPageWithFormat(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String format,
+            @PathVariable String slugStem) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        String slug = com.skillnet.util.CourseSlugUtils.joinRouteSlug(format, slugStem);
+        return ResponseEntity.ok(studentLearningService.getLearnPage(slug, userDetails.getId()));
+    }
+
     @GetMapping("/courses/{slug}/learn")
     public ResponseEntity<CourseLearnResponseDTO> getLearnPage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -43,6 +55,20 @@ public class StudentLearningController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         }
         return ResponseEntity.ok(studentLearningService.getLearnPage(slug, userDetails.getId()));
+    }
+
+    @PostMapping("/courses/{format}/{slugStem}/lessons/{lessonId}/progress")
+    public ResponseEntity<LessonProgressResponseDTO> markLessonCompleteWithFormat(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String format,
+            @PathVariable String slugStem,
+            @PathVariable Long lessonId) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        String slug = com.skillnet.util.CourseSlugUtils.joinRouteSlug(format, slugStem);
+        return ResponseEntity.ok(
+                studentLearningService.markLessonComplete(slug, lessonId, userDetails.getId()));
     }
 
     @PostMapping("/courses/{slug}/lessons/{lessonId}/progress")

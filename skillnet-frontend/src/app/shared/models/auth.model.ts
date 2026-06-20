@@ -26,6 +26,7 @@ export interface LoginRequest {
 
 export interface GoogleLoginRequest {
   token: string;
+  activeRole?: 'student' | 'infoproductor';
 }
 
 export interface RegisterRequest {

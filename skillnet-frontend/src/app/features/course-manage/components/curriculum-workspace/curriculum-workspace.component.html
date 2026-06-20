@@ -78,6 +78,26 @@
           } @else if (activeTab() === 'content' && activeLesson(); as lesson) {
           @if (!isLessonQuiz()) {
           <div class="lesson-content-panel">
+            @if (courseFormat() === 'ebook') {
+              <app-lesson-ebook-panel
+                [courseId]="resolvedCourseId()"
+                [lessonId]="activeLessonNumericId()"
+                [lessonTitle]="lesson.title"
+                [attachedPdfUrl]="activeLessonAttachedPdfUrl()"
+                (attachPdf)="applyGammaEbook($event)"
+                (removeAttached)="removeAttachedEbook()"
+              />
+            }
+            @if (courseFormat() === 'podcast') {
+              <app-lesson-podcast-panel
+                [courseId]="resolvedCourseId()"
+                [lessonId]="activeLessonNumericId()"
+                [lessonTitle]="lesson.title"
+                [attachedAudioUrl]="activeLessonAttachedAudioUrl()"
+                (attachAudio)="applyPodcastAudio($event)"
+                (removeAttached)="removeAttachedPodcast()"
+              />
+            }
             <div class="add-block-toolbar">
               <div class="add-block-toolbar__inner">
                 <span class="add-block-toolbar__title">
@@ -90,7 +110,34 @@
                   Añadir Bloque de Contenido
                 </span>
                 <div id="onboarding-content-grid" class="content-type-grid">
-                  @for (blockType of blockTypes; track blockType.id) {
+                  @if (courseFormat() === 'ebook') {
+                    <button
+                      type="button"
+                      class="content-type-btn content-type-btn--action"
+                      style="background: #D4B4FF"
+                      [disabled]="curriculum.saving()"
+                      (click)="openEbookUploadPanel()"
+                    >
+                      <div class="content-type-btn__icon">
+                        <i class="ri-upload-cloud-2-line"></i>
+                      </div>
+                      <span class="content-type-btn__label">Subir PDF</span>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="content-type-btn content-type-btn--action"
+                      style="background: #D4B4FF"
+                      [disabled]="curriculum.saving()"
+                      (click)="quickAddPdfBlock()"
+                    >
+                      <div class="content-type-btn__icon">
+                        <i class="ri-file-pdf-line"></i>
+                      </div>
+                      <span class="content-type-btn__label">Subir PDF</span>
+                    </button>
+                  }
+                  @for (blockType of visibleBlockTypes(); track blockType.id) {
                     <button
                       type="button"
                       class="content-type-btn"
@@ -114,6 +161,7 @@
 
             <div class="lesson-blocks-stack">
               @for (block of lesson.blocks; track block.id) {
+                @if (!(courseFormat() === 'ebook' && block.contentType === 'pdf') && !(courseFormat() === 'podcast' && block.contentType === 'audio')) {
                 <article class="lesson-block-card">
                   <header class="block-card-header">
                     <div class="block-card-header__type-icon">
@@ -179,24 +227,55 @@
                           <i [class]="lessonIcon(block.contentType) + ' text-2xl'"></i>
                           <span>{{ contentTypeLabel(block.contentType) }}</span>
                         </div>
-                        <label class="block-upload-btn">
-                          <input
-                            type="file"
-                            class="sr-only"
-                            [accept]="blockAcceptMime(block.contentType)"
-                            [disabled]="blockUploadingId() === block.id || curriculum.saving()"
-                            (change)="onBlockFileSelected(block.id, block.contentType, $event)"
-                          />
-                          <i class="ri-upload-cloud-2-line text-lg"></i>
-                          {{
-                            blockUploadingId() === block.id
-                              ? 'Subiendo…'
-                              : block.contentType === 'pdf'
-                                ? 'Subir PDF'
-                                : 'Subir archivo'
-                          }}
-                        </label>
-                        @if (block.resourceUrl) {
+
+                        @if (blockUploadingId() === block.id) {
+                          <div
+                            class="relative mt-2 h-[22px] w-full overflow-hidden rounded-full border border-slate-300 bg-slate-200"
+                            role="status"
+                            aria-live="polite"
+                          >
+                            <div
+                              class="h-full bg-skillnet-sky transition-all duration-200"
+                              [style.width.%]="blockUploadProgress()"
+                            ></div>
+                            <span
+                              class="absolute inset-0 flex items-center justify-center px-2 text-[10px] font-bold text-slate-700"
+                            >
+                              Subiendo {{ blockUploadFileName() || 'archivo' }}… {{ blockUploadProgress() }}%
+                            </span>
+                          </div>
+                        } @else if (block.resourceUrl) {
+                          <div
+                            class="mt-2 flex w-full items-center gap-3 rounded-lg border border-slate-300 bg-slate-100 p-3.5"
+                          >
+                            <i class="ri-checkbox-circle-fill shrink-0 text-2xl text-emerald-600"></i>
+                            <div class="min-w-0 flex-1">
+                              <p class="truncate text-sm font-bold text-slate-700">
+                                {{ blockFileDisplayName(block.resourceUrl) }}
+                              </p>
+                              <p class="text-[11px] text-slate-500">
+                                {{
+                                  block.contentType === 'pdf'
+                                    ? 'PDF subido con éxito'
+                                    : block.contentType === 'audio'
+                                      ? 'Audio listo para el alumno'
+                                      : 'Archivo cargado correctamente'
+                                }}
+                              </p>
+                            </div>
+                            <label
+                              class="shrink-0 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-[11px] font-bold hover:bg-slate-50"
+                            >
+                              <input
+                                type="file"
+                                class="sr-only"
+                                [accept]="blockAcceptMime(block.contentType)"
+                                [disabled]="curriculum.saving()"
+                                (change)="onBlockFileSelected(block.id, block.contentType, $event)"
+                              />
+                              Reemplazar
+                            </label>
+                          </div>
                           @if (block.contentType === 'pdf') {
                             <a
                               [href]="block.resourceUrl"
@@ -212,13 +291,42 @@
                               alt="Vista previa"
                               class="mt-3 max-h-48 rounded-lg border border-gray-200 object-contain"
                             />
-                          } @else {
+                          } @else if (block.contentType === 'audio') {
                             <audio class="mt-3 w-full" controls [src]="block.resourceUrl"></audio>
                           }
+                        } @else {
+                          <div
+                            class="relative mt-2 rounded-xl border border-dashed border-slate-400 bg-skillnet-sky/10"
+                            (dragover)="$event.preventDefault()"
+                            (drop)="onBlockFileDrop(block.id, block.contentType, $event)"
+                          >
+                            <input
+                              type="file"
+                              class="sr-only"
+                              [id]="'block-file-' + block.id"
+                              [accept]="blockAcceptMime(block.contentType)"
+                              [disabled]="curriculum.saving()"
+                              (change)="onBlockFileSelected(block.id, block.contentType, $event)"
+                            />
+                            <label
+                              class="flex cursor-pointer flex-col items-center justify-center gap-2 px-4 py-6 text-center text-[11px] font-bold uppercase text-skillnet-dark"
+                              [for]="'block-file-' + block.id"
+                            >
+                              <i class="ri-upload-cloud-2-line text-3xl"></i>
+                              <span>
+                                {{
+                                  block.contentType === 'pdf'
+                                    ? 'Arrastra un PDF o haz clic para subir'
+                                    : 'Arrastra un archivo o haz clic para subir'
+                                }}
+                              </span>
+                            </label>
+                          </div>
                         }
+
                         <p class="mt-2 text-[11px] text-gray-500">O pega una URL externa:</p>
                         <input
-                          type="url"
+                          type="text"
                           class="block-media-input"
                           placeholder="https://..."
                           [ngModel]="block.resourceUrl"
@@ -228,10 +336,15 @@
                     }
                   </div>
                 </article>
+                }
               } @empty {
+                @if (courseFormat() !== 'ebook' || !activeLessonAttachedPdfUrl()) {
+                  @if (courseFormat() !== 'podcast' || !activeLessonAttachedAudioUrl()) {
                 <p class="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-skillnet-muted">
                   Usa los botones de arriba para añadir el primer bloque a esta lección.
                 </p>
+                  }
+                }
               }
             </div>
 
@@ -239,7 +352,7 @@
               <summary>+ Elegir tipo de bloque</summary>
               <div class="add-block-more-inner">
                 <div class="content-type-grid content-type-grid--compact">
-                  @for (blockType of blockTypes; track blockType.id) {
+                  @for (blockType of visibleBlockTypes(); track blockType.id) {
                     <button
                       type="button"
                       class="content-type-btn"
@@ -371,9 +484,15 @@
                     class="lesson-sidebar-row__main"
                   >
                     <span
-                      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-sm"
+                      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm"
+                      [class.bg-emerald-50]="lessonHasContent(lesson)"
+                      [class.bg-gray-100]="!lessonHasContent(lesson)"
                     >
-                      <i [class]="lessonIcon(lesson.contentType)"></i>
+                      @if (lessonHasContent(lesson)) {
+                        <i class="ri-checkbox-circle-fill text-lg text-emerald-600"></i>
+                      } @else {
+                        <i [class]="lessonIcon(lesson.contentType)"></i>
+                      }
                     </span>
                     @if (editingLessonId() === lesson.id) {
                       <input

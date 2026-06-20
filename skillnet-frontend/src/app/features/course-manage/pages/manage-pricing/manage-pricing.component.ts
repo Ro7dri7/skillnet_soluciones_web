@@ -217,6 +217,12 @@ export class ManagePricingComponent implements OnInit, OnDestroy {
         affiliationType: this.affiliationType(),
       }),
     );
+    this.manageContext.patchLoadedCourse({
+      currency: this.currency(),
+      price: onSale && discount != null ? discount : base,
+      originalPrice: base,
+      onSale,
+    });
     this.showInvalidBanner.set(false);
   }
 }

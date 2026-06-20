@@ -147,6 +147,41 @@
         </div>
       </header>
 
+      @if (courseCompletedBanner()) {
+        <div
+          class="mx-4 mb-3 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"
+          role="status"
+        >
+          <div class="flex gap-3">
+            <i class="ri-award-line text-2xl text-emerald-600"></i>
+            <div class="text-sm">
+              <p class="m-0 mb-1 font-bold">¡Curso completado!</p>
+              <p class="m-0 leading-snug">
+                @if (page()?.congratulationsMessage) {
+                  {{ page()!.congratulationsMessage }}
+                } @else {
+                  Felicitaciones por terminar el curso. Tu certificado ya está disponible.
+                }
+                @if (certificateCode(); as code) {
+                  <span class="mt-1 block font-mono text-xs">Código: {{ code }}</span>
+                }
+              </p>
+              <a routerLink="/certificates" class="learn-link mt-2 inline-block font-semibold">
+                Ver mis certificados
+              </a>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="border-0 bg-transparent p-0 text-lg leading-none"
+            (click)="dismissCourseCompletedBanner()"
+            aria-label="Cerrar"
+          >
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      }
+
       <div
         #contentAreaRef
         class="learn-content"
@@ -211,6 +246,7 @@
                   @if (quizDataForBlock(block); as quiz) {
                     <app-learn-quiz-player
                       [quizData]="quiz"
+                      [lessonId]="activeLesson()!.id"
                       (passed)="onQuizPassed(activeLesson()!.id)"
                     />
                   } @else {

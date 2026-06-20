@@ -34,7 +34,9 @@ export class BuilderManageRedirectComponent implements OnInit {
         slug = normalizeCourseSlugForUrl(course.slug);
         this.builder.setCourseId(courseId, slug);
       }
-      await this.router.navigate([courseManagePath(slug, targetStep)]);
+      await this.router.navigate([
+        courseManagePath(slug, targetStep, this.builder.state().productType),
+      ]);
     } catch {
       await this.router.navigate(['/infoproductor/courses/new/subcategory']);
     }

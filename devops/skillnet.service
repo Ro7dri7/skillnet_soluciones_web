@@ -1,0 +1,46 @@
+[Unit]
+Description=SkillNet Spring Boot Application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/skillnet
+
+Environment=SPRING_PROFILES_ACTIVE=prod
+
+# Configura en el servidor (no commitear secretos reales).
+Environment=SPRING_DATASOURCE_URL=jdbc:postgresql://YOUR_RDS_HOST:5432/skillnet_db?sslmode=verify-full&sslrootcert=classpath:global-bundle.pem
+Environment=SPRING_DATASOURCE_USERNAME=postgres_aws
+Environment=SPRING_DATASOURCE_PASSWORD=CHANGE_ME
+
+Environment=AWS_REGION=us-east-2
+Environment=AWS_S3_BUCKET=skillnet-media-prod
+Environment=AWS_ACCESS_KEY_ID=CHANGE_ME
+Environment=AWS_SECRET_ACCESS_KEY=CHANGE_ME
+
+Environment=SKILLNET_MEDIA_STORAGE=s3
+Environment=SKILLNET_S3_BUCKET=skillnet-media-prod
+Environment=SKILLNET_S3_REGION=us-east-2
+
+Environment=SPRING_MAIL_HOST=smtp.gmail.com
+Environment=SPRING_MAIL_PORT=587
+Environment=SPRING_MAIL_USERNAME=tu_correo@gmail.com
+Environment=SPRING_MAIL_PASSWORD=CHANGE_ME
+Environment=SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+Environment=SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+
+ExecStart=/usr/bin/java -jar /opt/skillnet/backend.jar
+SuccessExitStatus=143
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=skillnet
+
+[Install]
+WantedBy=multi-user.target

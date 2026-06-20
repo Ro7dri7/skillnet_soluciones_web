@@ -1,15 +1,17 @@
-<div class="mx-auto max-w-6xl">
+<div class="mx-auto max-w-7xl">
   <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-skillnet-dark">Mis Infoproductos</h1>
-      <p class="mt-1 text-sm text-gray-600">Gestiona tus infoproductos publicados y borradores</p>
+      <h1 class="text-2xl font-black text-skillnet-dark">Mis Infoproductos</h1>
+      <p class="mt-1 text-sm font-medium text-gray-500">
+        Gestiona tus infoproductos publicados y borradores
+      </p>
     </div>
     <a
       routerLink="/infoproductor/courses/new/type"
-      class="inline-flex items-center justify-center gap-2 rounded-lg bg-skillnet-accent px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-skillnet-accent px-5 py-2.5 text-sm font-bold text-skillnet-dark shadow-sm transition-all hover:opacity-90"
     >
       <i class="ri-add-line text-lg"></i>
-      Nuevo Curso
+      Crear producto
     </a>
   </div>
 
@@ -18,64 +20,104 @@
   }
 
   @if (isLoading()) {
-    <p class="text-center text-gray-500">Cargando cursos...</p>
+    <p class="text-center text-gray-500">Cargando infoproductos…</p>
   } @else if (courses().length === 0) {
     <div
-      class="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-sm"
+      class="mt-4 flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 py-20 text-center shadow-sm"
     >
-      <p class="text-gray-600">Aún no tienes cursos. Crea el primero.</p>
+      <div
+        class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-skillnet-dark shadow-md"
+      >
+        <i class="ri-folder-open-fill text-4xl text-skillnet-accent"></i>
+      </div>
+      <h2 class="mb-2 text-xl font-black text-skillnet-dark">Aún no tienes infoproductos aquí</h2>
+      <p class="mb-8 max-w-md text-sm font-medium leading-relaxed text-gray-500">
+        Empieza a compartir tu conocimiento. Crea tu primer curso, ebook o audiolibro y comienza a
+        generar ingresos.
+      </p>
       <a
         routerLink="/infoproductor/courses/new/type"
-        class="mt-4 inline-block rounded-lg bg-skillnet-accent px-5 py-2.5 text-sm font-semibold text-white"
+        class="inline-flex items-center gap-2 rounded-xl bg-skillnet-accent px-8 py-3 text-sm font-bold text-skillnet-dark shadow-sm transition-colors hover:bg-skillnet-dark hover:text-skillnet-accent"
       >
-        + Nuevo Curso
+        <i class="ri-add-line text-lg"></i>
+        Crear mi primer producto
       </a>
     </div>
   } @else {
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       @for (course of courses(); track course.id) {
         <article
-          class="flex flex-col rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          class="flex h-full flex-col rounded-xl border-[1.5px] border-skillnet-sky bg-white p-4"
         >
-          @if (course.imageUrl) {
-            <img
-              [src]="course.imageUrl"
-              [alt]="course.title"
-              class="mb-4 h-36 w-full rounded-lg object-cover"
-            />
-          }
-
-          <h2 class="mb-2 text-lg font-bold text-skillnet-dark">{{ course.title }}</h2>
-
-          <div class="mb-4 flex flex-wrap gap-2">
-            <span
-              class="rounded-full bg-skillnet-dark/10 px-2.5 py-0.5 text-xs font-medium text-skillnet-dark"
-            >
-              {{ formatLabel(course.courseFormat) }}
-            </span>
-            <span
-              class="rounded-full px-2.5 py-0.5 text-xs font-medium"
-              [class.bg-amber-100]="isDraft(course.status)"
-              [class.text-amber-800]="isDraft(course.status)"
-              [class.bg-emerald-100]="!isDraft(course.status)"
-              [class.text-emerald-800]="!isDraft(course.status)"
-            >
-              {{ statusLabel(course.status) }}
-            </span>
+          <div class="relative mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-lg bg-gray-100">
+            @if (course.imageUrl) {
+              <img
+                [src]="course.imageUrl"
+                [alt]="course.title"
+                class="h-full w-full object-cover"
+              />
+            } @else {
+              <div class="flex h-full w-full items-center justify-center bg-skillnet-dark/5">
+                <i class="ri-image-line text-3xl text-gray-300"></i>
+              </div>
+            }
           </div>
 
-          <p class="mb-4 flex-1 text-xs text-gray-500">
-            Creado el {{ course.createdAt | date: 'dd/MM/yyyy' }}
-          </p>
+          <div class="flex flex-1 flex-col">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <span
+                class="text-[10px] font-bold uppercase tracking-wider"
+                [class.text-gray-500]="isDraft(course.status)"
+                [class.text-emerald-500]="!isDraft(course.status)"
+              >
+                {{ statusLabel(course.status) }}
+              </span>
+              <span
+                class="rounded bg-skillnet-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-skillnet-dark"
+              >
+                {{ formatLabel(course.courseFormat) }}
+              </span>
+            </div>
 
-          <div class="flex gap-2 border-t border-gray-100 pt-4">
-            <button
-              type="button"
-              (click)="manageCourse(course)"
-              class="flex-1 rounded-lg border border-skillnet-dark px-3 py-2 text-sm font-medium text-skillnet-dark transition-colors hover:bg-skillnet-dark hover:text-white"
+            <h2 class="mb-3 line-clamp-2 text-sm font-bold leading-snug text-skillnet-dark">
+              {{ course.title }}
+            </h2>
+
+            <div
+              class="mb-3 mt-auto flex items-center justify-between text-[11px] font-semibold text-gray-500"
             >
-              Gestionar
-            </button>
+              <div class="flex items-center gap-1.5">
+                <i class="ri-shopping-cart-2-line text-xs text-gray-400"></i>
+                {{ enrollmentLabel(course) }}
+              </div>
+              <div
+                class="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 font-bold text-skillnet-dark"
+              >
+                <i class="ri-calendar-line text-skillnet-sky"></i>
+                {{ course.createdAt | date: 'dd/MM/yy' }}
+              </div>
+            </div>
+
+            <div class="mb-3 h-px bg-gray-100"></div>
+
+            <div class="mt-auto flex gap-2">
+              <button
+                type="button"
+                (click)="metricsCourse(course)"
+                class="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-1.5 text-xs font-bold text-skillnet-dark transition-colors hover:bg-gray-50"
+              >
+                <i class="ri-bar-chart-fill text-gray-400"></i>
+                Métricas
+              </button>
+              <button
+                type="button"
+                (click)="manageCourse(course)"
+                class="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-skillnet-accent py-1.5 text-xs font-bold text-skillnet-dark shadow-sm transition-colors hover:bg-skillnet-sky"
+              >
+                <i class="ri-pencil-fill"></i>
+                Gestionar
+              </button>
+            </div>
           </div>
         </article>
       }

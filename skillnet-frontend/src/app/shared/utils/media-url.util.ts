@@ -50,3 +50,25 @@ export function mediaBackendUrl(raw: string | null | undefined): string {
 export function absoluteMediaUrl(raw: string | null | undefined): string {
   return mediaBackendUrl(raw);
 }
+
+/**
+ * URL para cargar el PDF en vista previa (iframe/blob).
+ * En dev usa ruta relativa proxyada por ng serve (misma origen, evita X-Frame-Options cross-origin).
+ */
+export function mediaPreviewFetchUrl(raw: string | null | undefined): string {
+  const relative = resolveMediaUrl(raw);
+  if (!relative) {
+    return '';
+  }
+  if (relative.startsWith(MEDIA_FILES_PREFIX)) {
+    return relative;
+  }
+  if (/^https?:\/\//i.test(relative)) {
+    const markerIdx = relative.indexOf(MEDIA_FILES_PREFIX);
+    if (markerIdx >= 0) {
+      return relative.slice(markerIdx);
+    }
+    return relative;
+  }
+  return mediaBackendUrl(raw);
+}

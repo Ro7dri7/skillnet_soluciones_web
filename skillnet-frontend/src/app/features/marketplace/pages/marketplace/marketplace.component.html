@@ -6,12 +6,29 @@
         class="flex h-full w-[200%] transition-transform duration-500 ease-in-out"
         [style.transform]="'translateX(-' + currentHeroSlide() * 50 + '%)'"
       >
-        <div class="relative h-full w-1/2 shrink-0">
+        <div class="relative h-full w-1/2 shrink-0 overflow-hidden">
+          <video
+            #bgVideo
+            [autoplay]="true"
+            [loop]="true"
+            [muted]="true"
+            playsinline
+            [defaultMuted]="true"
+            (canplay)="bgVideo.play()"
+            class="absolute inset-0 z-0 h-full w-full object-cover"
+          >
+            <source
+              src="https://skillnet-media-prod.s3.us-east-2.amazonaws.com/Banner+Skillnet+-+Educaci%C3%B3n+y+Oportunidad_1080p.mp4"
+              type="video/mp4"
+            />
+          </video>
+
           <div
-            class="h-full w-full bg-gradient-to-br from-skillnet-dark via-skillnet-accent/60 to-skillnet-cyan/40"
+            class="absolute inset-0 z-10 bg-gradient-to-br from-skillnet-dark/90 via-skillnet-accent/50 to-skillnet-cyan/40"
           ></div>
+
           <div
-            class="pointer-events-none absolute left-5 top-5 h-36 w-36 opacity-60"
+            class="pointer-events-none absolute left-5 top-5 z-20 h-36 w-36 opacity-60"
             style="background-image: radial-gradient(#145bff 2px, transparent 2px); background-size: 15px 15px"
           ></div>
         </div>
@@ -19,7 +36,7 @@
           <div
             class="absolute inset-0 bg-gradient-to-r from-transparent via-skillnet-dark/40 to-skillnet-dark/90"
           ></div>
-          <div class="relative z-10 flex h-full items-center justify-end px-6 text-right text-white md:px-12">
+          <div class="relative z-20 flex h-full items-center justify-end px-6 text-right text-white md:px-12">
             <div class="max-w-lg">
               <p class="mb-4 text-2xl font-bold">
                 <span>Skill</span><span class="text-skillnet-accent">net</span>
@@ -147,6 +164,13 @@
         }
       </div>
     } @else {
+      @if (loadError()) {
+        <p class="py-10 text-center text-sm text-red-500">{{ loadError() }}</p>
+      } @else if (courses().length === 0) {
+        <p class="py-10 text-center text-sm text-slate-500">
+          Aún no hay cursos publicados. Vuelve pronto.
+        </p>
+      }
       @for (entry of categoryEntries(); track entry[0]) {
         <app-marketplace-carousel
           [title]="'Los mejores cursos de ' + entry[0]"

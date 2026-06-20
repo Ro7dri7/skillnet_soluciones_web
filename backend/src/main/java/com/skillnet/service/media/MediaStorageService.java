@@ -47,6 +47,14 @@ public class MediaStorageService {
         return storeLocally(storageKey, input);
     }
 
+    public StoredMedia storeBytes(
+            Long courseId, String kind, String originalFilename, String contentType, byte[] data)
+            throws IOException {
+        try (InputStream input = new java.io.ByteArrayInputStream(data)) {
+            return storeCourseFile(courseId, kind, originalFilename, contentType, input, data.length);
+        }
+    }
+
     public Path resolveLocalPath(String storageKey) {
         return Path.of(properties.getLocalDir()).resolve(storageKey.replace("/", java.io.File.separator));
     }

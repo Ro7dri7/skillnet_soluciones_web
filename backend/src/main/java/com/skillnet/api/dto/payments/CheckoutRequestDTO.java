@@ -10,4 +10,5 @@ public class CheckoutRequestDTO {
     private List<Long> courseIds;
     private BigDecimal amount;
     private String paymentToken;
+    private String couponCode;
 }

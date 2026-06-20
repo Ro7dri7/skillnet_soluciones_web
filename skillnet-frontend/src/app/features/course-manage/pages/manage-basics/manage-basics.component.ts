@@ -6,7 +6,6 @@ import { filter, firstValueFrom, map, tap } from 'rxjs';
 import { CourseService } from '../../../../core/services/course.service';
 import { CourseBuilderService } from '../../../../core/services/course-builder.service';
 import { CourseManageContextService } from '../../../../core/services/course-manage-context.service';
-import { ManageCurriculumService } from '../../../../core/services/manage-curriculum.service';
 import { ManageLayoutSaveService } from '../../../../core/services/manage-layout-save.service';
 import {
   CourseMediaService,
@@ -42,7 +41,6 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
   private readonly producerCourses = inject(ProducerCoursesService);
   private readonly courseMedia = inject(CourseMediaService);
   private readonly builder = inject(CourseBuilderService);
-  private readonly curriculum = inject(ManageCurriculumService);
   private readonly toast = inject(ToastService);
   private readonly manageSave = inject(ManageLayoutSaveService);
 
@@ -106,10 +104,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     return getSubcategories(category);
   });
 
-  readonly manageBasePath = this.manageContext.manageBasePath;
-
   readonly missingItems = computed((): MissingItem[] => {
-    const base = this.manageBasePath();
     const raw = this.form.getRawValue();
     const meta = this.courseMeta();
     const items: MissingItem[] = [];
@@ -129,17 +124,20 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     if (!meta.whatYouWillLearn.trim() || !meta.targetAudience.trim()) {
       items.push({
         text: 'Audiencia y Objetivos del curso',
-        link: `${base}/audience`,
+        link: this.manageContext.manageSectionPath('audience'),
       });
     }
     if (meta.lessonCount === 0) {
       items.push({
         text: 'Diseñar el temario (módulos y lecciones)',
-        link: `${base}/curriculum`,
+        link: this.manageContext.manageSectionPath('curriculum'),
       });
     }
     if (meta.price <= 0) {
-      items.push({ text: 'Asignar un precio', link: `${base}/pricing` });
+      items.push({
+        text: 'Asignar un precio',
+        link: this.manageContext.manageSectionPath('pricing'),
+      });
     }
 
     return items;
@@ -227,6 +225,7 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
         this.form.patchValue({ imageUrl: result.imageUrl });
         this.imagePreviewOverride.set(result.imageUrl);
         this.pendingImageFile = null;
+        this.manageContext.patchLoadedCourse({ imageUrl: result.imageUrl });
         this.toast.success('Imagen de portada guardada');
       }
     } catch (err) {
@@ -277,20 +276,14 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       await this.builder.ensureInfoproductorSession();
-      const [course] = await Promise.all([
-        firstValueFrom(this.courseService.getCourse(id)),
-        this.curriculum.loadCurriculumAsync(id, true),
-      ]);
-
-      const modules = this.curriculum.modules();
-      const lessonCount = modules.reduce((sum, m) => sum + m.lessons.length, 0);
+      const course = await firstValueFrom(this.courseService.getCourse(id));
 
       this.courseMeta.set({
         whatYouWillLearn: course.whatYouWillLearn ?? '',
         targetAudience: course.targetAudience ?? '',
         price: typeof course.price === 'number' ? course.price : Number(course.price) || 0,
-        moduleCount: modules.length,
-        lessonCount,
+        moduleCount: course.moduleCount ?? 0,
+        lessonCount: course.lessonsCount ?? 0,
       });
 
       this.form.patchValue({
@@ -340,5 +333,15 @@ export class ManageBasicsComponent implements OnInit, OnDestroy {
       }),
     );
     this.builder.setTitle(raw.title.trim());
+    this.manageContext.patchLoadedCourse({
+      title: raw.title.trim(),
+      description: raw.description.trim(),
+      imageUrl: raw.imageUrl.trim(),
+      videoUrl: raw.videoUrl.trim(),
+      language: raw.language,
+      level: raw.level,
+      category: raw.category,
+      subcategory: raw.subcategory.trim(),
+    });
   }
 }

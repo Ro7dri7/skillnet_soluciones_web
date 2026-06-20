@@ -1,5 +1,6 @@
+<!-- Desktop sidebar -->
 <aside
-  class="relative z-[1020] flex h-screen shrink-0 flex-col overflow-hidden border-r border-white/10 bg-skillnet-dark text-white/70 transition-[width] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+  class="relative z-[1020] hidden h-screen shrink-0 flex-col overflow-hidden border-r border-white/10 bg-skillnet-dark text-white/70 transition-[width] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] lg:flex"
   [class.w-[72px]]="!expanded()"
   [class.w-64]="expanded()"
   (mouseenter)="onMouseEnter()"
@@ -26,45 +27,94 @@
     }
   </div>
 
-  <nav class="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-    @for (item of navItems(); track item.label) {
-      @if (item.route) {
-        <a
-          [routerLink]="item.route"
-          routerLinkActive="border-l-4 border-skillnet-sky bg-white/5 font-semibold !text-skillnet-sky"
-          [routerLinkActiveOptions]="{ exact: item.route.includes('/dashboard/') }"
-          [title]="item.label"
-          class="mb-1 flex w-full items-center rounded-r-lg py-2.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-          [class.justify-center]="!expanded()"
-          [class.gap-3]="expanded()"
-          [class.pl-4]="expanded()"
-          [class.pr-3]="expanded()"
-          [class.px-0]="!expanded()"
-        >
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center">
-            <i [class]="item.icon + ' text-[20px] leading-none'"></i>
-          </span>
-          @if (expanded()) {
-            <span class="truncate text-sm">{{ item.label }}</span>
+  <nav class="flex-1 overflow-x-hidden overflow-y-auto px-2 py-4">
+    @if (useSectionLayout()) {
+      @for (section of sidebarSections(); track section.id) {
+        <div class="mb-1" [attr.id]="'sidebar-section-' + section.id">
+          <button
+            type="button"
+            (click)="toggleSection(section.id)"
+            class="flex w-full items-center justify-between rounded-xl py-2.5 transition-all"
+            [class.justify-center]="!expanded()"
+            [class.px-2]="!expanded()"
+            [class.px-4]="expanded()"
+            [class.bg-skillnet-sky/10]="isSectionActive(section) && !isSectionOpen(section.id)"
+            [class.text-skillnet-sky]="isSectionActive(section)"
+            [class.text-white]="!isSectionActive(section)"
+            [class.hover:bg-white/5]="!isSectionActive(section)"
+            [title]="section.label"
+          >
+            <span
+              class="flex items-center gap-3 text-[15px]"
+              [class.justify-center]="!expanded()"
+            >
+              <i [class]="section.icon + ' text-xl'"></i>
+              @if (expanded()) {
+                <span class="font-medium">{{ section.label }}</span>
+              }
+            </span>
+            @if (expanded()) {
+              <i
+                [class]="
+                  'text-lg transition-transform ' +
+                  (isSectionOpen(section.id) ? 'ri-arrow-down-s-line text-skillnet-sky' : 'ri-arrow-right-s-line text-white')
+                "
+              ></i>
+            }
+          </button>
+
+          @if (isSectionOpen(section.id) && expanded()) {
+            <div class="relative mt-1">
+              <div class="absolute bottom-4 left-[23px] top-0 w-px bg-white/10"></div>
+              @for (item of section.items; track item.id) {
+                <div class="relative" [attr.id]="'sidebar-item-' + item.id">
+                  <div class="absolute left-[23px] top-[18px] h-px w-4 bg-white/10"></div>
+                  @if (item.route) {
+                    <a
+                      [routerLink]="item.route"
+                      class="block w-full py-2 pl-12 pr-4 text-left text-[13px] transition-all hover:text-skillnet-sky"
+                      [class.text-skillnet-sky]="isItemActive(item)"
+                      [class.font-semibold]="isItemActive(item)"
+                      [class.bg-white/5]="isItemActive(item)"
+                      [class.text-white]="!isItemActive(item)"
+                    >
+                      {{ item.label }}
+                    </a>
+                  }
+                </div>
+              }
+            </div>
           }
-        </a>
-      } @else {
-        <a
-          [href]="item.href ?? '#'"
-          [title]="item.label"
-          class="mb-1 flex w-full items-center rounded-lg py-2.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-          [class.justify-center]="!expanded()"
-          [class.gap-3]="expanded()"
-          [class.px-3]="expanded()"
-          [class.px-0]="!expanded()"
-        >
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center">
-            <i [class]="item.icon + ' text-[20px] leading-none'"></i>
-          </span>
-          @if (expanded()) {
-            <span class="truncate text-sm">{{ item.label }}</span>
+        </div>
+      }
+    } @else {
+      @for (section of sidebarSections(); track section.id) {
+        @for (item of section.items; track item.id) {
+          @if (item.route) {
+            <a
+              [routerLink]="item.route"
+              [title]="item.label"
+              class="mb-1 flex w-full items-center rounded-r-lg py-2.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              [class.justify-center]="!expanded()"
+              [class.gap-3]="expanded()"
+              [class.pl-4]="expanded()"
+              [class.pr-3]="expanded()"
+              [class.px-0]="!expanded()"
+              [class.border-l-4]="isItemActive(item)"
+              [class.border-skillnet-sky]="isItemActive(item)"
+              [class.bg-white/5]="isItemActive(item)"
+              [class.font-semibold]="isItemActive(item)"
+              [class.!text-skillnet-sky]="isItemActive(item)"
+            >
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center">
+                <i class="ri-arrow-right-s-line text-[20px] leading-none"></i>
+              </span>
+              @if (expanded()) {
+                <span class="truncate text-sm">{{ item.label }}</span>
+              }
+            </a>
           }
-        </a>
+        }
       }
     }
   </nav>
@@ -86,13 +136,8 @@
           class="flex flex-1 items-center justify-center rounded-md py-1 transition-all"
           [class.bg-skillnet-sky]="authService.currentUser()?.role === 'student'"
           [class.text-skillnet-dark]="authService.currentUser()?.role === 'student'"
-          [class.shadow-md]="authService.currentUser()?.role === 'student'"
-          [class.shadow-skillnet-sky/20]="authService.currentUser()?.role === 'student'"
           [class.text-white/80]="authService.currentUser()?.role !== 'student'"
-          [class.hover:bg-white/10]="authService.currentUser()?.role !== 'student'"
-          [class.hover:text-white]="authService.currentUser()?.role !== 'student'"
           title="Vista Estudiante"
-          [attr.aria-pressed]="authService.currentUser()?.role === 'student'"
         >
           <i class="ri-user-line text-base"></i>
         </button>
@@ -147,3 +192,123 @@
     </button>
   </div>
 </aside>
+
+<!-- Mobile bottom navigation -->
+@if (useSectionLayout()) {
+  <nav
+    class="fixed bottom-0 left-0 right-0 z-[1020] flex h-[65px] w-full items-center justify-around border-t border-white/10 bg-black px-2 lg:hidden"
+  >
+    @for (section of sidebarSections(); track section.id) {
+      <div class="relative flex flex-1 justify-center">
+        <button
+          type="button"
+          (click)="toggleMobileSection(section.id)"
+          class="flex items-center justify-center rounded-xl p-3 transition-all"
+          [class.bg-skillnet-sky/10]="isSectionActive(section)"
+          [class.text-skillnet-sky]="isSectionActive(section)"
+          [class.text-white]="!isSectionActive(section)"
+          [class.hover:bg-white/5]="!isSectionActive(section)"
+          [title]="section.label"
+        >
+          <i [class]="section.icon + ' text-[24px]'"></i>
+        </button>
+
+        @if (mobileOpenSection() === section.id) {
+          <div class="fixed inset-0 z-40 bg-black/40" (click)="closeMobileMenu()"></div>
+          <div
+            class="fixed bottom-[68px] right-4 z-50 flex max-h-[60vh] w-[240px] flex-col gap-0.5 overflow-y-auto rounded-xl border border-white/10 bg-[#1a1a1a] p-1.5 shadow-2xl"
+          >
+            <div
+              class="mb-0.5 border-b border-white/10 px-2 py-1.5 text-center text-[10px] font-bold uppercase text-white/50"
+            >
+              {{ section.label }}
+            </div>
+            @for (item of section.items; track item.id) {
+              @if (item.route) {
+                <a
+                  [routerLink]="item.route"
+                  (click)="closeMobileMenu()"
+                  class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition-colors"
+                  [class.bg-skillnet-sky]="isItemActive(item)"
+                  [class.font-bold]="isItemActive(item)"
+                  [class.text-skillnet-dark]="isItemActive(item)"
+                  [class.text-white]="!isItemActive(item)"
+                  [class.hover:bg-white/10]="!isItemActive(item)"
+                >
+                  {{ item.label }}
+                </a>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (showRoleSwitcher()) {
+      <div class="relative flex flex-1 justify-center">
+        <button
+          type="button"
+          (click)="toggleMobileSection('role_switcher')"
+          class="flex items-center justify-center rounded-xl p-3 transition-all"
+          [class.bg-skillnet-sky/10]="mobileOpenSection() === 'role_switcher'"
+          [class.text-skillnet-sky]="mobileOpenSection() === 'role_switcher'"
+          [class.text-white]="mobileOpenSection() !== 'role_switcher'"
+          title="Cambiar Perfil"
+        >
+          <i class="ri-swap-box-line text-[24px]"></i>
+        </button>
+
+        @if (mobileOpenSection() === 'role_switcher') {
+          <div class="fixed inset-0 z-40 bg-black/40" (click)="closeMobileMenu()"></div>
+          <div
+            class="fixed bottom-[68px] right-4 z-50 flex w-[240px] flex-col gap-1 rounded-xl border border-white/10 bg-[#1a1a1a] p-1.5 shadow-2xl"
+          >
+            <div
+              class="mb-0.5 border-b border-white/10 px-1 pb-1.5 text-center text-[10px] font-bold uppercase text-white/50"
+            >
+              Selecciona un perfil
+            </div>
+            <button
+              type="button"
+              (click)="switchToRole('student')"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all"
+              [class.bg-skillnet-sky]="authService.currentUser()?.role === 'student'"
+              [class.font-bold]="authService.currentUser()?.role === 'student'"
+              [class.text-skillnet-dark]="authService.currentUser()?.role === 'student'"
+              [class.text-white]="authService.currentUser()?.role !== 'student'"
+            >
+              <i class="ri-user-line text-base"></i>
+              Modo Estudiante
+            </button>
+            <button
+              type="button"
+              (click)="switchToRole('infoproductor')"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all"
+              [class.bg-skillnet-sky]="authService.currentUser()?.role === 'infoproductor'"
+              [class.font-bold]="authService.currentUser()?.role === 'infoproductor'"
+              [class.text-skillnet-dark]="authService.currentUser()?.role === 'infoproductor'"
+              [class.text-white]="authService.currentUser()?.role !== 'infoproductor'"
+            >
+              <i class="ri-store-2-line text-base"></i>
+              Modo Infoproductor
+            </button>
+            @if (isAdminUser()) {
+              <button
+                type="button"
+                (click)="switchToRole('admin')"
+                class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all"
+                [class.bg-skillnet-sky]="authService.currentUser()?.role === 'admin'"
+                [class.font-bold]="authService.currentUser()?.role === 'admin'"
+                [class.text-skillnet-dark]="authService.currentUser()?.role === 'admin'"
+                [class.text-white]="authService.currentUser()?.role !== 'admin'"
+              >
+                <i class="ri-shield-star-line text-base"></i>
+                Modo Admin
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </nav>
+}

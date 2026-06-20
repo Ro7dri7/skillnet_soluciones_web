@@ -87,4 +87,17 @@ public class JwtService {
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
+
+    public String generateReferralToken(Long courseId, Long professorId) {
+        long referralExpirationMs = 30L * 24 * 60 * 60 * 1000;
+        return Jwts.builder()
+                .subject("referral")
+                .claim("courseId", courseId)
+                .claim("professorId", professorId)
+                .claim("type", "referral")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + referralExpirationMs))
+                .signWith(signingKey())
+                .compact();
+    }
 }

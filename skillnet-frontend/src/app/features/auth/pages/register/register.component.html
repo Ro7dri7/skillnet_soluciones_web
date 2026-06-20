@@ -47,6 +47,10 @@
               Inicia sesión
             </a>
           </p>
+
+          @if (googleSignInEnabled) {
+            <ng-container *ngTemplateOutlet="googleRegisterBlock"></ng-container>
+          }
         </div>
       }
       @case ('student') {
@@ -245,5 +249,25 @@
         <i class="ri-arrow-right-line"></i>
       }
     </button>
+
+    @if (googleSignInEnabled) {
+      <ng-container *ngTemplateOutlet="googleRegisterBlock"></ng-container>
+    }
   </form>
+</ng-template>
+
+<ng-template #googleRegisterBlock>
+  <div class="my-4 text-center text-sm font-extrabold text-skillnet-dark">o</div>
+  <div class="flex w-full justify-center">
+    <asl-google-signin-button
+      type="standard"
+      size="large"
+      text="signup_with"
+      theme="outline"
+      [width]="360"
+    ></asl-google-signin-button>
+  </div>
+  <p class="mt-2 text-center text-[11px] leading-relaxed text-gray-500">
+    Al continuar con Google aceptas los Términos de Uso y Políticas de Privacidad de SkillNet.
+  </p>
 </ng-template>

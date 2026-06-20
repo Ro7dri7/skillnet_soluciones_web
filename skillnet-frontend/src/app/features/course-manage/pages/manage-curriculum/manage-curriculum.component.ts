@@ -7,10 +7,12 @@ import { CurriculumWorkspaceComponent } from '../../components/curriculum-worksp
   standalone: true,
   imports: [CurriculumWorkspaceComponent],
   template: `
-    @if (courseId()) {
-      <app-curriculum-workspace [initialCourseId]="courseId()!" />
+    @if (courseId(); as id) {
+      <app-curriculum-workspace [initialCourseId]="id" />
     } @else {
-      <app-curriculum-workspace />
+      <div class="flex min-h-[50vh] items-center justify-center p-8">
+        <p class="text-sm text-gray-500">Cargando producto…</p>
+      </div>
     }
   `,
 })

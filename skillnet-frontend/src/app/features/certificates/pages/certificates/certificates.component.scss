@@ -1,0 +1,32 @@
+@import '../../../admin/pages/admin-users/admin-users.component.scss';
+
+.summary {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #4a6fa5;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #eef2ff;
+  border-radius: 12px;
+
+  p {
+    margin: 0 0 12px;
+    color: #4a6fa5;
+  }
+
+  a {
+    color: #145bff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+}
+
+a {
+  color: #145bff;
+  font-weight: 600;
+  text-decoration: none;
+}

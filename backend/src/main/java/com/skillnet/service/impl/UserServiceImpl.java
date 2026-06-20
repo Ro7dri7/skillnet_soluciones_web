@@ -1,8 +1,10 @@
 package com.skillnet.service.impl;
 
+import com.skillnet.domain.AuditAction;
 import com.skillnet.mapper.UserMapper;
 import com.skillnet.persistence.entity.core.User;
 import com.skillnet.persistence.repository.UserRepository;
+import com.skillnet.service.AuditService;
 import com.skillnet.service.UserService;
 import com.skillnet.web.dto.request.UserRequestDTO;
 import com.skillnet.web.dto.response.UserResponseDTO;
@@ -16,17 +18,26 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final AuditService auditService;
 
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, AuditService auditService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.auditService = auditService;
     }
 
     @Override
     @Transactional
     public UserResponseDTO create(UserRequestDTO dto) {
         User user = userMapper.toEntity(dto);
-        return userMapper.toResponseDTO(userRepository.save(user));
+        User saved = userRepository.save(user);
+        auditService.logAction(
+                AuditAction.REGISTER_USER,
+                AuditAction.ENTITY_USER,
+                saved.getId(),
+                saved.getEmail(),
+                "Registro de cuenta: " + saved.getEmail());
+        return userMapper.toResponseDTO(saved);
     }
 
     @Override
@@ -34,13 +45,28 @@ public class UserServiceImpl implements UserService {
     public Optional<UserResponseDTO> update(Long id, UserRequestDTO dto) {
         return userRepository.findById(id).map(existing -> {
             userMapper.applyToEntity(existing, dto, false);
-            return userMapper.toResponseDTO(userRepository.save(existing));
+            User saved = userRepository.save(existing);
+            auditService.logAction(
+                    AuditAction.UPDATE_PROFILE,
+                    AuditAction.ENTITY_USER,
+                    saved.getId(),
+                    saved.getEmail(),
+                    "Usuario actualizado (admin/API): " + saved.getEmail());
+            return userMapper.toResponseDTO(saved);
         });
     }
 
     @Override
     @Transactional
     public void deleteById(Long id) {
+        userRepository
+                .findById(id)
+                .ifPresent(user -> auditService.logAction(
+                        AuditAction.DELETE_USER,
+                        AuditAction.ENTITY_USER,
+                        user.getId(),
+                        user.getEmail(),
+                        "Cuenta eliminada: " + user.getEmail()));
         userRepository.deleteById(id);
     }
 

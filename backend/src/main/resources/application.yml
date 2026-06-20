@@ -1,6 +1,8 @@
 spring:
   application:
     name: skillnet-backend
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/skillnet_db
     username: postgres
@@ -23,12 +25,29 @@ spring:
       max-file-size: 100MB
       max-request-size: 105MB
 
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 skillnet:
   jwt:
     secret: ${SKILLNET_JWT_SECRET:skillnet-dev-jwt-secret-key-minimum-32bytes!}
     expiration-ms: ${SKILLNET_JWT_EXPIRATION_MS:86400000}
   google:
     client-id: ${SKILLNET_GOOGLE_CLIENT_ID:226869771343-duthig8qnupr5j7u1l61bkl95hmc284n.apps.googleusercontent.com}
+  frontend:
+    base-url: ${SKILLNET_FRONTEND_BASE_URL:http://localhost:4200}
+  mail:
+    enabled: ${SKILLNET_MAIL_ENABLED:false}
+    from: ${SKILLNET_MAIL_FROM:noreply@skillnet.com}
   media:
     storage: ${SKILLNET_MEDIA_STORAGE:local}
     local-dir: ${SKILLNET_MEDIA_LOCAL_DIR:uploads/media}
@@ -38,6 +57,20 @@ skillnet:
     s3-access-key: ${AWS_ACCESS_KEY_ID:}
     s3-secret-key: ${AWS_SECRET_ACCESS_KEY:}
     s3-public-base-url: ${SKILLNET_S3_PUBLIC_BASE_URL:}
+  gamma:
+    api-key: ${GAMMA_API_KEY:}
+    dev-mock: ${GAMMA_DEV_MOCK:true}
+  elevenlabs:
+    api-key: ${ELEVENLABS_API_KEY:}
+    voice-person1: ${ELEVENLABS_VOICE_PERSON1:JBFqnCBsd6RMkjVDRZzb}
+    voice-person2: ${ELEVENLABS_VOICE_PERSON2:cgSgspJ2msm6clMCkdW9}
+    model-id: ${ELEVENLABS_MODEL_ID:eleven_multilingual_v2}
+  openrouter:
+    api-key: ${OPENROUTER_API_KEY:}
+    model: ${OPENROUTER_MODEL:google/gemini-2.5-flash-lite}
+    model-fallback: ${OPENROUTER_MODEL_FALLBACK:openrouter/auto}
+    referer: ${SKILLNET_FRONTEND_BASE_URL:http://localhost:4200}
+    title: SkillNet
 
 stripe:
   api:

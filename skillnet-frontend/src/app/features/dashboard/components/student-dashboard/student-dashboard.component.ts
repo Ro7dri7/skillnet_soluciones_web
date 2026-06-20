@@ -13,6 +13,7 @@ import {
   StudentLearningCourse,
 } from '../../../../shared/models/analytics.model';
 import { User } from '../../../../shared/models/auth.model';
+import { courseLearnRouterLink } from '../../../../shared/utils/course-slug.util';
 
 export type CategoryFilter = 'Todas' | 'Tecnología' | 'Finanzas' | 'Marketing' | 'Diseño';
 export type LearningTab = 'todos' | 'videocursos' | 'ebooks' | 'audiolibros';
@@ -241,9 +242,9 @@ export class StudentDashboardComponent {
     el.scrollBy({ left: direction === 'left' ? -320 : 320, behavior: 'smooth' });
   }
 
-  courseLearnLink(course: StudentLearningCourse): string[] {
+  courseLearnLink(course: StudentLearningCourse): (string | number)[] {
     const slug = course.slug?.trim();
-    return slug ? ['/marketplace/course', slug, 'learn'] : ['/mis-cursos'];
+    return slug ? courseLearnRouterLink(slug) : ['/mis-cursos'];
   }
 
   learningActionLabel(progress: number): string {
