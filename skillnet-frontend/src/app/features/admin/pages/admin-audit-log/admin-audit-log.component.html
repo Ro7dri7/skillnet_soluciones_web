@@ -1,7 +1,7 @@
 <section class="page-head">
   <h1>Auditoría maestra</h1>
   <p>
-    Trazabilidad completa: quién ejecutó la acción, fecha/hora (UTC), IP, navegador y detalle del evento.
+    Trazabilidad completa: quién ejecutó la acción, fecha/hora (Lima, Perú), IP, navegador y detalle del evento.
   </p>
 </section>
 
@@ -84,7 +84,7 @@
     <table>
       <thead>
         <tr>
-          <th>Fecha / Hora (UTC)</th>
+          <th>Fecha / Hora (Lima)</th>
           <th>Usuario</th>
           <th>Acción</th>
           <th>Entidad afectada</th>
@@ -95,7 +95,7 @@
       <tbody>
         @for (entry of entries(); track entry.id) {
           <tr>
-            <td>{{ entry.timestamp | date: 'dd/MM/yyyy HH:mm:ss' : 'UTC' }}</td>
+            <td>{{ entry.timestamp | date: 'dd/MM/yyyy HH:mm:ss' : 'America/Lima' }}</td>
             <td>{{ userLabel(entry) }}</td>
             <td>
               <span class="action-badge">{{ actionLabel(entry.action) }}</span>

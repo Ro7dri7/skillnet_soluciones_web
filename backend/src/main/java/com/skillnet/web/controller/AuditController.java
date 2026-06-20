@@ -6,7 +6,7 @@ import com.skillnet.web.dto.response.AuditLogResponseDTO;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AuditController {
+
+    /** Zona horaria de negocio (Perú); filtros por fecha usan inicio/fin de día en Lima. */
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Lima");
 
     private final AuditService auditService;
 
@@ -56,9 +59,9 @@ public class AuditController {
 
     private AuditLogFilter buildFilter(String email, String action, LocalDate startDate, LocalDate endDate) {
         Instant startInstant =
-                startDate != null ? startDate.atStartOfDay().toInstant(ZoneOffset.UTC) : null;
+                startDate != null ? startDate.atStartOfDay(BUSINESS_ZONE).toInstant() : null;
         Instant endInstant =
-                endDate != null ? endDate.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC) : null;
+                endDate != null ? endDate.atTime(LocalTime.MAX).atZone(BUSINESS_ZONE).toInstant() : null;
 
         return AuditLogFilter.builder()
                 .email(email)

@@ -16,7 +16,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditServiceImpl implements AuditService {
 
     private static final int EXPORT_LIMIT = 10_000;
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Lima");
     private static final DateTimeFormatter CSV_TIMESTAMP =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(BUSINESS_ZONE);
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;

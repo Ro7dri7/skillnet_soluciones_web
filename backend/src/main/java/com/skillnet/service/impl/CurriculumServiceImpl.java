@@ -28,6 +28,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.security.access.AccessDeniedException;
@@ -214,6 +215,7 @@ public class CurriculumServiceImpl implements CurriculumService {
             String primaryType = primaryTypeFromBlocks(normalizedBlocks);
             lesson.setContent(buildLessonContentFromBlocks(normalizedBlocks, primaryType));
             lesson.setContentType("quiz".equals(primaryType) ? "quiz" : "lesson");
+            syncLessonResourceUrlFromBlocks(lesson, normalizedBlocks);
         } else {
             String uiContentType = request.getContentType() != null && !request.getContentType().isBlank()
                     ? normalizeUiContentType(request.getContentType())
@@ -367,26 +369,69 @@ public class CurriculumServiceImpl implements CurriculumService {
                 uiType,
                 textContent,
                 quizData,
-                lesson.getResourceUrl() != null ? lesson.getResourceUrl() : "");
+                lesson.getResourceUrl() != null ? lesson.getResourceUrl() : "",
+                lesson.getContentType());
 
         return new LessonContentPayload(uiType, textContent, quizData, blocks);
     }
 
     private JsonNode ensureBlocksArray(
-            JsonNode blocks, String uiType, String textContent, JsonNode quizData, String resourceUrl) {
-        if (blocks != null && blocks.isArray()) {
+            JsonNode blocks,
+            String uiType,
+            String textContent,
+            JsonNode quizData,
+            String resourceUrl,
+            String lessonContentType) {
+        ArrayNode working;
+        if (blocks != null && blocks.isArray() && !blocks.isEmpty()) {
+            working = objectMapper.createArrayNode();
+            blocks.forEach(working::add);
+        } else {
+            ObjectNode block = objectMapper.createObjectNode();
+            block.put("id", "legacy-1");
+            block.put("contentType", uiType);
+            block.put("orderIndex", 0);
+            block.put("resourceUrl", resourceUrl != null ? resourceUrl : "");
+            block.put("textContent", textContent != null ? textContent : "");
+            if (quizData != null && !quizData.isNull()) {
+                block.set("quizData", quizData);
+            }
+            working = objectMapper.createArrayNode().add(block);
+        }
+        return mergeStandaloneResourceUrl(working, resourceUrl, uiType, lessonContentType);
+    }
+
+    /**
+     * Si el audio/PDF quedó solo en {@code lesson.resource_url} (p. ej. adjunto IA) pero los bloques
+     * JSON no lo incluyen, añade un bloque de media para que el alumno pueda reproducirlo.
+     */
+    private ArrayNode mergeStandaloneResourceUrl(
+            ArrayNode blocks, String resourceUrl, String uiType, String lessonContentType) {
+        if (resourceUrl == null || resourceUrl.isBlank()) {
             return blocks;
         }
-        ObjectNode block = objectMapper.createObjectNode();
-        block.put("id", "legacy-1");
-        block.put("contentType", uiType);
-        block.put("orderIndex", 0);
-        block.put("resourceUrl", resourceUrl != null ? resourceUrl : "");
-        block.put("textContent", textContent != null ? textContent : "");
-        if (quizData != null && !quizData.isNull()) {
-            block.set("quizData", quizData);
+        String mediaType = inferTypeFromUrl(resourceUrl);
+        if ("audio".equalsIgnoreCase(lessonContentType) || "audio".equalsIgnoreCase(uiType)) {
+            mediaType = "audio";
         }
-        return objectMapper.createArrayNode().add(block);
+        if (!Set.of("audio", "pdf", "video", "image").contains(mediaType)) {
+            return blocks;
+        }
+        for (JsonNode block : blocks) {
+            String blockType = block.path("contentType").asText("").trim();
+            if (mediaType.equalsIgnoreCase(blockType)
+                    && !block.path("resourceUrl").asText("").isBlank()) {
+                return blocks;
+            }
+        }
+        ObjectNode mediaBlock = objectMapper.createObjectNode();
+        mediaBlock.put("id", "lesson-" + mediaType);
+        mediaBlock.put("contentType", mediaType);
+        mediaBlock.put("orderIndex", blocks.size());
+        mediaBlock.put("resourceUrl", resourceUrl);
+        mediaBlock.put("textContent", "");
+        blocks.add(mediaBlock);
+        return blocks;
     }
 
     private String primaryTypeFromBlocks(JsonNode blocks) {
@@ -471,6 +516,23 @@ public class CurriculumServiceImpl implements CurriculumService {
             return "video";
         }
         return raw.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void syncLessonResourceUrlFromBlocks(Lesson lesson, JsonNode blocks) {
+        if (blocks == null || !blocks.isArray()) {
+            return;
+        }
+        for (JsonNode block : blocks) {
+            String resourceUrl = block.path("resourceUrl").asText("").trim();
+            if (resourceUrl.isBlank()) {
+                continue;
+            }
+            String contentType = block.path("contentType").asText("").trim().toLowerCase(Locale.ROOT);
+            if (Set.of("audio", "pdf", "video", "image").contains(contentType)) {
+                lesson.setResourceUrl(resourceUrl);
+                return;
+            }
+        }
     }
 
     private String inferTypeFromUrl(String url) {

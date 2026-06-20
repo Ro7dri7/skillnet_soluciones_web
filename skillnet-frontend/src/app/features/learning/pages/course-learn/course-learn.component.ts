@@ -1,13 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CourseLearnPage,
@@ -46,7 +37,6 @@ export class CourseLearnComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly studentService = inject(StudentService);
   private readonly certificateService = inject(CertificateService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   private readonly contentAreaRef = viewChild<ElementRef<HTMLElement>>('contentAreaRef');
 
@@ -60,7 +50,6 @@ export class CourseLearnComponent implements OnInit {
   readonly completedLessonIds = signal<Set<number>>(new Set());
   readonly savingProgress = signal(false);
   readonly courseCompletedBanner = signal(false);
-  readonly certificateCode = signal<string | null>(null);
 
   private courseSlug = '';
   private courseFormat: string | null = null;
@@ -252,8 +241,18 @@ export class CourseLearnComponent implements OnInit {
   }
 
   lessonBlocks(lesson: LearnLesson): ContentBlockDTO[] {
+    const blocks = this.rawLessonBlocks(lesson);
+    return this.ensureMediaBlockFromLessonResource(lesson, blocks);
+  }
+
+  private rawLessonBlocks(lesson: LearnLesson): ContentBlockDTO[] {
     if (lesson.blocks?.length) {
-      return [...lesson.blocks].sort((a, b) => a.orderIndex - b.orderIndex);
+      return [...lesson.blocks]
+        .map((block) => ({
+          ...block,
+          contentType: this.normalizeContentType(block.contentType),
+        }))
+        .sort((a, b) => a.orderIndex - b.orderIndex);
     }
     return [
       {
@@ -267,7 +266,70 @@ export class CourseLearnComponent implements OnInit {
     ];
   }
 
+  /** Audio/PDF adjunto solo en resourceUrl (p. ej. podcast IA) sin bloque en JSON. */
+  private ensureMediaBlockFromLessonResource(
+    lesson: LearnLesson,
+    blocks: ContentBlockDTO[],
+  ): ContentBlockDTO[] {
+    const resourceUrl = lesson.resourceUrl?.trim();
+    if (!resourceUrl) {
+      return blocks;
+    }
+
+    const mediaType = this.inferMediaTypeFromUrl(resourceUrl, lesson.contentType);
+    if (!mediaType) {
+      return blocks;
+    }
+
+    const hasMediaBlock = blocks.some(
+      (block) => block.contentType === mediaType && block.resourceUrl?.trim(),
+    );
+    if (hasMediaBlock) {
+      return blocks;
+    }
+
+    return [
+      ...blocks,
+      {
+        id: `lesson-${mediaType}-${lesson.id}`,
+        contentType: mediaType,
+        resourceUrl,
+        textContent: '',
+        orderIndex: blocks.length,
+      },
+    ];
+  }
+
+  private inferMediaTypeFromUrl(
+    url: string,
+    lessonContentType: string,
+  ): ContentBlockDTO['contentType'] | null {
+    const normalizedLessonType = lessonContentType?.trim().toLowerCase();
+    if (normalizedLessonType === 'audio' || normalizedLessonType === 'podcast') {
+      return 'audio';
+    }
+
+    const lower = url.toLowerCase();
+    if (/\.(mp3|wav|ogg|m4a)(\?|$)/i.test(lower) || lower.includes('/podcast-ai/')) {
+      return 'audio';
+    }
+    if (lower.endsWith('.pdf')) {
+      return 'pdf';
+    }
+    if (/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(lower)) {
+      return 'image';
+    }
+    if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(lower) || lower.includes('video')) {
+      return 'video';
+    }
+    return null;
+  }
+
   normalizeContentType(value: string): ContentBlockDTO['contentType'] {
+    const normalized = value?.trim().toLowerCase();
+    if (normalized === 'podcast') {
+      return 'audio';
+    }
     const allowed: ContentBlockDTO['contentType'][] = [
       'text',
       'image',
@@ -276,8 +338,8 @@ export class CourseLearnComponent implements OnInit {
       'quiz',
       'audio',
     ];
-    return allowed.includes(value as ContentBlockDTO['contentType'])
-      ? (value as ContentBlockDTO['contentType'])
+    return allowed.includes(normalized as ContentBlockDTO['contentType'])
+      ? (normalized as ContentBlockDTO['contentType'])
       : 'text';
   }
 
@@ -285,12 +347,9 @@ export class CourseLearnComponent implements OnInit {
     return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url) || url.includes('video');
   }
 
-  trustedResourceUrl(url: string | null | undefined): SafeResourceUrl | null {
-    const resolved = mediaBackendUrl(url);
-    if (!resolved) {
-      return null;
-    }
-    return this.sanitizer.bypassSecurityTrustResourceUrl(resolved);
+  isPodcastFormat(): boolean {
+    const fmt = this.courseFormat?.trim().toLowerCase();
+    return fmt === 'podcast' || fmt === 'audiobook';
   }
 
   mediaUrl(url: string | null | undefined): string {
@@ -339,17 +398,17 @@ export class CourseLearnComponent implements OnInit {
   }
 
   private showCourseCompletionBanner(): void {
-    const courseId = this.page()?.courseId;
     this.courseCompletedBanner.set(true);
+    if (this.isPodcastFormat()) {
+      return;
+    }
+    const courseId = this.page()?.courseId;
     if (courseId == null) {
       return;
     }
     this.certificateService.check(courseId).subscribe({
-      next: (check) => {
-        const file = check.certificate?.certificateFile;
-        if (file?.startsWith('auto:')) {
-          this.certificateCode.set(file.slice(5));
-        }
+      next: () => {
+        // El código no se muestra en pantalla; el alumno lo ve en /certificates.
       },
     });
   }
