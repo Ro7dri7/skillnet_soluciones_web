@@ -10,6 +10,7 @@ import {
 import { Subscription, filter } from 'rxjs';
 import { AuthNavbarComponent } from '../../../../core/layout/auth-navbar/auth-navbar.component';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AuthResponse } from '../../../../shared/models/auth.model';
 import {
   getPasswordRequirements,
   passwordMeetsRequirements,
@@ -155,7 +156,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         infoproductor: true,
       })
       .subscribe({
-        next: () => void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser()),
+        next: (response) => this.handleAuthResponse(response, email),
         error: (err) => {
           this.error.set(messageFromHttpError(err, 'Error al crear la cuenta. Intenta nuevamente.'));
           this.isLoading.set(false);
@@ -179,11 +180,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.error.set('');
 
     this.authService.loginWithGoogle(user.idToken, this.googleActiveRole()).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        this.googleRegisterInProgress = false;
-        void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser());
-      },
+      next: (response) => this.handleAuthResponse(response, user.email ?? response.user?.email ?? ''),
       error: (err) => {
         this.error.set(
           messageFromHttpError(err, 'Error al registrarse con Google. Intenta nuevamente.'),
@@ -192,6 +189,18 @@ export class RegisterComponent implements OnInit, OnDestroy {
         this.googleRegisterInProgress = false;
       },
     });
+  }
+
+  private handleAuthResponse(response: AuthResponse, email: string): void {
+    if (this.authService.isVerificationPending(response)) {
+      this.isLoading.set(false);
+      this.googleRegisterInProgress = false;
+      this.authService.redirectToEmailVerification(email);
+      return;
+    }
+    this.isLoading.set(false);
+    this.googleRegisterInProgress = false;
+    void this.router.navigateByUrl(this.authService.dashboardPathForCurrentUser());
   }
 
   private generateUsername(email: string): string {

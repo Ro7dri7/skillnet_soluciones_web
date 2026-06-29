@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { OwnedCoursesService } from '../../../../core/services/owned-courses.service';
 import { User } from '../../../../shared/models/auth.model';
 import { MARKETPLACE_CATEGORIES, OFFER_FORMATS } from '../../data/categories.data';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
@@ -17,6 +18,7 @@ import { courseToMarketplace } from '../../../../shared/utils/marketplace-course
 export class MarketplaceComponent implements OnInit, OnDestroy {
   private readonly courseService = inject(CourseService);
   private readonly authService = inject(AuthService);
+  private readonly ownedCourses = inject(OwnedCoursesService);
   private readonly router = inject(Router);
 
   private heroAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -33,6 +35,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   readonly user = this.authService.getCurrentUser();
 
   ngOnInit(): void {
+    this.ownedCourses.refresh();
     this.loadCourses();
     this.scheduleHeroAdvance();
   }

@@ -16,6 +16,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtService {
 
+    private static final String PENDING_2FA_TYPE = "pending_2fa";
+    private static final long PENDING_2FA_EXPIRATION_MS = 10L * 60 * 1000;
+
     private final String secret;
     private final long expirationMs;
 
@@ -24,6 +27,33 @@ public class JwtService {
             @Value("${skillnet.jwt.expiration-ms}") long expirationMs) {
         this.secret = secret;
         this.expirationMs = expirationMs;
+    }
+
+    public String generatePending2FaToken(Long userId) {
+        return Jwts.builder()
+                .subject("pending-2fa")
+                .claim("userId", userId)
+                .claim("type", PENDING_2FA_TYPE)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + PENDING_2FA_EXPIRATION_MS))
+                .signWith(signingKey())
+                .compact();
+    }
+
+    public Long resolvePending2FaUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        Object type = claims.get("type");
+        if (type == null || !PENDING_2FA_TYPE.equals(type.toString())) {
+            throw new IllegalArgumentException("Token 2FA inválido");
+        }
+        Object userId = claims.get("userId");
+        if (userId == null) {
+            throw new IllegalArgumentException("Token 2FA sin userId");
+        }
+        if (userId instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(userId.toString());
     }
 
     public String generateToken(CustomUserDetails userDetails) {

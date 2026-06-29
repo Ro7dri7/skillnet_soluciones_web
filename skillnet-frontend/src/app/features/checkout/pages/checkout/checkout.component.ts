@@ -405,9 +405,7 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
       this.cartService.clearCart();
       const paymentId = response.paymentId;
       const query = paymentId != null ? { paymentId: String(paymentId) } : undefined;
-      setTimeout(() => {
-        void this.router.navigate(['/payment/success'], { queryParams: query });
-      }, 800);
+      void this.router.navigate(['/payment/success'], { queryParams: query });
     } catch (err) {
       this.errorMessage.set(messageFromHttpError(err, 'No se pudo procesar el pago con Stripe.'));
     } finally {
@@ -447,11 +445,9 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
       this.paymentSuccess.set(true);
       this.cartService.clearCart();
       const paymentId = response.paymentId;
-      setTimeout(() => {
-        void this.router.navigate(['/payment/success'], {
-          queryParams: paymentId != null ? { paymentId: String(paymentId) } : undefined,
-        });
-      }, 800);
+      void this.router.navigate(['/payment/success'], {
+        queryParams: paymentId != null ? { paymentId: String(paymentId) } : undefined,
+      });
     } catch (err) {
       this.errorMessage.set(messageFromHttpError(err, 'No se pudo procesar el pago.'));
     } finally {

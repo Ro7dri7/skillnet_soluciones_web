@@ -30,17 +30,27 @@ spring:
     port: ${SPRING_MAIL_PORT:587}
     username: ${SPRING_MAIL_USERNAME:}
     password: ${SPRING_MAIL_PASSWORD:}
+    test-connection: ${SKILLNET_MAIL_TEST_CONNECTION:false}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true
+          ssl:
+            trust: ${SPRING_MAIL_HOST:smtp.gmail.com}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
 
 skillnet:
   jwt:
     secret: ${SKILLNET_JWT_SECRET:skillnet-dev-jwt-secret-key-minimum-32bytes!}
     expiration-ms: ${SKILLNET_JWT_EXPIRATION_MS:86400000}
+  security:
+    cors:
+      allowed-origins: ${SKILLNET_SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200}
   google:
     client-id: ${SKILLNET_GOOGLE_CLIENT_ID:226869771343-duthig8qnupr5j7u1l61bkl95hmc284n.apps.googleusercontent.com}
   frontend:
@@ -48,6 +58,7 @@ skillnet:
   mail:
     enabled: ${SKILLNET_MAIL_ENABLED:false}
     from: ${SKILLNET_MAIL_FROM:noreply@skillnet.com}
+    from-name: ${SKILLNET_MAIL_FROM_NAME:SkillNet}
   media:
     storage: ${SKILLNET_MEDIA_STORAGE:local}
     local-dir: ${SKILLNET_MEDIA_LOCAL_DIR:uploads/media}

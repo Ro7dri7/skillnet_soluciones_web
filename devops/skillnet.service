@@ -24,6 +24,8 @@ Environment=AWS_SECRET_ACCESS_KEY=CHANGE_ME
 Environment=SKILLNET_MEDIA_STORAGE=s3
 Environment=SKILLNET_S3_BUCKET=skillnet-media-prod
 Environment=SKILLNET_S3_REGION=us-east-2
+Environment=SKILLNET_FRONTEND_BASE_URL=https://skillnet.com.pe
+Environment=SKILLNET_SECURITY_CORS_ALLOWED_ORIGINS=https://skillnet.com.pe,https://www.skillnet.com.pe,https://main.CHANGE_ME.amplifyapp.com
 
 Environment=SPRING_MAIL_HOST=smtp.gmail.com
 Environment=SPRING_MAIL_PORT=587

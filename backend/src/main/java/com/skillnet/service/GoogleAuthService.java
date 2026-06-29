@@ -12,6 +12,7 @@ import com.skillnet.security.CustomUserDetails;
 import com.skillnet.security.JwtService;
 import com.skillnet.security.RoleAuthorityResolver;
 import com.skillnet.service.UserRoleNormalizer;
+import com.skillnet.service.auth.EmailVerificationService;
 import com.skillnet.web.dto.request.GoogleLoginRequestDTO;
 import com.skillnet.web.dto.response.AuthResponseDTO;
 import com.skillnet.web.dto.response.UserSummaryDTO;
@@ -34,6 +35,7 @@ public class GoogleAuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final EmailVerificationService emailVerificationService;
     private final String googleClientId;
 
     public GoogleAuthService(
@@ -41,11 +43,13 @@ public class GoogleAuthService {
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
             UserMapper userMapper,
+            EmailVerificationService emailVerificationService,
             @Value("${skillnet.google.client-id}") String googleClientId) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.emailVerificationService = emailVerificationService;
         this.googleClientId = googleClientId;
     }
 
@@ -76,6 +80,14 @@ public class GoogleAuthService {
             user.setActiveRole(activeRole);
             user = userRepository.save(user);
         }
+
+        if (emailVerificationService.requiresVerification(user)) {
+            emailVerificationService.sendVerificationCode(user);
+            UserSummaryDTO summary = userMapper.toSummaryDTO(user, activeRole);
+            return AuthResponseDTO.verificationPending(
+                    summary, "Te enviamos un código de verificación a tu correo.");
+        }
+
         CustomUserDetails userDetails = new CustomUserDetails(user, activeRole);
         String jwt = jwtService.generateToken(userDetails, activeRole);
         UserSummaryDTO summary = userMapper.toSummaryDTO(user, activeRole);
@@ -109,7 +121,7 @@ public class GoogleAuthService {
         user.setProfilePicture(pictureUrl);
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setIdentityProvider("google");
-        user.setEmailVerified(true);
+        user.setEmailVerified(false);
         UserRoleNormalizer.applyDualRoleCapabilities(
                 user, normalizeRequestedRole(requestedRole, "student"));
         user.setActive(true);

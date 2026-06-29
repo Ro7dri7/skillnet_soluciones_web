@@ -2,8 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 export function messageFromHttpError(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
-    const body = error.error as { message?: string } | null;
-    if (body?.message) {
+    const body = error.error;
+    if (typeof body === 'string' && body.trim()) {
+      return translateApiMessage(body.trim());
+    }
+    if (body && typeof body === 'object' && 'message' in body && typeof body.message === 'string') {
       return translateApiMessage(body.message);
     }
     if (error.status === 401) {

@@ -11,12 +11,18 @@ export interface User {
   profilePicture?: string;
   firstName?: string;
   lastName?: string;
+  emailVerified?: boolean;
 }
 
 export interface AuthResponse {
   token: string;
   type: string;
   user: User;
+  verificationRequired?: boolean;
+  twoFactorRequired?: boolean;
+  twoFactorToken?: string;
+  twoFactorMethod?: string;
+  message?: string;
 }
 
 export interface LoginRequest {

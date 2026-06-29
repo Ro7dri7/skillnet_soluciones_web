@@ -1,32 +1,85 @@
-<section class="success-card">
+<section class="success-page">
   @if (genericSuccess() && !paymentId()) {
-    <i class="ri-checkbox-circle-fill icon ok"></i>
-    <h1>¡Pago recibido!</h1>
-    <p>Tu compra se está procesando. Recibirás acceso al curso en breve.</p>
+    <div class="success-card">
+      <i class="ri-checkbox-circle-fill icon ok"></i>
+      <h1>¡Pago recibido!</h1>
+      <p>Tu compra se está procesando. Recibirás acceso al curso en breve.</p>
+      <div class="actions">
+        <a routerLink="/mis-cursos" class="btn-primary">Ir a mis infoproductos</a>
+      </div>
+    </div>
   } @else if (error()) {
-    <i class="ri-error-warning-fill icon warn"></i>
-    <h1>Verificación de pago</h1>
-    <p class="error">{{ error() }}</p>
+    <div class="success-card">
+      <i class="ri-error-warning-fill icon warn"></i>
+      <h1>Verificación de pago</h1>
+      <p class="error">{{ error() }}</p>
+    </div>
   } @else if (polling()) {
-    <i class="ri-loader-4-line icon spin"></i>
-    <h1>Confirmando pago…</h1>
-    <p>Estamos verificando el estado de tu transacción.</p>
-  } @else if (isSuccessStatus()) {
-    <i class="ri-checkbox-circle-fill icon ok"></i>
-    <h1>¡Pago confirmado!</h1>
-    @if (courseTitle()) {
-      <p>Ya tienes acceso a <strong>{{ courseTitle() }}</strong>.</p>
-    } @else {
-      <p>Tu pago fue procesado correctamente.</p>
-    }
-  } @else {
-    <i class="ri-time-fill icon warn"></i>
-    <h1>Pago en proceso</h1>
-    <p>Estado: {{ status() ?? 'pendiente' }}</p>
-  }
+    <div class="success-card">
+      <i class="ri-loader-4-line icon spin"></i>
+      <h1>Confirmando pago…</h1>
+      <p>Estamos generando tu resumen de compra.</p>
+    </div>
+  } @else if (receipt(); as data) {
+    @if (isSuccessStatus()) {
+      <div class="success-card success-card--receipt">
+        <div class="success-head">
+          <i class="ri-checkbox-circle-fill icon ok"></i>
+          <div>
+            <p class="eyebrow">Pago exitoso</p>
+            <h1>¡Gracias por tu compra!</h1>
+            <p class="lead">Te enviamos una copia de este resumen a tu correo.</p>
+          </div>
+        </div>
 
-  <div class="actions">
-    <a routerLink="/mis-cursos" class="btn-primary">Ir a mis cursos</a>
-    <a routerLink="/marketplace" class="btn-secondary">Seguir explorando</a>
-  </div>
+        <div class="receipt-box">
+          <div class="receipt-row">
+            <span>Pedido</span>
+            <strong>#{{ data.id }}</strong>
+          </div>
+          @if (data.createdAt) {
+            <div class="receipt-row">
+              <span>Fecha</span>
+              <strong>{{ data.createdAt | date: 'dd/MM/yyyy HH:mm' : 'America/Lima' }}</strong>
+            </div>
+          }
+          @if (data.clientName) {
+            <div class="receipt-row">
+              <span>Cliente</span>
+              <strong>{{ data.clientName }}</strong>
+            </div>
+          }
+          @if (data.amount != null) {
+            <div class="receipt-row receipt-row--total">
+              <span>Total pagado</span>
+              <strong>{{ data.amount | currency: (data.currency || 'USD') : 'symbol' : '1.2-2' }}</strong>
+            </div>
+          }
+        </div>
+
+        <h2 class="items-title">Productos adquiridos</h2>
+        <ul class="items-list">
+          @for (item of receiptItems(data); track item.courseId ?? item.courseTitle) {
+            <li>
+              <span>{{ item.courseTitle }}</span>
+              @if (item.courseFormat) {
+                <small>{{ item.courseFormat }}</small>
+              }
+            </li>
+          }
+        </ul>
+
+        <div class="actions">
+          <a routerLink="/mis-cursos" class="btn-primary">Ir a mis infoproductos</a>
+          <a routerLink="/marketplace" class="btn-secondary">Seguir explorando</a>
+        </div>
+      </div>
+    } @else {
+      <div class="success-card">
+        <i class="ri-time-fill icon warn"></i>
+        <h1>Pago en proceso</h1>
+        <p>Estado: {{ data.status ?? 'pendiente' }}</p>
+      </div>
+    }
+  }
 </section>

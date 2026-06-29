@@ -38,12 +38,15 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(
+                .authorizeHttpRequests(auth -> auth                        .requestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/google",
+                                "/api/v1/auth/verify-email-code",
+                                "/api/v1/auth/resend-verification",
                                 "/api/v1/auth/password-reset/request",
-                                "/api/v1/auth/password-reset/confirm")
+                                "/api/v1/auth/password-reset/confirm",
+                                "/api/v1/auth/2fa/verify-login")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/**")
                         .permitAll()

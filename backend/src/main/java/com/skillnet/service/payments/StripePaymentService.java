@@ -61,6 +61,7 @@ public class StripePaymentService {
     private final AuditService auditService;
     private final CheckoutQuoteService checkoutQuoteService;
     private final NotificationPublisher notificationPublisher;
+    private final com.skillnet.service.mail.EmailService emailService;
 
     @Value("${stripe.api.secretKey}")
     private String stripeSecretKey;
@@ -167,7 +168,7 @@ public class StripePaymentService {
             redeemCoupon(appliedCoupon);
             createEnrollments(currentUser, courseIds, now);
             logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
-            notifyPurchase(currentUser, courses);
+            notifyPurchase(currentUser, courses, payment);
             message = "Transacción aprobada de forma segura por Stripe. ID: " + charge.getId();
         }
 
@@ -200,7 +201,7 @@ public class StripePaymentService {
         redeemCoupon(appliedCoupon);
         createEnrollments(currentUser, courseIds, now);
         logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
-        notifyPurchase(currentUser, courses);
+        notifyPurchase(currentUser, courses, payment);
         return payment;
     }
 
@@ -229,7 +230,7 @@ public class StripePaymentService {
         redeemCoupon(appliedCoupon);
         createEnrollments(currentUser, courseIds, now);
         logPurchase(currentUser, primaryCourse, payment.getId(), quote.getTotal(), courseIds);
-        notifyPurchase(currentUser, courses);
+        notifyPurchase(currentUser, courses, payment);
 
         return payment;
     }
@@ -242,13 +243,19 @@ public class StripePaymentService {
         couponRepository.save(coupon);
     }
 
-    private void notifyPurchase(User buyer, Iterable<Course> courses) {
+    private void notifyPurchase(User buyer, Iterable<Course> courses, Payment payment) {
         notificationPublisher.publish(
                 buyer,
                 "purchase",
                 "Compra confirmada",
                 "Tu pago fue procesado correctamente. Ya puedes acceder a tus cursos.",
                 frontendBaseUrl + "/mis-cursos");
+
+        List<Course> courseList = new java.util.ArrayList<>();
+        for (Course course : courses) {
+            courseList.add(course);
+        }
+        emailService.sendPurchaseReceiptEmail(payment, courseList, frontendBaseUrl + "/mis-cursos");
 
         Set<Long> notifiedProfessors = new HashSet<>();
         for (Course course : courses) {

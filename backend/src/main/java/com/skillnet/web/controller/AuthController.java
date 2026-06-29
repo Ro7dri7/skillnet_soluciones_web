@@ -13,12 +13,16 @@ import com.skillnet.domain.AuditAction;
 import com.skillnet.service.UserRoleNormalizer;
 import com.skillnet.service.UserService;
 import com.skillnet.service.auth.PasswordResetService;
+import com.skillnet.service.auth.EmailVerificationService;
+import com.skillnet.service.auth.TwoFactorAuthService;
 import com.skillnet.web.dto.request.GoogleLoginRequestDTO;
 import com.skillnet.web.dto.request.LoginRequestDTO;
 import com.skillnet.web.dto.request.PasswordResetConfirmDTO;
 import com.skillnet.web.dto.request.PasswordResetRequestDTO;
+import com.skillnet.web.dto.request.ResendVerificationRequestDTO;
 import com.skillnet.web.dto.request.SwitchRoleRequestDTO;
 import com.skillnet.web.dto.request.UserRequestDTO;
+import com.skillnet.web.dto.request.VerifyEmailCodeRequestDTO;
 import com.skillnet.web.dto.response.AuthResponseDTO;
 import com.skillnet.web.dto.response.UserResponseDTO;
 import com.skillnet.web.dto.response.UserSummaryDTO;
@@ -54,7 +58,9 @@ public class AuthController {
     private final GoogleAuthService googleAuthService;
     private final AuthRoleService authRoleService;
     private final PasswordResetService passwordResetService;
+    private final EmailVerificationService emailVerificationService;
     private final AuditService auditService;
+    private final TwoFactorAuthService twoFactorAuthService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -66,7 +72,9 @@ public class AuthController {
             GoogleAuthService googleAuthService,
             AuthRoleService authRoleService,
             PasswordResetService passwordResetService,
-            AuditService auditService) {
+            EmailVerificationService emailVerificationService,
+            AuditService auditService,
+            TwoFactorAuthService twoFactorAuthService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
@@ -76,7 +84,9 @@ public class AuthController {
         this.googleAuthService = googleAuthService;
         this.authRoleService = authRoleService;
         this.passwordResetService = passwordResetService;
+        this.emailVerificationService = emailVerificationService;
         this.auditService = auditService;
+        this.twoFactorAuthService = twoFactorAuthService;
     }
 
     @PostMapping("/login")
@@ -90,6 +100,15 @@ public class AuthController {
                 .orElseThrow();
         UserRoleNormalizer.ensureDualCapabilities(user);
         userRepository.save(user);
+        if (emailVerificationService.requiresVerification(user)) {
+            emailVerificationService.sendVerificationCode(user);
+            return ResponseEntity.ok(AuthResponseDTO.verificationPending(
+                    userMapper.toSummaryDTO(user, RoleAuthorityResolver.defaultActiveRole(user)),
+                    "Te enviamos un código de verificación a tu correo."));
+        }
+        if (twoFactorAuthService.isEnabledForUser(user.getId())) {
+            return ResponseEntity.ok(twoFactorAuthService.pendingLoginResponse(user));
+        }
         return ResponseEntity.ok(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
     }
 
@@ -149,9 +168,33 @@ public class AuthController {
                 .findById(created.getId())
                 .orElseThrow();
         UserRoleNormalizer.applyDualRoleCapabilities(user, user.getRole());
+        user.setEmailVerified(false);
         userRepository.save(user);
+        emailVerificationService.sendVerificationCode(user);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
+                .body(AuthResponseDTO.verificationPending(
+                        userMapper.toSummaryDTO(user, RoleAuthorityResolver.defaultActiveRole(user)),
+                        "Cuenta creada. Revisa tu correo e ingresa el código de verificación."));
+    }
+
+    @PostMapping("/verify-email-code")
+    public ResponseEntity<AuthResponseDTO> verifyEmailCode(@Valid @RequestBody VerifyEmailCodeRequestDTO dto) {
+        User user = emailVerificationService.verifyCode(dto.getEmail(), dto.getCode());
+        UserRoleNormalizer.ensureDualCapabilities(user);
+        userRepository.save(user);
+        auditService.logAction(
+                AuditAction.UPDATE_PROFILE,
+                AuditAction.ENTITY_USER,
+                user.getId(),
+                user.getEmail(),
+                "Email verificado");
+        return ResponseEntity.ok(buildAuthResponse(user, RoleAuthorityResolver.defaultActiveRole(user)));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerification(@Valid @RequestBody ResendVerificationRequestDTO dto) {
+        emailVerificationService.resendForEmail(dto.getEmail());
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/password-reset/request")

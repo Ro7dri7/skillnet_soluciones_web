@@ -1,0 +1,162 @@
+<section class="rounded-[10px] border border-gray-100 bg-white p-6 shadow-sm">
+  @if (loading()) {
+    <p class="text-sm text-gray-500">Cargando autenticación de dos factores…</p>
+  } @else {
+    <div class="flex flex-col justify-between gap-6">
+      <div class="space-y-4">
+        <div class="flex items-center gap-4">
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-full"
+            [class.bg-green-100]="enabled()"
+            [class.text-green-600]="enabled()"
+            [class.bg-gray-100]="!enabled()"
+            [class.text-gray-500]="!enabled()"
+          >
+            <i class="ri-shield-keyhole-fill text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900">Doble factor (2FA)</h3>
+            <span
+              class="mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-bold"
+              [class.bg-green-50]="enabled()"
+              [class.text-green-700]="enabled()"
+              [class.border]="enabled()"
+              [class.border-green-200]="enabled()"
+              [class.bg-gray-100]="!enabled()"
+              [class.text-gray-500]="!enabled()"
+            >
+              {{ enabled() ? 'Activado' : 'Desactivado' }}
+            </span>
+          </div>
+        </div>
+
+        <p class="text-sm font-medium text-gray-500">
+          @if (enabled()) {
+            Tu cuenta está protegida con {{ methodLabel() }}.
+          } @else {
+            Agrega una capa extra de seguridad escaneando un código QR con Google Authenticator o Authy.
+          }
+        </p>
+
+        @if (error()) {
+          <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {{ error() }}
+          </div>
+        }
+        @if (success()) {
+          <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {{ success() }}
+          </div>
+        }
+      </div>
+
+      @if (setupStep() === 'qr' && setupData(); as setup) {
+        <div class="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p class="text-sm font-medium text-gray-700">
+            1. Escanea este QR con Google Authenticator o Authy.
+          </p>
+          <div class="flex flex-wrap items-start gap-6">
+            <img [src]="setup.qrCode" alt="Código QR 2FA" class="h-40 w-40 rounded-lg border border-gray-200 bg-white p-2" />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Entrada manual</p>
+              <code class="mt-1 block break-all rounded bg-white px-2 py-1 text-sm text-gray-800">{{ setup.secret }}</code>
+            </div>
+          </div>
+          <p class="text-sm font-medium text-gray-700">
+            2. Introduce el código de 6 dígitos que muestra la app.
+          </p>
+          <form [formGroup]="verifyForm" (ngSubmit)="confirmSetup()" class="flex max-w-xs flex-col gap-3">
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              formControlName="code"
+              placeholder="000000"
+              autocomplete="one-time-code"
+              class="h-11 rounded-lg border border-gray-200 bg-white px-4 text-center text-lg tracking-widest outline-none focus:border-[#89CEFF]"
+            />
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="submit"
+                class="rounded-lg bg-[#89CEFF] px-4 py-2 text-sm font-bold text-black disabled:opacity-50"
+                [disabled]="saving()"
+              >
+                {{ saving() ? 'Verificando…' : 'Activar 2FA' }}
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700"
+                (click)="cancelSetup()"
+                [disabled]="saving()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      } @else if (setupStep() === 'disabling') {
+        <form [formGroup]="disableForm" (ngSubmit)="confirmDisable()" class="max-w-md space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          @if (passwordRequiredForDisable()) {
+            <p class="text-sm text-gray-600">Confirma tu contraseña y un código TOTP para desactivar 2FA.</p>
+            <input
+              type="password"
+              formControlName="password"
+              placeholder="Contraseña actual"
+              autocomplete="current-password"
+              class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+            />
+            <p class="text-xs text-gray-500">
+              ¿No la recuerdas?
+              <a routerLink="/password-reset" class="font-bold text-[#355EC9] hover:underline">Restablecer contraseña</a>
+            </p>
+          } @else {
+            <p class="text-sm text-gray-600">
+              Cuenta con Google: solo necesitas el código de tu app autenticadora.
+            </p>
+          }
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            formControlName="code"
+            placeholder="Código 2FA"
+            autocomplete="one-time-code"
+            class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+          />
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              [disabled]="saving()"
+            >
+              {{ saving() ? 'Desactivando…' : 'Desactivar 2FA' }}
+            </button>
+            <button type="button" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700" (click)="cancelDisable()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      } @else {
+        @if (enabled()) {
+          <button
+            type="button"
+            class="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            (click)="showDisableForm()"
+            [disabled]="saving()"
+          >
+            Gestionar / desactivar 2FA
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="w-full rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            (click)="startSetup()"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Preparando…' : 'Configurar 2FA' }}
+          </button>
+        }
+      }
+    </div>
+  }
+</section>

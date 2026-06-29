@@ -23,4 +23,5 @@ public class UserSummaryDTO {
     private boolean superUser;
     private boolean staff;
     private String profilePicture;
+    private boolean emailVerified;
 }

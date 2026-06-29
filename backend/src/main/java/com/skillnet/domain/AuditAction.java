@@ -19,6 +19,9 @@ public final class AuditAction {
     public static final String SWITCH_ROLE = "SWITCH_ROLE";
     public static final String ADMIN_ENROLL_USER = "ADMIN_ENROLL_USER";
     public static final String ADMIN_CHANGE_USER_ROLE = "ADMIN_CHANGE_USER_ROLE";
+    public static final String ENABLE_2FA = "ENABLE_2FA";
+    public static final String DISABLE_2FA = "DISABLE_2FA";
+    public static final String LOGIN_2FA = "LOGIN_2FA";
 
     public static final String ENTITY_COURSE = "Course";
     public static final String ENTITY_PAYMENT = "Payment";

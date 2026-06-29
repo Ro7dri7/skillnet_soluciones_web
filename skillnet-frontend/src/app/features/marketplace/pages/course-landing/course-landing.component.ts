@@ -17,6 +17,7 @@ import { CheckoutService } from '../../../../core/services/checkout.service';
 import { CourseService } from '../../../../core/services/course.service';
 import { ReviewService, CourseReview } from '../../../../core/services/review.service';
 import { StudentService } from '../../../../core/services/student.service';
+import { OwnedCoursesService } from '../../../../core/services/owned-courses.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { CourseResponse, ProfessorSummary } from '../../../../shared/models/course.model';
 import {
@@ -61,6 +62,7 @@ export class CourseLandingComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly courseService = inject(CourseService);
   private readonly studentService = inject(StudentService);
+  private readonly ownedCourses = inject(OwnedCoursesService);
   private readonly reviewService = inject(ReviewService);
   private readonly authService = inject(AuthService);
   private readonly cartService = inject(CartService);
@@ -136,6 +138,7 @@ export class CourseLandingComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.ownedCourses.refresh();
     const formatParam = this.route.snapshot.paramMap.get('format');
     const slugParam = this.route.snapshot.paramMap.get('slug');
     const slug = slugFromRouteParams(formatParam, slugParam);
@@ -287,6 +290,10 @@ export class CourseLandingComponent implements OnInit {
   addToCart(): void {
     const course = this.course();
     if (!course) {
+      return;
+    }
+    if (this.isEnrolled()) {
+      void this.router.navigateByUrl(this.learnPath());
       return;
     }
     this.cartService.addToCart(courseToMarketplace(course));

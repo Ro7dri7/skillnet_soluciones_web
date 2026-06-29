@@ -42,6 +42,34 @@ export const routes: Routes = [
 
   {
 
+    path: 'verify-email',
+
+    loadComponent: () =>
+
+      import('./features/auth/pages/verify-email/verify-email.component').then(
+
+        (m) => m.VerifyEmailComponent,
+
+      ),
+
+  },
+
+  {
+
+    path: 'login/2fa',
+
+    loadComponent: () =>
+
+      import('./features/auth/pages/login-2fa/login-2fa.component').then(
+
+        (m) => m.Login2faComponent,
+
+      ),
+
+  },
+
+  {
+
     path: 'password-reset',
 
     loadComponent: () =>

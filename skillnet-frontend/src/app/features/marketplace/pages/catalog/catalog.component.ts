@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CourseService } from '../../../../core/services/course.service';
+import { OwnedCoursesService } from '../../../../core/services/owned-courses.service';
 import {
   MARKETPLACE_CATEGORIES,
   getParentCategory,
@@ -19,6 +20,7 @@ import { courseToMarketplace } from '../../../../shared/utils/marketplace-course
 })
 export class CatalogComponent implements OnInit {
   private readonly courseService = inject(CourseService);
+  private readonly ownedCourses = inject(OwnedCoursesService);
   private readonly route = inject(ActivatedRoute);
 
   readonly isLoading = signal(true);
@@ -27,6 +29,7 @@ export class CatalogComponent implements OnInit {
   readonly selectedCategory = signal<string>('');
 
   ngOnInit(): void {
+    this.ownedCourses.refresh();
     this.route.queryParamMap.subscribe((params) => {
       this.selectedCategory.set(params.get('category') ?? '');
       this.load();

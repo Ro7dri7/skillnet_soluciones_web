@@ -2,7 +2,8 @@ import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../../../core/services/cart.service';
-import { courseLandingRouterLink } from '../../../../shared/utils/course-slug.util';
+import { OwnedCoursesService } from '../../../../core/services/owned-courses.service';
+import { courseLandingRouterLink, courseLearnRouterLink } from '../../../../shared/utils/course-slug.util';
 import { MarketplaceCourse } from '../../models/marketplace-course.model';
 
 @Component({
@@ -14,14 +15,21 @@ import { MarketplaceCourse } from '../../models/marketplace-course.model';
 export class MarketplaceCourseCardComponent {
   private readonly router = inject(Router);
   readonly cartService = inject(CartService);
+  readonly ownedCourses = inject(OwnedCoursesService);
 
   readonly course = input.required<MarketplaceCourse>();
 
   readonly inCart = computed(() => this.cartService.isInCart(this.course().id));
+  readonly isOwned = computed(() => this.ownedCourses.isOwned(this.course().id));
 
   landingLink(): (string | number)[] {
     const item = this.course();
     return courseLandingRouterLink(item.slug, item.format);
+  }
+
+  learnLink(): (string | number)[] {
+    const item = this.course();
+    return courseLearnRouterLink(item.slug, item.format);
   }
 
   levelLabel(level: string): string {

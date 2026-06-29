@@ -13,11 +13,24 @@ export interface PaymentItem {
   createdAt?: string;
 }
 
+export interface PaymentReceiptItem {
+  courseId?: number;
+  courseTitle?: string;
+  courseFormat?: string;
+}
+
 export interface PaymentStatus {
   id: number;
   status: string;
   courseId?: number;
   courseTitle?: string;
+  amount?: number;
+  currency?: string;
+  createdAt?: string;
+  clientName?: string;
+  clientEmail?: string;
+  paymentMethod?: string;
+  items?: PaymentReceiptItem[];
 }
 
 @Injectable({ providedIn: 'root' })

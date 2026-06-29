@@ -9,6 +9,7 @@ import {
 import { Subscription, filter } from 'rxjs';
 import { AuthNavbarComponent } from '../../../../core/layout/auth-navbar/auth-navbar.component';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AuthResponse } from '../../../../shared/models/auth.model';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 import { returnUrlFromQuery } from '../../../../shared/utils/return-url.util';
 import { environment } from '../../../../../environments/environment';
@@ -83,7 +84,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.error.set('');
 
     this.authService.login(this.form.getRawValue()).subscribe({
-      next: () => this.navigateAfterAuth(),
+      next: (response) => this.handleAuthResponse(response),
       error: (err) => {
         this.error.set(
           messageFromHttpError(err, 'Error al iniciar sesión. Intenta nuevamente.'),
@@ -103,7 +104,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.error.set('');
 
     this.authService.loginWithGoogle(user.idToken).subscribe({
-      next: () => this.navigateAfterAuth(),
+      next: (response) => this.handleAuthResponse(response),
       error: (err) => {
         this.error.set(
           messageFromHttpError(err, 'Error al iniciar sesión con Google. Intenta nuevamente.'),
@@ -112,6 +113,28 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.googleLoginInProgress = false;
       },
     });
+  }
+
+  private handleAuthResponse(response: AuthResponse): void {
+    if (this.authService.isVerificationPending(response)) {
+      this.isLoading.set(false);
+      this.googleLoginInProgress = false;
+      this.authService.redirectToEmailVerification(
+        response.user.email,
+        returnUrlFromQuery(this.route.snapshot.queryParams),
+      );
+      return;
+    }
+    if (this.authService.isTwoFactorPending(response)) {
+      this.isLoading.set(false);
+      this.googleLoginInProgress = false;
+      this.authService.redirectToTwoFactorLogin(
+        response.twoFactorToken!,
+        returnUrlFromQuery(this.route.snapshot.queryParams),
+      );
+      return;
+    }
+    this.navigateAfterAuth();
   }
 
   private navigateAfterAuth(): void {

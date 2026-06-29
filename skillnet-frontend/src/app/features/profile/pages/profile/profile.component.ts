@@ -11,6 +11,7 @@ import {
 } from '../../../../core/services/profile.service';
 import { PaymentItem, PaymentService } from '../../../../core/services/payment.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ProfileTwoFactorComponent } from '../../components/profile-two-factor/profile-two-factor.component';
 import { messageFromHttpError } from '../../../../shared/utils/http-error.util';
 
 type ProfileTab = 'info' | 'security' | 'purchases';
@@ -18,7 +19,7 @@ type ProfileTab = 'info' | 'security' | 'purchases';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, DatePipe],
+  imports: [ReactiveFormsModule, CurrencyPipe, DatePipe, ProfileTwoFactorComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })

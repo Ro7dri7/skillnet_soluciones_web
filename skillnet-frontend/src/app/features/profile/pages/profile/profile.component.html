@@ -269,48 +269,52 @@
       }
 
       @case ('security') {
-        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-6 sm:p-8">
-          <h2 class="mb-2 text-xl font-bold uppercase tracking-tight text-black">Cambiar contraseña</h2>
-          <p class="mb-6 text-xs font-medium text-gray-600">
-            Confirma tu contraseña actual e introduce una nueva.
-          </p>
-          <div class="max-w-md space-y-4">
-            <label class="block">
-              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Contraseña actual</span>
-              <input
-                type="password"
-                formControlName="currentPassword"
-                autocomplete="current-password"
-                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
-              />
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Nueva contraseña</span>
-              <input
-                type="password"
-                formControlName="newPassword"
-                autocomplete="new-password"
-                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
-              />
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Confirmar contraseña</span>
-              <input
-                type="password"
-                formControlName="confirmPassword"
-                autocomplete="new-password"
-                class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
-              />
-            </label>
-            <button
-              type="submit"
-              class="rounded-xl bg-[#89CEFF] px-8 py-3 text-[13px] font-medium uppercase tracking-wider text-black shadow-md transition hover:bg-[#7ec4ff] disabled:opacity-50"
-              [disabled]="saving()"
-            >
-              {{ saving() ? 'Actualizando…' : 'Cambiar contraseña' }}
-            </button>
-          </div>
-        </form>
+        <div class="space-y-6">
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="rounded-[10px] border border-gray-100 bg-[#F0F0F0] p-6 sm:p-8">
+            <h2 class="mb-2 text-xl font-bold uppercase tracking-tight text-black">Cambiar contraseña</h2>
+            <p class="mb-6 text-xs font-medium text-gray-600">
+              Confirma tu contraseña actual e introduce una nueva.
+            </p>
+            <div class="max-w-md space-y-4">
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Contraseña actual</span>
+                <input
+                  type="password"
+                  formControlName="currentPassword"
+                  autocomplete="current-password"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Nueva contraseña</span>
+                <input
+                  type="password"
+                  formControlName="newPassword"
+                  autocomplete="new-password"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-[11px] font-bold uppercase tracking-tight text-black">Confirmar contraseña</span>
+                <input
+                  type="password"
+                  formControlName="confirmPassword"
+                  autocomplete="new-password"
+                  class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#89CEFF]"
+                />
+              </label>
+              <button
+                type="submit"
+                class="rounded-xl bg-[#89CEFF] px-8 py-3 text-[13px] font-medium uppercase tracking-wider text-black shadow-md transition hover:bg-[#7ec4ff] disabled:opacity-50"
+                [disabled]="saving()"
+              >
+                {{ saving() ? 'Actualizando…' : 'Cambiar contraseña' }}
+              </button>
+            </div>
+          </form>
+
+          <app-profile-two-factor />
+        </div>
       }
 
       @case ('purchases') {

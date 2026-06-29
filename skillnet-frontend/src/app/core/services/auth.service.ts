@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, WritableSignal, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 import { Observable, tap } from 'rxjs';
 import { dashboardPathForRole } from '../../shared/utils/user-role.util';
@@ -17,12 +18,15 @@ import { hasValidSessionToken } from '../../shared/utils/return-url.util';
 
 const TOKEN_STORAGE_KEY = 'skillnet_token';
 const USER_STORAGE_KEY = 'skillnet_user';
+export const PENDING_EMAIL_KEY = 'skillnet_pending_email';
+export const PENDING_2FA_TOKEN_KEY = 'skillnet_pending_2fa_token';
 
 export type AppRole = 'student' | 'infoproductor' | 'admin';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly socialAuthService = inject(SocialAuthService, { optional: true });
   private readonly apiUrl = environment.apiUrl;
 
@@ -51,6 +55,55 @@ export class AuthService {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/auth/register`, data)
       .pipe(tap((response) => this.handleAuthSuccess(response)));
+  }
+
+  verifyEmailCode(email: string, code: string): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/verify-email-code`, { email, code })
+      .pipe(tap((response) => this.handleAuthSuccess(response)));
+  }
+
+  resendVerification(email: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/auth/resend-verification`, { email });
+  }
+
+  isVerificationPending(response: AuthResponse): boolean {
+    if (response.twoFactorRequired) {
+      return false;
+    }
+    return response.verificationRequired === true;
+  }
+
+  isTwoFactorPending(response: AuthResponse): boolean {
+    return response.twoFactorRequired === true && !!response.twoFactorToken;
+  }
+
+  redirectToTwoFactorLogin(twoFactorToken: string, returnUrl?: string | null): void {
+    sessionStorage.setItem(PENDING_2FA_TOKEN_KEY, twoFactorToken);
+    const query: Record<string, string> = {};
+    if (returnUrl) {
+      query['returnUrl'] = returnUrl;
+    }
+    void this.router.navigate(['/login/2fa'], { queryParams: query });
+  }
+
+  completeTwoFactorLogin(response: AuthResponse): void {
+    if (!response.token) {
+      return;
+    }
+    this.setToken(response.token);
+    const user = this.normalizeUser(response.user, response.token);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    this.currentUserSignal.set(user);
+  }
+
+  redirectToEmailVerification(email: string, returnUrl?: string | null): void {
+    sessionStorage.setItem(PENDING_EMAIL_KEY, email);
+    const query: Record<string, string> = { email };
+    if (returnUrl) {
+      query['returnUrl'] = returnUrl;
+    }
+    void this.router.navigate(['/verify-email'], { queryParams: query });
   }
 
   setToken(token: string): void {
@@ -119,6 +172,17 @@ export class AuthService {
   }
 
   private handleAuthSuccess(response: AuthResponse): void {
+    if (this.isTwoFactorPending(response)) {
+      this.logout();
+      return;
+    }
+    if (this.isVerificationPending(response)) {
+      this.logout();
+      return;
+    }
+    if (!response.token) {
+      return;
+    }
     this.setToken(response.token);
     const user = this.normalizeUser(response.user, response.token);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));

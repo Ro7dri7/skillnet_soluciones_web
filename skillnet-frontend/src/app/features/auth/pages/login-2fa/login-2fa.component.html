@@ -1,0 +1,43 @@
+<app-auth-navbar />
+
+<div class="flex min-h-[calc(100vh-64px)] items-center justify-center bg-white p-6">
+  <div class="w-full max-w-md">
+    <div class="mb-6 text-center">
+      <h1 class="mb-2 text-2xl font-bold text-skillnet-dark">Verificación en dos pasos</h1>
+      <p class="text-sm text-gray-600">
+        Introduce el código de 6 dígitos de Google Authenticator o Authy.
+      </p>
+    </div>
+
+    @if (error()) {
+      <div class="mb-4 rounded-lg bg-red-100 px-3 py-2 text-center text-sm text-red-800">
+        {{ error() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+      <input
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        formControlName="code"
+        placeholder="000000"
+        autocomplete="one-time-code"
+        class="h-14 w-full rounded-[10px] border border-gray-300 bg-white px-4 text-center text-2xl tracking-[0.4em] outline-none focus:border-skillnet-accent"
+      />
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="w-full rounded-[10px] bg-skillnet-accent py-3 text-[15px] font-bold text-white disabled:opacity-60"
+      >
+        {{ loading() ? 'Verificando…' : 'Continuar' }}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-gray-600">
+      <a routerLink="/login" class="font-bold text-skillnet-accent no-underline hover:underline">
+        Volver al login
+      </a>
+    </p>
+  </div>
+</div>

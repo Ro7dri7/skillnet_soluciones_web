@@ -89,6 +89,7 @@ public class UserMapper {
         dto.setSuperUser(user.isSuperUser());
         dto.setStaff(user.isStaff());
         dto.setProfilePicture(user.getProfilePicture());
+        dto.setEmailVerified(user.isEmailVerified());
         return dto;
     }
 
