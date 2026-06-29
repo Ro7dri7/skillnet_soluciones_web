@@ -14,8 +14,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class WebConfig {
 
     /**
-     * Orígenes CORS separados por coma. Ej. en EC2:
-     * SKILLNET_SECURITY_CORS_ALLOWED_ORIGINS=https://main.xxx.amplifyapp.com,https://skillnet.com.pe
+     * Orígenes CORS separados por coma.
+     * Env: SKILLNET_SECURITY_CORS_ALLOWED_ORIGINS (vía application.yml → skillnet.security.cors.allowed-origins)
      */
     @Value("${skillnet.security.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200}")
     private String allowedOrigins;

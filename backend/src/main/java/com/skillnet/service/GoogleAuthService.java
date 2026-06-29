@@ -44,6 +44,7 @@ public class GoogleAuthService {
             PasswordEncoder passwordEncoder,
             UserMapper userMapper,
             EmailVerificationService emailVerificationService,
+            /** Resuelto desde application.yml → SKILLNET_GOOGLE_CLIENT_ID */
             @Value("${skillnet.google.client-id}") String googleClientId) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;

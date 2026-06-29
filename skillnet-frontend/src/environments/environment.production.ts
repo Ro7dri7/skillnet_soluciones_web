@@ -1,11 +1,9 @@
 /**
- * Producción (Amplify / CloudFront).
- * Sustituye apiUrl en CI si usas otro dominio: SKILLNET_API_URL o fileReplacements en amplify.yml.
+ * Producción (Vercel / Amplify) — API en EC2 Ohio (esquema híbrido temporal HTTP).
  */
 export const environment = {
   production: true,
-  /** API pública detrás de Nginx/ALB en EC2 — no usar localhost en builds de prod. */
-  apiUrl: 'https://api.skillnet.com.pe/api/v1',
+  apiUrl: 'http://18.219.134.97:8080/api/v1',
   googleClientId: '226869771343-duthig8qnupr5j7u1l61bkl95hmc284n.apps.googleusercontent.com',
   googleSignInEnabled: true,
   /** Sustituir por pk_live_... cuando Stripe esté en modo live. */
